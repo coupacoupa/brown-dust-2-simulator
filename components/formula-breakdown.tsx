@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FormulaContributor, TurnFormulaBreakdown } from "@/types";
 import { formatNumber } from "@/lib/format";
 
@@ -205,9 +205,11 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
   const hasDamage = breakdown && breakdown.atk !== null;
 
   // Collapse the drill-down when the selected turn changes
-  useEffect(() => {
+  const [lastTurn, setLastTurn] = useState(breakdown?.turn);
+  if (lastTurn !== breakdown?.turn) {
+    setLastTurn(breakdown?.turn);
     setOpenBucket(null);
-  }, [breakdown?.turn]);
+  }
 
   // Impact meter: each multiplier's |log| share of the turn's total
   // amplification, so ×2.00 visibly dwarfs ×1.08 and ×0.50 registers as loss.

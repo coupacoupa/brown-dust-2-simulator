@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ElementType, RosterEntry } from "@/types";
 import { CHARACTER_TEMPLATES } from "@/data/characters";
 import { loadRoster, saveRoster, defaultRoster, charKeyOf } from "@/lib/storage";
+import { useClientState } from "@/hooks/use-client-state";
 import { ElementIcon } from "@/components/ui/element-icon";
 import { PortraitCard } from "@/components/ui/portrait-card";
 
@@ -11,14 +12,10 @@ import { PortraitCard } from "@/components/ui/portrait-card";
 // from here, and anything a team runs beyond these values is flagged as
 // hypothetical in the builder.
 export default function RosterPage() {
-  const [roster, setRoster] = useState<RosterEntry[] | null>(null);
+  const [roster, setRoster] = useClientState(loadRoster);
   const [elementFilter, setElementFilter] = useState<"all" | ElementType>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
-
-  useEffect(() => {
-    setRoster(loadRoster());
-  }, []);
 
   const update = (next: RosterEntry[]) => {
     setRoster(next);

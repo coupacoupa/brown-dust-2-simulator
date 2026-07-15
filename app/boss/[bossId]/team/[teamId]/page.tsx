@@ -1,305 +1,34 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  BossRecord,
-  Character,
-  RosterEntry,
-  SavedTeam,
-  SimulationResult,
-  TurnAction,
-  TurnSetup,
-} from "@/types";
-import {
-  getBoss,
-  getTeam,
-  upsertTeam,
-  loadRoster,
-  rosterEntryFor,
-  isHypothetical,
-  upsertBoss,
-} from "@/lib/storage";
-import { applyBossLevel } from "@/lib/bosses";
+import { useTeamWorkspace } from "@/hooks/use-team-workspace";
 import CharacterEditor from "@/components/character-editor";
-import TurnSequencer from "@/components/turn-sequencer";
+import TurnSequencer from "@/components/sequencer/turn-sequencer";
 import TurnStrip from "@/components/turn-strip";
 import FormulaBreakdown from "@/components/formula-breakdown";
 import DamageCharts from "@/components/damage-charts";
-import { runSimulation } from "@/lib/sim/engine";
 
 // The simulation workspace for one saved team: three lineups fighting the boss
 // as one continuous flow (Team 1's turns, then Team 2's, then Team 3's), with
-// per-team turn scripts and the sequencer — persisted to the record as you work.
+// per-team turn scripts and the sequencer. All state, simulation and autosave
+// live in useTeamWorkspace — this page is layout glue.
 export default function TeamWorkspacePage() {
   const { bossId, teamId } = useParams<{ bossId: string; teamId: string }>();
-
-  const [boss, setBoss] = useState<BossRecord | null | undefined>(undefined);
-  const [roster, setRoster] = useState<RosterEntry[]>([]);
-  // Identity fields of the loaded save (never change while editing)
-  const recordRef = useRef<Pick<SavedTeam, "id" | "bossId" | "createdAt"> | null>(null);
-
-  const [loaded, setLoaded] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [variants, setVariants] = useState<(Character | null)[][]>([]);
-  const [variantTurns, setVariantTurns] = useState<TurnSetup[][]>([]);
-  const [activeVariantIdx, setActiveVariantIdx] = useState(0);
-  const [startingSp, setStartingSp] = useState(6);
-  const [spRecovery, setSpRecovery] = useState(3);
-  const [maxSp, setMaxSp] = useState(20);
-  const [lastResults, setLastResults] = useState<(number | null)[]>([null, null, null]);
+  const ws = useTeamWorkspace(bossId, teamId);
 
   const [activeTab, setActiveTab] = useState<"sequencer" | "team">("sequencer");
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(0);
-  const [activeTurnIndex, setActiveTurnIndex] = useState(0);
-  const [hoveredAction, setHoveredAction] = useState<{
-    turnIdx: number;
-    charId: string;
-    targetTile: number;
-  } | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
-  // Load everything from storage once the route params are known
-  useEffect(() => {
-    setBoss(getBoss(bossId));
-    setRoster(loadRoster());
-    const team = getTeam(teamId);
-    if (!team || team.bossId !== bossId) {
-      setNotFound(true);
-      return;
-    }
-    recordRef.current = { id: team.id, bossId: team.bossId, createdAt: team.createdAt };
-    setTeamName(team.name);
-    setVariants(team.variants);
-    setVariantTurns(team.variantTurns);
-    setActiveVariantIdx(team.activeVariantIdx);
-    setStartingSp(team.startingSp);
-    setSpRecovery(team.spRecovery);
-    setMaxSp(team.maxSp);
-    setLastResults(team.lastResults ?? [null, null, null]);
-    setLoaded(true);
-  }, [bossId, teamId]);
-
-  const variantCharacters = useMemo(
-    () => variants.map((v) => (v ?? []).filter((c): c is Character => c !== null)),
-    [variants],
-  );
-  const activeCharacters = useMemo(
-    () => variantCharacters[activeVariantIdx] ?? [],
-    [variantCharacters, activeVariantIdx],
-  );
-  const activeTurns = useMemo(
-    () => variantTurns[activeVariantIdx] ?? [],
-    [variantTurns, activeVariantIdx],
-  );
-
-  // The battle is one continuous flow: Team 1 plays its turns, Team 2 continues
-  // from Team 1's last global turn, then Team 3. Every team is simulated so the
-  // strip can show the whole flow; each team enters fresh (SP/buffs reset), only
-  // the turn counter and boss rotation carry across the swap. Empty teams take
-  // no turns and don't advance the flow.
-  const variantResults = useMemo<(SimulationResult | null)[]>(() => {
-    if (!loaded || !boss) return [null, null, null];
-    return variantTurns.map((turns, idx) => {
-      const chars = variantCharacters[idx] ?? [];
-      return chars.length > 0 ? runSimulation(chars, boss, turns) : null;
-    });
-  }, [loaded, boss, variantCharacters, variantTurns]);
-
-  const simulationResult = variantResults[activeVariantIdx] ?? null;
-
-  // Global player-turn offsets per team (turns used by the teams before it)
-  const flowOffsets = useMemo(() => {
-    const counts = variantTurns.map((turns, idx) =>
-      (variantCharacters[idx]?.length ?? 0) > 0 ? turns.length : 0,
-    );
-    return [0, counts[0], counts[0] + counts[1]];
-  }, [variantTurns, variantCharacters]);
-
-  const globalTurnNumber = (flowOffsets[activeVariantIdx] ?? 0) + activeTurnIndex + 1;
-
-  // Damage already dealt by the teams fielded before the active one
-  const carryoverDamage = useMemo(
-    () =>
-      variantResults
-        .slice(0, activeVariantIdx)
-        .reduce((acc, r) => acc + (r?.totalDamageExpected ?? 0), 0),
-    [variantResults, activeVariantIdx],
-  );
-
-  // Keep each turn's action list aligned with the variant's current members
-  const updateTurnsForCharacters = (newCharacters: Character[], currentTurns: TurnSetup[]): TurnSetup[] => {
-    return currentTurns.map((turn) => {
-      const charIds = new Set(newCharacters.map((c) => c.id));
-      const filteredActions = turn.actions.filter((a) => charIds.has(a.characterId));
-
-      const orderedActions: TurnAction[] = [];
-      newCharacters.forEach((char) => {
-        const existing = filteredActions.find((a) => a.characterId === char.id);
-        orderedActions.push(
-          existing ?? {
-            characterId: char.id,
-            actionType: "attack",
-            costumeId: undefined,
-            burstLevel: 0,
-            targetTile: 4,
-          },
-        );
-      });
-
-      return { ...turn, actions: orderedActions };
-    });
-  };
-
-  const setVariantAt = (variantIdx: number, updatedTeam: (Character | null)[]) => {
-    setVariants((prev) => {
-      const copy = [...prev];
-      copy[variantIdx] = updatedTeam;
-      return copy;
-    });
-    const activeChars = updatedTeam.filter((c): c is Character => c !== null);
-    setVariantTurns((prev) => {
-      const copy = [...prev];
-      copy[variantIdx] = updateTurnsForCharacters(activeChars, prev[variantIdx]);
-      return copy;
-    });
-  };
-
-  const handleUpdateCharacters = (updatedChars: Character[]) => {
-    setVariants((prev) => {
-      const copy = [...prev];
-      copy[activeVariantIdx] = copy[activeVariantIdx].map((c) => {
-        if (!c) return null;
-        return updatedChars.find((x) => x.id === c.id) ?? c;
-      });
-      return copy;
-    });
-  };
-
-  // "TEAM" sync: re-apply roster levels/upgrades to every member of the active variant
-  const handleSyncFromRoster = () => {
-    const freshRoster = loadRoster();
-    setRoster(freshRoster);
-    setVariants((prev) => {
-      const copy = [...prev];
-      copy[activeVariantIdx] = copy[activeVariantIdx].map((c) => {
-        if (!c) return null;
-        const entry = rosterEntryFor(freshRoster, c);
-        return entry ? { ...c, level: entry.level, upgradeLevel: entry.upgradeLevel } : c;
-      });
-      return copy;
-    });
-  };
-
-  const setActiveTurnsSafe = (newTurns: TurnSetup[]) => {
-    setVariantTurns((prev) => {
-      const copy = [...prev];
-      copy[activeVariantIdx] = newTurns;
-      return copy;
-    });
-  };
-
-  const handleSelectFlowTurn = (teamIdx: number, turnIdx: number) => {
-    setActiveVariantIdx(teamIdx);
-    setActiveTurnIndex(turnIdx);
-  };
-
-  const handleAddTurn = (teamIdx: number) => {
-    const teamTurns = variantTurns[teamIdx] ?? [];
-    const teamChars = variantCharacters[teamIdx] ?? [];
-    const nextIdx = teamTurns.length;
-    setVariantTurns((prev) => {
-      const copy = [...prev];
-      copy[teamIdx] = [
-        ...teamTurns,
-        {
-          turnIndex: nextIdx,
-          actions: teamChars.map(
-            (char): TurnAction => ({
-              characterId: char.id,
-              actionType: "attack",
-              costumeId: undefined,
-              burstLevel: 0,
-              targetTile: 4,
-            }),
-          ),
-        },
-      ];
-      return copy;
-    });
-    setActiveVariantIdx(teamIdx);
-    setActiveTurnIndex(nextIdx);
-  };
-
-  const handleRemoveTurn = (teamIdx: number) => {
-    const teamTurns = variantTurns[teamIdx] ?? [];
-    if (teamTurns.length <= 1) return;
-    setVariantTurns((prev) => {
-      const copy = [...prev];
-      copy[teamIdx] = teamTurns.slice(0, -1);
-      return copy;
-    });
-    if (teamIdx === activeVariantIdx) {
-      setActiveTurnIndex((idx) => Math.min(idx, teamTurns.length - 2));
-    }
-  };
-
-  // Per-team expected totals for boss-page listings — freshly simulated when
-  // the boss is available, otherwise whatever the save last recorded.
-  const liveLastResults = useMemo(
-    () => (boss ? variantResults.map((r) => r?.totalDamageExpected ?? null) : lastResults),
-    [boss, variantResults, lastResults],
-  );
-
-  // Keep the selected turn valid when switching variants or shrinking the script
-  useEffect(() => {
-    setActiveTurnIndex((idx) => Math.max(0, Math.min(idx, activeTurns.length - 1)));
-  }, [activeTurns.length, activeVariantIdx]);
-
-  // Debounced autosave of the whole team record
-  useEffect(() => {
-    if (!loaded || !recordRef.current) return;
-    const handle = window.setTimeout(() => {
-      upsertTeam({
-        ...recordRef.current!,
-        name: teamName,
-        updatedAt: Date.now(),
-        variants,
-        variantTurns,
-        activeVariantIdx,
-        startingSp,
-        spRecovery,
-        maxSp,
-        lastResults: liveLastResults,
-      });
-      setLastSavedAt(Date.now());
-    }, 400);
-    return () => window.clearTimeout(handle);
-  }, [loaded, teamName, variants, variantTurns, activeVariantIdx, startingSp, spRecovery, maxSp, liveLastResults]);
-
-  const handleLevelChange = (newLevel: number) => {
-    if (!boss) return;
-    const updatedBoss = applyBossLevel(boss, newLevel);
-    if (updatedBoss === boss) return;
-    setBoss(updatedBoss);
-    upsertBoss(updatedBoss);
-  };
-
-  const hypotheticalCount = useMemo(
-    () => activeCharacters.filter((c) => isHypothetical(c, roster)).length,
-    [activeCharacters, roster],
-  );
-
-  if (notFound || boss === null) {
+  if (ws.notFound || ws.boss === null) {
     return (
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 mt-10 flex flex-col items-center gap-4 py-16">
         <p className="text-sm font-bold text-zinc-400">
-          {boss === null ? "This boss doesn't exist." : "This team doesn't exist (it may have been deleted)."}
+          {ws.boss === null ? "This boss doesn't exist." : "This team doesn't exist (it may have been deleted)."}
         </p>
         <Link
-          href={boss === null ? "/" : `/boss/${bossId}`}
+          href={ws.boss === null ? "/" : `/boss/${bossId}`}
           className="text-xs font-black text-indigo-400 uppercase tracking-wider hover:text-indigo-300"
         >
           ← Back
@@ -308,13 +37,15 @@ export default function TeamWorkspacePage() {
     );
   }
 
-  if (!loaded || !boss) {
+  if (!ws.loaded || !ws.boss) {
     return (
       <main className="flex-1 w-full max-w-[98%] mx-auto px-4 md:px-8 mt-10 text-xs text-zinc-500 font-bold uppercase tracking-widest">
         Loading team…
       </main>
     );
   }
+
+  const boss = ws.boss;
 
   return (
     <main className="flex-1 w-full max-w-[98%] mx-auto px-4 md:px-8 mt-6 pb-16 flex flex-col gap-5">
@@ -331,7 +62,7 @@ export default function TeamWorkspacePage() {
           {boss.stats && Object.keys(boss.stats).length > 0 && (
             <select
               value={boss.level}
-              onChange={(e) => handleLevelChange(Number(e.target.value))}
+              onChange={(e) => ws.changeBossLevel(Number(e.target.value))}
               className="bg-zinc-900 border border-zinc-800 text-zinc-100 font-black text-[10px] px-2 py-0.5 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer shadow-md hover:bg-zinc-850 transition-colors"
             >
               {Object.keys(boss.stats)
@@ -346,17 +77,17 @@ export default function TeamWorkspacePage() {
           )}
           <input
             type="text"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
+            value={ws.teamName}
+            onChange={(e) => ws.setTeamName(e.target.value)}
             className="bg-transparent border-b border-zinc-800 focus:border-indigo-500 text-sm font-black text-zinc-100 uppercase tracking-wide px-1 py-0.5 focus:outline-none min-w-0 w-48"
             title="Team name"
           />
           <span
             className={`text-[8px] font-black uppercase tracking-widest shrink-0 ${
-              lastSavedAt ? "text-emerald-500/80" : "text-zinc-600"
+              ws.lastSavedAt ? "text-emerald-500/80" : "text-zinc-600"
             }`}
           >
-            {lastSavedAt ? "● Saved" : "Autosave on"}
+            {ws.lastSavedAt ? "● Saved" : "Autosave on"}
           </span>
         </div>
 
@@ -364,24 +95,24 @@ export default function TeamWorkspacePage() {
           {/* TEAM roster sync */}
           <button
             type="button"
-            onClick={handleSyncFromRoster}
+            onClick={ws.syncFromRoster}
             title="Re-apply your roster's levels and upgrades to every member of this variant"
             className={`px-3.5 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-              hypotheticalCount > 0
+              ws.hypotheticalCount > 0
                 ? "border-amber-500/50 bg-amber-950/20 text-amber-300 hover:bg-amber-950/40"
                 : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
             }`}
           >
-            ⟳ Sync Roster{hypotheticalCount > 0 ? ` (${hypotheticalCount} hypo)` : ""}
+            ⟳ Sync Roster{ws.hypotheticalCount > 0 ? ` (${ws.hypotheticalCount} hypo)` : ""}
           </button>
 
           {/* SP economy settings */}
           <div className="flex items-center gap-3 bg-zinc-900/40 border border-zinc-800 px-3.5 py-2 rounded-xl">
             {(
               [
-                ["Start SP", startingSp, setStartingSp, 0, 15],
-                ["SP/Turn", spRecovery, setSpRecovery, 0, 10],
-                ["Max SP", maxSp, setMaxSp, 10, 20],
+                ["Start SP", ws.startingSp, ws.setStartingSp, 0, 15],
+                ["SP/Turn", ws.spRecovery, ws.setSpRecovery, 0, 10],
+                ["Max SP", ws.maxSp, ws.setMaxSp, 10, 20],
               ] as const
             ).map(([label, value, setter, min, max], i) => (
               <React.Fragment key={label}>
@@ -429,14 +160,14 @@ export default function TeamWorkspacePage() {
 
       {activeTab === "team" && (
         <CharacterEditor
-          teams={variants}
-          activeTeamIdx={activeVariantIdx}
+          teams={ws.variants}
+          activeTeamIdx={ws.activeVariantIdx}
           selectedSlotIdx={selectedSlotIdx}
-          onSelectTeam={setActiveVariantIdx}
+          onSelectTeam={ws.setActiveVariantIdx}
           onSelectSlot={setSelectedSlotIdx}
-          onChangeTeamAt={setVariantAt}
+          onChangeTeamAt={ws.setVariantAt}
           onConfirm={() => setActiveTab("sequencer")}
-          roster={roster}
+          roster={ws.roster}
         />
       )}
 
@@ -444,25 +175,25 @@ export default function TeamWorkspacePage() {
         <div className="flex flex-col gap-5">
           <TurnStrip
             teams={[0, 1, 2].map((idx) => ({
-              turns: variantTurns[idx] ?? [],
-              characters: variantCharacters[idx] ?? [],
-              result: variantResults[idx],
-              offset: flowOffsets[idx],
+              turns: ws.variantTurns[idx] ?? [],
+              characters: ws.variantCharacters[idx] ?? [],
+              result: ws.variantResults[idx],
+              offset: ws.flowOffsets[idx],
             }))}
-            activeTeamIdx={activeVariantIdx}
-            activeTurnIndex={activeTurnIndex}
-            onSelectTurn={handleSelectFlowTurn}
-            onAddTurn={handleAddTurn}
-            onRemoveTurn={handleRemoveTurn}
-            startingSp={startingSp}
-            spRecovery={spRecovery}
-            maxSp={maxSp}
+            activeTeamIdx={ws.activeVariantIdx}
+            activeTurnIndex={ws.activeTurnIndex}
+            onSelectTurn={ws.selectFlowTurn}
+            onAddTurn={ws.addTurn}
+            onRemoveTurn={ws.removeTurn}
+            startingSp={ws.startingSp}
+            spRecovery={ws.spRecovery}
+            maxSp={ws.maxSp}
           />
 
-          {activeCharacters.length === 0 ? (
+          {ws.activeCharacters.length === 0 ? (
             <div className="py-16 text-center border border-dashed border-zinc-900 rounded-2xl">
               <p className="text-xs font-bold text-zinc-500">
-                Team {activeVariantIdx + 1} is empty.
+                Team {ws.activeVariantIdx + 1} is empty.
               </p>
               <button
                 type="button"
@@ -475,28 +206,25 @@ export default function TeamWorkspacePage() {
           ) : (
             <>
               <FormulaBreakdown
-                breakdown={simulationResult?.formulaPerTurn.find((b) => b.turn === activeTurnIndex + 1)}
-                turnNumber={globalTurnNumber}
+                breakdown={ws.simulationResult?.formulaPerTurn.find((b) => b.turn === ws.activeTurnIndex + 1)}
+                turnNumber={ws.globalTurnNumber}
               />
               <TurnSequencer
-                characters={activeCharacters}
-                turns={activeTurns}
-                onChange={setActiveTurnsSafe}
-                activeTurnIndex={activeTurnIndex}
-                onSelectTurn={setActiveTurnIndex}
-                startingSp={startingSp}
-                spRecoveryPerTurn={spRecovery}
-                maxSp={maxSp}
-                hoveredAction={hoveredAction}
-                onHoverAction={setHoveredAction}
+                characters={ws.activeCharacters}
+                turns={ws.activeTurns}
+                onChange={ws.setActiveTurns}
+                activeTurnIndex={ws.activeTurnIndex}
+                startingSp={ws.startingSp}
+                spRecoveryPerTurn={ws.spRecovery}
+                maxSp={ws.maxSp}
                 boss={boss}
-                onUpdateCharacters={handleUpdateCharacters}
-                simulationResult={simulationResult}
-                flowTurnOffset={flowOffsets[activeVariantIdx] ?? 0}
-                carryoverDamage={carryoverDamage}
+                onUpdateCharacters={ws.updateActiveCharacters}
+                simulationResult={ws.simulationResult}
+                flowTurnOffset={ws.flowOffsets[ws.activeVariantIdx] ?? 0}
+                carryoverDamage={ws.carryoverDamage}
               />
-              {simulationResult && (
-                <DamageCharts result={simulationResult} turnOffset={flowOffsets[activeVariantIdx] ?? 0} />
+              {ws.simulationResult && (
+                <DamageCharts result={ws.simulationResult} turnOffset={ws.flowOffsets[ws.activeVariantIdx] ?? 0} />
               )}
             </>
           )}

@@ -1,21 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { BossRecord } from "@/types";
 import { loadBosses, upsertBoss, deleteBoss, isSeedBoss, uid } from "@/lib/storage";
+import { useClientState } from "@/hooks/use-client-state";
 import BossEditor from "@/components/boss-editor";
 import { ElementIcon } from "@/components/ui/element-icon";
 
 // Admin console for the boss catalog. Seeds can be edited (a stored copy
 // overrides the built-in) but only custom bosses can be deleted outright.
 export default function AdminBossesPage() {
-  const [bosses, setBosses] = useState<BossRecord[] | null>(null);
+  const [bosses, setBosses] = useClientState(loadBosses);
   const [draft, setDraft] = useState<BossRecord | null>(null);
-
-  useEffect(() => {
-    setBosses(loadBosses());
-  }, []);
 
   const refresh = () => setBosses(loadBosses());
 

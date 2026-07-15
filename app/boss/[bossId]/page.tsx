@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { BossRecord, SavedTeam } from "@/types";
 import {
   getBoss,
   teamsForBoss,
@@ -14,6 +13,7 @@ import {
   upsertBoss,
 } from "@/lib/storage";
 import { applyBossLevel } from "@/lib/bosses";
+import { useClientState } from "@/hooks/use-client-state";
 import BossInfoPanel from "@/components/boss-info-panel";
 import { formatNumber } from "@/lib/format";
 
@@ -21,14 +21,10 @@ export default function BossDetailPage() {
   const { bossId } = useParams<{ bossId: string }>();
   const router = useRouter();
 
-  const [boss, setBoss] = useState<BossRecord | null | undefined>(undefined);
-  const [teams, setTeams] = useState<SavedTeam[]>([]);
+  const [boss, setBoss] = useClientState(useCallback(() => getBoss(bossId), [bossId]));
+  const [teamsState, setTeams] = useClientState(useCallback(() => teamsForBoss(bossId), [bossId]));
   const [newTeamName, setNewTeamName] = useState("");
-
-  useEffect(() => {
-    setBoss(getBoss(bossId));
-    setTeams(teamsForBoss(bossId));
-  }, [bossId]);
+  const teams = teamsState ?? [];
 
   const handleCreateTeam = () => {
     if (!boss) return;
@@ -62,7 +58,7 @@ export default function BossDetailPage() {
   if (boss === null) {
     return (
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 mt-10 flex flex-col items-center gap-4 py-16">
-        <p className="text-sm font-bold text-zinc-400">This boss doesn't exist (it may have been deleted).</p>
+        <p className="text-sm font-bold text-zinc-400">This boss doesn&apos;t exist (it may have been deleted).</p>
         <Link href="/" className="text-xs font-black text-indigo-400 uppercase tracking-wider hover:text-indigo-300">
           ← Back to boss list
         </Link>

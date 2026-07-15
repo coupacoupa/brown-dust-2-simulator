@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { BossRecord } from "@/types";
 import { loadBosses, loadTeams } from "@/lib/storage";
 import { ELEMENT_CARD_GRADIENTS } from "@/lib/elements";
+import { useClientState } from "@/hooks/use-client-state";
 import { ElementIcon } from "@/components/ui/element-icon";
 
 // Compact read-only 3x4 hitbox preview for boss cards
@@ -27,24 +27,20 @@ function MiniHitbox({ hitbox, weakPoints }: { hitbox: number[]; weakPoints: numb
   );
 }
 
-// A boss counts as NEW for 30 days after release
-const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
-
 export default function BossListPage() {
-  const [bosses, setBosses] = useState<BossRecord[] | null>(null);
-  const [teamCounts, setTeamCounts] = useState<Record<string, number>>({});
+  const [bosses] = useClientState(loadBosses);
+  const [teams] = useClientState(loadTeams);
 
-  // Storage reads happen post-mount so SSR markup never disagrees with the client
-  useEffect(() => {
-    setBosses(loadBosses());
+  const teamCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    loadTeams().forEach((t) => {
+    (teams ?? []).forEach((t) => {
       counts[t.bossId] = (counts[t.bossId] || 0) + 1;
     });
-    setTeamCounts(counts);
-  }, []);
+    return counts;
+  }, [teams]);
 
-  const now = Date.now();
+  // Stamped once on mount — used only to decide which bosses are LIVE
+  const [now] = useState(() => Date.now());
 
   return (
     <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 mt-10 pb-16 flex flex-col gap-8">
@@ -140,7 +136,7 @@ export default function BossListPage() {
         })}
       </div>
 
-      {bosses !== null && bosses.length === 0 && (
+      {bosses !== undefined && bosses.length === 0 && (
         <div className="py-16 text-center text-zinc-550 text-sm font-semibold border border-dashed border-zinc-900 rounded-2xl">
           No bosses configured yet — add one via the Account menu → Manage Bosses.
         </div>

@@ -47,7 +47,6 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
 
   // 2. SVG Donut Chart Paths
   const donutSegments = useMemo(() => {
-    let currentAngle = 0;
     const radius = 50;
     const cx = 60;
     const cy = 60;
@@ -55,8 +54,7 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
 
     return characterShareData.map(char => {
       const strokeLength = (char.percentage / 100) * circumference;
-      const strokeOffset = circumference - (currentAngle / 100) * circumference;
-      currentAngle += char.percentage;
+      const strokeOffset = circumference - (char.startPercent / 100) * circumference;
 
       return {
         ...char,

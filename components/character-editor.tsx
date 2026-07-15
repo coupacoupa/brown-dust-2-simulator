@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Character, ElementType, RosterEntry } from '@/types';
 import { CHARACTER_TEMPLATES } from '@/data/characters';
-import { rosterEntryFor, isHypothetical } from '@/lib/storage';
+import { rosterEntryFor, isHypothetical, uid } from '@/lib/storage';
 import { formatNumber } from '@/lib/format';
 import { ElementIcon } from './ui/element-icon';
 import { PortraitCard } from './ui/portrait-card';
@@ -151,7 +151,7 @@ export default function CharacterEditor({
     const rosterEntry = roster ? rosterEntryFor(roster, template) : null;
     const newChar: Character = {
       ...JSON.parse(JSON.stringify(template)),
-      id: `char_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: uid("char"),
       level: rosterEntry?.level ?? template.level ?? 100,
       upgradeLevel: rosterEntry?.upgradeLevel ?? template.upgradeLevel ?? 5,
       position: defaultPos
@@ -198,7 +198,7 @@ export default function CharacterEditor({
       if (deployedIn !== undefined && deployedIn !== activeTeamIdx) return null;
       return {
         ...JSON.parse(JSON.stringify(template)),
-        id: `char_starter_${idx + 1}_${Date.now()}`,
+        id: uid(`char_starter_${idx + 1}`),
         position: idx + 3
       } as Character;
     });
