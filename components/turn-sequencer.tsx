@@ -6,11 +6,7 @@ import {
   TurnSetup,
   TurnAction,
   Boss,
-  TargetShape,
-  ElementType,
   SimulationResult,
-  Costume,
-  ApproachType
 } from "@/types";
 import { getTilesHit } from "@/lib/sim/targeting";
 import {
@@ -21,9 +17,13 @@ import {
   MAX_BURST_LEVEL,
 } from "@/lib/sim/actions";
 import { resolveBossRotation } from "@/lib/bosses";
+import { formatNumber } from "@/lib/format";
+import { ELEMENT_BOSS_GRADIENTS } from "@/lib/elements";
 import GridEditor from "./grid-editor";
-import AlliedGrid, { getInitials } from "./allied-grid";
-import { ElementIcon } from "./character-editor";
+import AlliedGrid from "./allied-grid";
+import { ElementIcon } from "./ui/element-icon";
+import { CardSkillBackground } from "./ui/card-skill-background";
+import { HitboxThumbnail } from "./ui/hitbox-thumbnail";
 
 interface TurnSequencerProps {
   characters: Character[];
@@ -44,373 +44,6 @@ interface TurnSequencerProps {
   flowTurnOffset?: number;
   // Expected damage those earlier teams already dealt (boss HP carries over).
   carryoverDamage?: number;
-}
-
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat().format(num || 0);
-};
-
-// Dark element gradient used for the boss HUD avatar and skill queue cards
-const getBossGradient = (el: ElementType) => {
-  switch (el) {
-    case "fire":
-      return "from-orange-900 via-zinc-900 to-red-950";
-    case "water":
-      return "from-cyan-900 via-zinc-900 to-blue-950";
-    case "wind":
-      return "from-emerald-900 via-zinc-900 to-teal-950";
-    case "light":
-      return "from-amber-900 via-zinc-900 to-yellow-950";
-    case "dark":
-      return "from-purple-900 via-zinc-900 to-indigo-950";
-  }
-};
-
-// 3×4 Hitbox Pattern Thumbnail — renders the costume's actual hitbox pattern
-// (red filled cells) with a ✓ tick mark on the target origin tile, matching
-// the in-game skill preview grid.
-function HitboxThumbnail({
-  shape,
-  hitboxPattern,
-  approach,
-  targetGrid = 'enemy',
-}: {
-  shape: TargetShape;
-  hitboxPattern?: [number, number][];
-  approach?: 'very_front' | 'vault';
-  targetGrid?: 'enemy' | 'ally';
-}) {
-  // Convert hitbox pattern offsets to flat indices on a 3×4 grid.
-  // The origin tile is placed at row 1, col 1 (center-ish of the 3×4 grid)
-  // for display purposes so the pattern has room to expand in all directions.
-  const THUMB_ROWS = 4;
-  const THUMB_COLS = 3;
-  const TOTAL_CELLS = THUMB_ROWS * THUMB_COLS;
-
-  // Origin position in the thumbnail grid (row 1, col 1 = flat index 4)
-  const originRow = 1;
-  const originCol = 1;
-  const originFlat = originRow * THUMB_COLS + originCol;
-
-  let activeCells: number[] = [];
-  let tickCell = originFlat; // The tick mark cell
-
-  if (hitboxPattern && hitboxPattern.length > 0) {
-    // Use the custom hitbox pattern
-    for (const [dr, dc] of hitboxPattern) {
-      const r = originRow + dr;
-      const c = originCol + dc;
-      if (r >= 0 && r < THUMB_ROWS && c >= 0 && c < THUMB_COLS) {
-        activeCells.push(r * THUMB_COLS + c);
-      }
-    }
-  } else {
-    // Fallback to TargetShape-based cells (centered at origin)
-    const shapeOffsets: Record<TargetShape, [number, number][]> = {
-      single: [[0, 0]],
-      row: [[0, -1], [0, 0], [0, 1]],
-      col: [[-1, 0], [0, 0], [1, 0], [2, 0]],
-      plus: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
-      cross: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
-      square: [[0, 0], [0, 1], [1, 0], [1, 1]],
-      all: Array.from({ length: TOTAL_CELLS }).map((_, i) => [
-        Math.floor(i / THUMB_COLS) - originRow,
-        (i % THUMB_COLS) - originCol,
-      ] as [number, number]),
-    };
-    for (const [dr, dc] of (shapeOffsets[shape] || [[0, 0]])) {
-      const r = originRow + dr;
-      const c = originCol + dc;
-      if (r >= 0 && r < THUMB_ROWS && c >= 0 && c < THUMB_COLS) {
-        activeCells.push(r * THUMB_COLS + c);
-      }
-    }
-  }
-
-  activeCells = Array.from(new Set(activeCells));
-
-  return (
-    <div className="relative w-12 h-16 bg-zinc-950/80 border border-zinc-800 rounded flex items-center justify-center overflow-hidden shrink-0 select-none">
-      <div className="grid grid-cols-3 grid-rows-4 gap-[2px] w-full h-full p-[3px]">
-        {Array.from({ length: TOTAL_CELLS }).map((_, i) => {
-          const isActive = activeCells.includes(i);
-          const isTick = i === tickCell;
-          return (
-            <span
-              key={i}
-              className={`relative w-full h-full rounded-[2px] flex items-center justify-center ${
-                isActive
-                  ? "bg-rose-600/80 shadow-[0_0_4px_rgba(244,63,94,0.4)]"
-                  : "bg-zinc-900/60"
-              }`}
-            >
-              {isTick && isActive && (
-                <span className="text-[7px] font-black text-white leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                  ✓
-                </span>
-              )}
-            </span>
-          );
-        })}
-      </div>
-        <span className={`absolute bottom-0 inset-x-0 text-center text-[5px] font-black uppercase tracking-wider py-[1px] ${
-          targetGrid === 'ally'
-            ? 'bg-emerald-600/90 text-emerald-100'
-            : approach === 'vault'
-              ? 'bg-amber-600/90 text-amber-100'
-              : 'bg-indigo-600/90 text-indigo-100'
-        }`}>
-          {targetGrid === 'ally' ? 'BUFF' : approach === 'vault' ? 'VAULT' : 'FRONT'}
-        </span>
-    </div>
-  );
-}
-
-// Legacy wrapper for backward compatibility with places that still pass just a shape
-function TargetShapeThumbnail({ shape }: { shape: TargetShape }) {
-  return <HitboxThumbnail shape={shape} />;
-}
-
-// Full Cover Skill Image Background Loader with element gradient fallbacks
-export function CardSkillBackground({
-  skillId,
-  skillName,
-  element,
-  imagePath,
-  imageScale = 1,
-  imageTranslateY = 0,
-  animate = true,
-  className = "absolute inset-0 w-full h-full",
-}: {
-  skillId?: string;
-  skillName?: string;
-  element: ElementType;
-  imagePath?: string; // Direct image path override (e.g. for costume base illustration)
-  imageScale?: number; // Zoom level applied to the image (default 1 = full cover)
-  imageTranslateY?: number; // Optional Y translation shift for images that need to be lowered
-  animate?: boolean; // Fade/scale the image in on mount (disable when swapping images to avoid a jarring resize)
-  className?: string;
-}) {
-  const [retry, setRetry] = useState(0);
-
-  const filename =
-    skillId ||
-    (skillName
-      ? skillName
-          .toLowerCase()
-          .replace(/\(.*\)/g, "")
-          .trim()
-          .replace(/\s+/g, "_")
-      : "skip");
-  const skillPath = imagePath || `/images/skills/${filename}.png`;
-  const fallbackPath = `/images/characters/${filename.replace(/_s$/, "")}.png`;
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => setRetry(0), 0);
-    return () => window.clearTimeout(timer);
-  }, [skillPath, fallbackPath]);
-
-  const src = React.useMemo(() => {
-    if (retry === 0) {
-      return skillPath;
-    }
-    if (retry === 1 && !imagePath) {
-      return fallbackPath;
-    }
-    return null;
-  }, [retry, skillPath, fallbackPath, imagePath]);
-
-  const getElementGradient = (el: ElementType) => {
-    switch (el) {
-      case "fire":
-        return "from-orange-950 via-zinc-900/50 to-red-950";
-      case "water":
-        return "from-cyan-950 via-zinc-900/50 to-blue-950";
-      case "wind":
-        return "from-emerald-950 via-zinc-900/50 to-teal-950";
-      case "light":
-        return "from-amber-955/65 via-zinc-900/50 to-yellow-950/65";
-      case "dark":
-        return "from-purple-955 via-zinc-900/50 to-indigo-950";
-    }
-  };
-
-  const gradient = getElementGradient(element);
-
-  if (!src) {
-    return (
-      <div
-        className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center relative overflow-hidden ${className}`}
-      >
-        <span className="absolute text-5xl font-black text-white/5 uppercase select-none tracking-widest scale-150 rotate-12">
-          {element}
-        </span>
-        <span className="absolute -right-4 -bottom-6 text-9xl font-black text-white/10 select-none uppercase tracking-tighter rotate-6">
-          {filename.substring(0, 3)}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`absolute inset-0 select-none overflow-hidden ${className}`}
-    >
-      {/* Element gradient base so transparent art (full-body illustrations)
-          rests on a colored backdrop instead of the raw dark card. Hidden
-          behind opaque skill busts, so it only shows through transparency. */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
-      <img
-        src={src}
-        alt={filename}
-        onError={() => setRetry((r) => r + 1)}
-        className={`relative w-full h-full object-cover object-center ${
-          animate ? "transition-all duration-300 animate-fadeIn" : ""
-        }`}
-        style={{
-          transform: `scale(${imageScale}) translateY(${imageTranslateY * 100}%)`,
-          transformOrigin: "center",
-        }}
-      />
-    </div>
-  );
-}
-
-// Circular Character Avatar fallback
-export function SmartCharacterAvatar({
-  name,
-  element,
-  customImage,
-  className = "w-10 h-10",
-  textClassName = "text-xs font-black",
-}: {
-  name: string;
-  element: ElementType;
-  customImage?: string;
-  className?: string;
-  textClassName?: string;
-}) {
-  const [imgError, setImgError] = useState(false);
-  const initials = getInitials(name);
-
-  const predictedPath =
-    customImage ||
-    `/images/characters/${name
-      .toLowerCase()
-      .replace(/\(.*\)/g, "")
-      .trim()
-      .replace(/\s+/g, "_")}.png`;
-
-  const getElementColorBorder = (el: ElementType) => {
-    switch (el) {
-      case "fire":
-        return "border-orange-500/70 bg-orange-950/20 text-orange-400";
-      case "water":
-        return "border-cyan-500/70 bg-cyan-950/20 text-cyan-400";
-      case "wind":
-        return "border-emerald-500/70 bg-emerald-950/20 text-emerald-400";
-      case "light":
-        return "border-amber-500/70 bg-amber-950/20 text-amber-300";
-      case "dark":
-        return "border-purple-500/70 bg-purple-950/20 text-purple-400";
-    }
-  };
-
-  const borderClass = getElementColorBorder(element);
-
-  return (
-    <div
-      className={`relative rounded-xl border flex items-center justify-center overflow-hidden shrink-0 select-none ${borderClass} ${className}`}
-    >
-      {!imgError ? (
-        <img
-          src={predictedPath}
-          alt={name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-cover animate-fadeIn"
-        />
-      ) : (
-        <span className={`uppercase tracking-wider ${textClassName}`}>
-          {initials}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// Circular Skill Icon supporting custom assets + fallback gradient placeholders + Burst animation glow
-export function SmartSkillIcon({
-  skillId,
-  skillName,
-  element,
-  customIcon,
-  className = "w-8 h-8",
-  burstLevel = 0,
-}: {
-  skillId?: string;
-  skillName: string;
-  element: ElementType;
-  customIcon?: string;
-  className?: string;
-  burstLevel?: number;
-}) {
-  const [imgError, setImgError] = useState(false);
-
-  const filename =
-    skillId ||
-    skillName
-      .toLowerCase()
-      .replace(/\(.*\)/g, "")
-      .trim()
-      .replace(/\s+/g, "_");
-  const predictedPath = customIcon || `/images/skills/${filename}.png`;
-
-  const getElementGrad = (el: ElementType) => {
-    switch (el) {
-      case "fire":
-        return "from-orange-500 to-red-655";
-      case "water":
-        return "from-cyan-400 to-blue-655";
-      case "wind":
-        return "from-emerald-400 to-teal-650";
-      case "light":
-        return "from-amber-300 to-yellow-550";
-      case "dark":
-        return "from-purple-500 to-indigo-700";
-    }
-  };
-
-  const grad = getElementGrad(element);
-  const isBurstActive = burstLevel > 0;
-
-  return (
-    <div
-      className={`
-        relative rounded-full flex items-center justify-center overflow-hidden shrink-0 select-none border transition-all duration-300
-        ${className} 
-        ${
-          isBurstActive
-            ? "border-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.85)] ring-1 ring-rose-550/40 scale-[1.03] animate-pulse"
-            : "border-zinc-850"
-        }
-      `}
-    >
-      {!imgError ? (
-        <img
-          src={predictedPath}
-          alt={skillName}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-cover animate-fadeIn"
-        />
-      ) : (
-        <div
-          className={`w-full h-full bg-gradient-to-br ${grad} flex items-center justify-center text-[9px] font-black text-white uppercase`}
-        >
-          {skillName.substring(0, 2)}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function TurnSequencer({
@@ -515,18 +148,6 @@ export default function TurnSequencer({
     });
 
     onChange(updatedTurns);
-  };
-
-  // Grid Allied click — only selects / deselects a character for the options
-  // deck. Repositioning is handled exclusively by drag-and-drop.
-  const handleTileClick = (tileIdx: number) => {
-    const charAtTile = characters.find((c) => c.position === tileIdx);
-    if (charAtTile) {
-      // Toggle: clicking the already-selected character deselects it
-      setOpenSelectorCharId((prev) =>
-        prev === charAtTile.id ? null : charAtTile.id,
-      );
-    }
   };
 
   // Drag grid swaps
@@ -742,7 +363,7 @@ export default function TurnSequencer({
   }, [simulationResult, bossMaxHp, activeTurnIndex, carryoverDamage]);
   const bossHpPct = bossMaxHp > 0 ? (bossCurrentHp / bossMaxHp) * 100 : 0;
 
-  const bossGradient = getBossGradient(boss.element);
+  const bossGradient = ELEMENT_BOSS_GRADIENTS[boss.element];
   const bossShortName = boss.name
     .replace(/^[^:]*:\s*/, "")
     .replace(/\(.*\)/, "")

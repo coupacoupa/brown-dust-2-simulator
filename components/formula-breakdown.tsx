@@ -2,13 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { FormulaContributor, TurnFormulaBreakdown } from "@/types";
+import { formatNumber } from "@/lib/format";
 
 interface FormulaBreakdownProps {
   breakdown: TurnFormulaBreakdown | undefined;
   turnNumber: number; // 1-indexed global flow turn (continues across teams)
 }
-
-const formatNumber = (num: number) => new Intl.NumberFormat().format(Math.round(num));
 
 // A multiplier within this band of ×1.00 counts as "untapped" — nothing in
 // this bucket is contributing, which is exactly what an optimizer wants to see.

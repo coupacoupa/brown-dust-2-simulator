@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BossRecord } from "@/types";
 import { loadBosses, upsertBoss, deleteBoss, isSeedBoss, uid } from "@/lib/storage";
 import BossEditor from "@/components/boss-editor";
-import { ElementIcon } from "@/components/character-editor";
+import { ElementIcon } from "@/components/ui/element-icon";
 
 // Admin console for the boss catalog. Seeds can be edited (a stored copy
 // overrides the built-in) but only custom bosses can be deleted outright.

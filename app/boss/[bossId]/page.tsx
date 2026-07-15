@@ -15,8 +15,7 @@ import {
 } from "@/lib/storage";
 import { applyBossLevel } from "@/lib/bosses";
 import BossInfoPanel from "@/components/boss-info-panel";
-
-const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
+import { formatNumber } from "@/lib/format";
 
 export default function BossDetailPage() {
   const { bossId } = useParams<{ bossId: string }>();

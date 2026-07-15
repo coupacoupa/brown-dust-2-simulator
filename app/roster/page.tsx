@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ElementType, RosterEntry } from "@/types";
 import { CHARACTER_TEMPLATES } from "@/data/characters";
 import { loadRoster, saveRoster, defaultRoster, charKeyOf } from "@/lib/storage";
-import { ElementIcon, PortraitCard } from "@/components/character-editor";
+import { ElementIcon } from "@/components/ui/element-icon";
+import { PortraitCard } from "@/components/ui/portrait-card";
 
 // "Account sync" page: the user's real collection. Teams pull level/upgrade
 // from here, and anything a team runs beyond these values is flagged as

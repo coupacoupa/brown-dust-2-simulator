@@ -11,27 +11,11 @@
 import React, { useMemo, useState } from "react";
 import { Boss, BossRecord, ElementType } from "@/types";
 import { resolveBossRotation, uniqueBossSkills } from "@/lib/bosses";
-import { ElementIcon } from "./character-editor";
-
-const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
+import { formatNumber } from "@/lib/format";
+import { ELEMENT_BOSS_GRADIENTS } from "@/lib/elements";
+import { ElementIcon } from "./ui/element-icon";
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-// Same dark element gradient family as the battle HUD skill queue
-const elementGradient = (el: ElementType) => {
-  switch (el) {
-    case "fire":
-      return "from-orange-900 via-zinc-900 to-red-950";
-    case "water":
-      return "from-cyan-900 via-zinc-900 to-blue-950";
-    case "wind":
-      return "from-emerald-900 via-zinc-900 to-teal-950";
-    case "light":
-      return "from-amber-900 via-zinc-900 to-yellow-950";
-    case "dark":
-      return "from-purple-900 via-zinc-900 to-indigo-950";
-  }
-};
 
 // ---------------------------------------------------------------------------
 // Rules-text highlighting: numbers in amber, magic terms in purple, physical
@@ -164,7 +148,7 @@ export default function BossInfoPanel({
       .replace(/{atk}/g, `${atkVal}`);
   }, [selected, boss.atk]);
 
-  const gradient = elementGradient(boss.element);
+  const gradient = ELEMENT_BOSS_GRADIENTS[boss.element];
   const rules = boss.huntingRules;
 
   const renderAttackRotation = () => {

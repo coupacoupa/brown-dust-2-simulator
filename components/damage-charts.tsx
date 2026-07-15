@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { SimulationResult } from '@/types';
+import { formatNumber } from '@/lib/format';
 
 interface DamageChartsProps {
   result: SimulationResult;
@@ -11,10 +12,6 @@ interface DamageChartsProps {
 
 export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsProps) {
   const { totalDamageMin, totalDamageExpected, totalDamageMax, damagePerTurn, damagePerCharacter } = result;
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat().format(num);
-  };
 
   // 1. Character Damage Shares calculations
   const characterShareData = useMemo(() => {

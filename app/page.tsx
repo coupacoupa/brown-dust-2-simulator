@@ -2,17 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { BossRecord, ElementType } from "@/types";
+import { BossRecord } from "@/types";
 import { loadBosses, loadTeams } from "@/lib/storage";
-import { ElementIcon } from "@/components/character-editor";
-
-const ELEMENT_CARD_GRADIENTS: Record<ElementType, string> = {
-  fire: "from-red-950/60 via-zinc-950 to-zinc-950",
-  water: "from-blue-950/60 via-zinc-950 to-zinc-950",
-  wind: "from-emerald-950/60 via-zinc-950 to-zinc-950",
-  light: "from-amber-950/60 via-zinc-950 to-zinc-950",
-  dark: "from-purple-950/60 via-zinc-950 to-zinc-950",
-};
+import { ELEMENT_CARD_GRADIENTS } from "@/lib/elements";
+import { ElementIcon } from "@/components/ui/element-icon";
 
 // Compact read-only 3x4 hitbox preview for boss cards
 function MiniHitbox({ hitbox, weakPoints }: { hitbox: number[]; weakPoints: number[] }) {

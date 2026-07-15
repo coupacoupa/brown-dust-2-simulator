@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { Character, ElementType } from '@/types';
-import { ElementIcon } from './character-editor';
+import { getInitials } from '@/lib/format';
+import { ElementIcon } from './ui/element-icon';
 
 interface AlliedGridProps {
   characters: Character[];
@@ -15,16 +16,6 @@ interface AlliedGridProps {
   // Array of grid indices (0-11) that should be highlighted for AoE buffs
   highlightedTiles?: number[];
 }
-
-export const getInitials = (name: string) => {
-  if (!name) return '?';
-  const clean = name.replace(/\(.*\)/g, '').trim();
-  const parts = clean.split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return parts[0].substring(0, 2).toUpperCase();
-};
 
 // Square tile face portrait with initials fallback
 function TileFace({

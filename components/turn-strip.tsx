@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { Character, TurnSetup, SimulationResult } from "@/types";
 import { computeSpTimeline } from "@/lib/sim/actions";
+import { formatCompact } from "@/lib/format";
 
 // One team's slice of the battle flow. Teams fight in order (1 → 2 → 3);
 // `offset` is how many player turns earlier teams already used, so this
@@ -25,13 +26,6 @@ interface TurnStripProps {
   spRecovery: number;
   maxSp: number;
 }
-
-const formatCompact = (num: number) =>
-  num >= 1_000_000
-    ? `${(num / 1_000_000).toFixed(2)}M`
-    : num >= 1_000
-      ? `${(num / 1_000).toFixed(1)}K`
-      : `${num}`;
 
 // Battle-flow rail: one container per team, in fight order, each holding its
 // own turn tabs numbered globally (Team 2 continues from Team 1's last turn).
