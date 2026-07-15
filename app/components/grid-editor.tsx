@@ -18,6 +18,10 @@ interface GridEditorProps {
   //   clean tiles with no labels, sized by the parent container.
   variant?: 'editor' | 'battle';
   weakPointMultiplier?: number; // e.g. 1.5 → weak tiles labeled "WEAK 150%"
+  // In battle variant, the flat index of the skill's target origin tile
+  // (the ✓ tick mark shown in the game preview). Renders a tick indicator
+  // on that tile when highlighted.
+  targetOriginTile?: number | null;
 }
 
 export default function GridEditor({
@@ -32,7 +36,8 @@ export default function GridEditor({
   hoverCenter = null,
   onHoverCell,
   variant = 'editor',
-  weakPointMultiplier
+  weakPointMultiplier,
+  targetOriginTile = null,
 }: GridEditorProps) {
   const columns = 3; // Left, Center, Right
   const rows = 4;    // Front, Mid-Front, Mid-Back, Back
@@ -166,9 +171,30 @@ export default function GridEditor({
         const isSelected = selectedTiles.includes(index);
         const isWeakPoint = weakPoints.includes(index);
         const isHighlighted = highlightedTiles.includes(index);
+        const isTargetOrigin = targetOriginTile === index && isHighlighted;
 
         let cellBg = 'bg-zinc-950/40 border-zinc-800/60';
-        if (isSelected) {
+        if (isHighlighted && isSelected) {
+          // Tile is both part of boss hitbox AND highlighted by skill — strong color
+          if (highlightColor === 'amber') {
+            cellBg = isWeakPoint
+              ? 'bg-amber-900/60 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+              : 'bg-amber-950/50 border-amber-500/80 shadow-[0_0_8px_rgba(251,191,36,0.35)]';
+          } else if (highlightColor === 'blue') {
+            cellBg = isWeakPoint
+              ? 'bg-cyan-900/60 border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.5)]'
+              : 'bg-cyan-950/50 border-cyan-500/80 shadow-[0_0_8px_rgba(34,211,238,0.35)]';
+          } else {
+            cellBg = isWeakPoint
+              ? 'bg-rose-900/60 border-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+              : 'bg-rose-950/50 border-rose-500/80 shadow-[0_0_8px_rgba(244,63,94,0.35)]';
+          }
+        } else if (isHighlighted) {
+          // Highlighted but not a boss tile — dimmer color
+          if (highlightColor === 'amber') cellBg = 'bg-amber-950/25 border-amber-700/50';
+          else if (highlightColor === 'blue') cellBg = 'bg-cyan-950/25 border-cyan-700/50';
+          else cellBg = 'bg-rose-950/25 border-rose-700/50';
+        } else if (isSelected) {
           cellBg = isWeakPoint
             ? 'bg-rose-950/40 border-rose-500/70'
             : 'bg-indigo-950/40 border-indigo-500/70';
@@ -181,11 +207,18 @@ export default function GridEditor({
               relative aspect-square rounded-lg border-2 flex items-center justify-center
               transition-all duration-200 select-none
               ${cellBg}
-              ${getCellHighlightClass(index)}
+              ${!isHighlighted ? getCellHighlightClass(index) : ''}
             `}
           >
+            {/* Target origin tick mark — shown when this is the skill's target tile */}
+            {isTargetOrigin && (
+              <span className="absolute text-sm font-black text-white z-10 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] animate-fadeIn">
+                ✓
+              </span>
+            )}
+
             {/* Weak point marker — the only tile content in battle view */}
-            {isSelected && isWeakPoint && (
+            {isSelected && isWeakPoint && !isTargetOrigin && (
               <div className="flex flex-col items-center animate-pulse drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                 <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-tight">
                   WEAK
@@ -204,6 +237,7 @@ export default function GridEditor({
                 highlightColor === 'red' ? 'border-rose-500/60' :
                 highlightColor === 'blue' ? 'border-cyan-500/60' :
                 highlightColor === 'purple' ? 'border-purple-500/60' :
+                highlightColor === 'amber' ? 'border-amber-500/60' :
                 'border-emerald-500/60'
               } animate-ping pointer-events-none opacity-20`} />
             )}

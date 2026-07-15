@@ -9,11 +9,77 @@ import {
   SkillEffect,
   DamageType,
   TurnFormulaBreakdown,
-  FormulaContributor
+  FormulaContributor,
+  ApproachType
 } from '../types';
 
-// Get flat indices hit by a skill shape given a center tile (0-11) on a 3x4 grid
-export function getTilesHit(shape: TargetShape, center: number): number[] {
+
+// Hitbox resolver: convert pattern offsets → flat boss-grid indices ──
+// Given a target origin tile (flat index 0-11 on the 3-col boss grid) and
+// a hitbox pattern, returns the set of flat indices that the skill covers.
+// Out-of-bounds offsets are silently dropped.
+export function resolveHitboxTiles(
+  originTile: number,
+  pattern: [number, number][],
+  gridCols: number = 3,
+  gridRows: number = 4,
+): number[] {
+  const originRow = Math.floor(originTile / gridCols);
+  const originCol = originTile % gridCols;
+  const tiles: number[] = [];
+
+  for (const [dr, dc] of pattern) {
+    const r = originRow + dr;
+    const c = originCol + dc;
+    if (r >= 0 && r < gridRows && c >= 0 && c < gridCols) {
+      tiles.push(r * gridCols + c);
+    }
+  }
+
+  return Array.from(new Set(tiles));
+}
+
+// Auto-targeting: determines the anchor tile on the boss grid (0-11) based on
+// the character's allied position, approach type, and the boss's active hitbox.
+export function calculateAutoTarget(
+  alliedPosition: number,
+  bossHitbox: number[],
+  approach: ApproachType = 'very_front',
+): number {
+  // In BD2 grids, flat index = depth * 3 + flank.
+  // Flank (0 = top, 1 = mid, 2 = bottom) is index % 3.
+  const flank = alliedPosition % 3;
+  
+  // Find all occupied boss tiles in this flank, from front (depth 0) to back (depth 3).
+  const flankTiles = [0 * 3 + flank, 1 * 3 + flank, 2 * 3 + flank, 3 * 3 + flank];
+  const occupied = flankTiles.filter((t) => bossHitbox.includes(t));
+
+  if (occupied.length === 0) {
+    // If the flank is empty, hit the front-most tile of that flank
+    return flankTiles[0];
+  }
+
+  // Vault skips the first occupied tile if there's another behind it
+  if (approach === 'vault' && occupied.length > 1) {
+    return occupied[1];
+  }
+
+  // Very front (or vault with only 1 target) hits the first occupied tile
+  return occupied[0];
+}
+
+// Get flat indices hit by a skill shape given a center tile (0-11) on a 3x4 grid.
+// When a custom hitboxPattern is provided, it takes precedence.
+export function getTilesHit(
+  shape: TargetShape,
+  center: number,
+  hitboxPattern?: [number, number][],
+): number[] {
+  // Custom hitbox pattern takes priority over shape-based calculation
+  if (hitboxPattern && hitboxPattern.length > 0) {
+    return resolveHitboxTiles(center, hitboxPattern);
+  }
+
   const cx = center % 3;
   const cy = Math.floor(center / 3);
   const hits: number[] = [];
@@ -191,6 +257,9 @@ export function runSimulation(
       let targetShape: TargetShape = 'single';
       let effects: SkillEffect[] = [];
       let usedSkillId: string | null = null;
+      let hitboxPattern: [number, number][] | undefined = undefined;
+      let targetGrid: 'enemy' | 'ally' = 'enemy';
+      let approach: ApproachType = 'very_front';
 
       // Determine action details
       if (action.actionType === 'skip') {
@@ -199,7 +268,7 @@ export function runSimulation(
           turn: displayTurn,
           characterName: char.name,
           actionName: 'Skip',
-          targetTile: action.targetTile,
+          targetTile: 0, // Skip has no target
           damageType: 'physical',
           hitCount: 0,
           hits: [],
@@ -213,6 +282,11 @@ export function runSimulation(
       } else if (action.actionType === 'attack') {
         actionName = 'Normal Attack';
         dmgType = char.baseAtk >= char.baseMatk ? 'physical' : 'magic';
+        targetShape = 'single'; // Normal attacks are single target
+        // Base character attack uses their default costume approach if available
+        if (char.costumes.length > 0) {
+          approach = char.costumes[0].approach ?? 'very_front';
+        }
       } else if (action.actionType === 'knockback') {
         actionName = 'Knock Back';
         dmgType = char.baseAtk >= char.baseMatk ? 'physical' : 'magic';
@@ -220,7 +294,7 @@ export function runSimulation(
         hitCount = 1;
         scaling = 100;
         targetShape = 'single';
-      } else if (action.actionType === 'costume') {
+      } else if (action.actionType === 'costume' && action.costumeId) {
         const costume = (char.costumes || []).find(c => c.id === action.costumeId);
         if (costume) {
           const skill = costume.skill;
@@ -236,8 +310,25 @@ export function runSimulation(
           dmgType = skill.damageType;
           targetShape = skill.targetShape;
           effects = skill.effects;
+          hitboxPattern = skill.hitboxPattern;
+          targetGrid = skill.targetGrid ?? 'enemy';
+          approach = costume.approach ?? 'very_front';
         }
       }
+
+      // Compute automatic target tile based on allied grid position
+      const charPosition = char.position ?? 0;
+      let targetOriginTile = 0;
+      
+      if (targetGrid === 'ally') {
+        // Buff skills target the allied grid centered on the caster
+        targetOriginTile = charPosition;
+      } else {
+        // Attack skills target the boss grid based on approach
+        targetOriginTile = calculateAutoTarget(charPosition, boss.hitbox, approach);
+      }
+
+      const tilesTargeted = getTilesHit(targetShape, targetOriginTile, hitboxPattern);
 
       // Track SP consumption
       currentSp -= spCost;
@@ -274,6 +365,19 @@ export function runSimulation(
             });
           });
           newBuffsApplied.push(`Allies: ${description}`);
+        } else if (eff.target === 'area_allies') {
+          // Buff applies to allies whose position falls within the targeted allied tiles
+          characters.forEach(ally => {
+            if (ally.position !== undefined && tilesTargeted.includes(ally.position)) {
+              characterBuffs[ally.id].push({
+                type: eff.type,
+                value: eff.value,
+                remainingTurns: eff.duration,
+                sourceCharacterId: char.id
+              });
+            }
+          });
+          newBuffsApplied.push(`AoE: ${description}`);
         } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
           // Debuff applies to the boss
           bossDebuffs.push({
@@ -325,9 +429,10 @@ export function runSimulation(
       // Vulnerability
       const vulnerabilityMultiplier = 1 + (vulnDebuff / 100);
 
-      // Find overlap between hit range and boss hitbox
-      const tilesTargeted = getTilesHit(targetShape, action.targetTile);
-      const hitParts = tilesTargeted.filter(tileIndex => boss.hitbox.includes(tileIndex));
+      // Find overlap between hit range and boss hitbox (only if targeting enemies)
+      const hitParts = targetGrid === 'enemy'
+        ? tilesTargeted.filter(tileIndex => boss.hitbox.includes(tileIndex))
+        : [];
 
       const detailedHits: SimulationLog['hits'] = [];
       let skillMinDmg = 0;
@@ -474,7 +579,7 @@ export function runSimulation(
         turn: displayTurn,
         characterName: char.name,
         actionName,
-        targetTile: action.targetTile,
+        targetTile: targetOriginTile,
         damageType: dmgType,
         hitCount: hitParts.length > 0 ? hitCount : 0,
         hits: detailedHits,

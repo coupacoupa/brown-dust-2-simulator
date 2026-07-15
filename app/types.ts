@@ -1,5 +1,6 @@
 export type ElementType = 'fire' | 'water' | 'wind' | 'light' | 'dark';
 export type DamageType = 'physical' | 'magic' | 'pure';
+export type ApproachType = 'very_front' | 'vault';
 
 export type TargetShape = 
   | 'single' 
@@ -23,7 +24,7 @@ export interface SkillEffect {
     | 'debuff_vulnerability'; // Amplifies all damage taken
   value: number; // e.g., 50 for +50%
   duration: number; // in turns
-  target: 'self' | 'all_allies' | 'target_enemy' | 'all_enemies';
+  target: 'self' | 'all_allies' | 'area_allies' | 'target_enemy' | 'all_enemies';
 }
 
 export interface Skill {
@@ -37,6 +38,13 @@ export interface Skill {
   targetShape: TargetShape;
   effects: SkillEffect[];
   icon?: string; // Optional path to skill icon asset
+  // Custom hitbox pattern: array of [rowOffset, colOffset] relative to the
+  // target origin tile (the tick mark in the game UI).  [0,0] = origin.
+  // Positive row = down, positive col = right (deeper into boss).
+  // When set this overrides the generic TargetShape-based calculation.
+  hitboxPattern?: [number, number][];
+  // Which grid the shape is projected onto. Defaults to 'enemy'.
+  targetGrid?: 'enemy' | 'ally';
 }
 
 export interface Costume {
@@ -47,6 +55,11 @@ export interface Costume {
   image?: string; // Costume/skill illustration (illust_skill_char asset)
   invenImage?: string; // Inventory illustration (illust_inven_char asset) — used by the basic-attack card
   icon?: string; // Optional path to costume skill icon
+  // Approach type: 'vault' leaps over column 0, 'very_front' attacks from column 0.
+  // Characters default to 'very_front' when omitted.
+  approach?: ApproachType;
+  // Display-only effect labels shown on the costume card, e.g. ["Knock back ↑ 1"]
+  displayEffects?: string[];
 }
 
 export interface Character {

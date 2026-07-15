@@ -9,8 +9,10 @@ import {
   TargetShape,
   ElementType,
   SimulationResult,
+  Costume,
+  ApproachType
 } from "../types";
-import { getTilesHit } from "../lib/simulator";
+import { getTilesHit, calculateAutoTarget } from "../lib/simulator";
 import { resolveBossRotation } from "../lib/bosses";
 import GridEditor from "./grid-editor";
 import AlliedGrid, { getInitials } from "./allied-grid";
@@ -57,46 +59,109 @@ const getBossGradient = (el: ElementType) => {
   }
 };
 
-// 3x3 Target Shape Grid Thumbnail (Red filled cells)
-function TargetShapeThumbnail({ shape }: { shape: TargetShape }) {
-  const getActiveCells = (sh: TargetShape) => {
-    switch (sh) {
-      case "single":
-        return [4];
-      case "row":
-        return [3, 4, 5];
-      case "col":
-        return [1, 4, 7];
-      case "plus":
-        return [1, 3, 4, 5, 7];
-      case "cross":
-        return [0, 2, 4, 6, 8];
-      case "square":
-        return [0, 1, 3, 4];
-      case "all":
-        return [0, 1, 2, 3, 4, 5, 6, 7, 8];
-    }
-  };
+// 3×4 Hitbox Pattern Thumbnail — renders the costume's actual hitbox pattern
+// (red filled cells) with a ✓ tick mark on the target origin tile, matching
+// the in-game skill preview grid.
+function HitboxThumbnail({
+  shape,
+  hitboxPattern,
+  approach,
+  targetGrid = 'enemy',
+}: {
+  shape: TargetShape;
+  hitboxPattern?: [number, number][];
+  approach?: 'very_front' | 'vault';
+  targetGrid?: 'enemy' | 'ally';
+}) {
+  // Convert hitbox pattern offsets to flat indices on a 3×4 grid.
+  // The origin tile is placed at row 1, col 1 (center-ish of the 3×4 grid)
+  // for display purposes so the pattern has room to expand in all directions.
+  const THUMB_ROWS = 4;
+  const THUMB_COLS = 3;
+  const TOTAL_CELLS = THUMB_ROWS * THUMB_COLS;
 
-  const activeCells = getActiveCells(shape);
+  // Origin position in the thumbnail grid (row 1, col 1 = flat index 4)
+  const originRow = 1;
+  const originCol = 1;
+  const originFlat = originRow * THUMB_COLS + originCol;
+
+  let activeCells: number[] = [];
+  let tickCell = originFlat; // The tick mark cell
+
+  if (hitboxPattern && hitboxPattern.length > 0) {
+    // Use the custom hitbox pattern
+    for (const [dr, dc] of hitboxPattern) {
+      const r = originRow + dr;
+      const c = originCol + dc;
+      if (r >= 0 && r < THUMB_ROWS && c >= 0 && c < THUMB_COLS) {
+        activeCells.push(r * THUMB_COLS + c);
+      }
+    }
+  } else {
+    // Fallback to TargetShape-based cells (centered at origin)
+    const shapeOffsets: Record<TargetShape, [number, number][]> = {
+      single: [[0, 0]],
+      row: [[0, -1], [0, 0], [0, 1]],
+      col: [[-1, 0], [0, 0], [1, 0], [2, 0]],
+      plus: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
+      cross: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
+      square: [[0, 0], [0, 1], [1, 0], [1, 1]],
+      all: Array.from({ length: TOTAL_CELLS }).map((_, i) => [
+        Math.floor(i / THUMB_COLS) - originRow,
+        (i % THUMB_COLS) - originCol,
+      ] as [number, number]),
+    };
+    for (const [dr, dc] of (shapeOffsets[shape] || [[0, 0]])) {
+      const r = originRow + dr;
+      const c = originCol + dc;
+      if (r >= 0 && r < THUMB_ROWS && c >= 0 && c < THUMB_COLS) {
+        activeCells.push(r * THUMB_COLS + c);
+      }
+    }
+  }
+
+  activeCells = Array.from(new Set(activeCells));
 
   return (
-    <div className="relative w-12 h-12 bg-zinc-950/80 border border-zinc-900 rounded flex items-center justify-center overflow-hidden shrink-0 select-none">
-      <div className="grid grid-cols-3 gap-0.5 w-full h-full p-1 opacity-45">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <span
-            key={i}
-            className={`w-full h-full rounded-sm ${
-              activeCells.includes(i) ? "bg-rose-650" : "bg-zinc-900"
-            }`}
-          />
-        ))}
+    <div className="relative w-12 h-16 bg-zinc-950/80 border border-zinc-800 rounded flex items-center justify-center overflow-hidden shrink-0 select-none">
+      <div className="grid grid-cols-3 grid-rows-4 gap-[2px] w-full h-full p-[3px]">
+        {Array.from({ length: TOTAL_CELLS }).map((_, i) => {
+          const isActive = activeCells.includes(i);
+          const isTick = i === tickCell;
+          return (
+            <span
+              key={i}
+              className={`relative w-full h-full rounded-[2px] flex items-center justify-center ${
+                isActive
+                  ? "bg-rose-600/80 shadow-[0_0_4px_rgba(244,63,94,0.4)]"
+                  : "bg-zinc-900/60"
+              }`}
+            >
+              {isTick && isActive && (
+                <span className="text-[7px] font-black text-white leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                  ✓
+                </span>
+              )}
+            </span>
+          );
+        })}
       </div>
-      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-rose-500 uppercase tracking-widest bg-black/10 select-none">
-        {shape === "single" ? "SNGL" : shape === "all" ? "ALL" : shape}
-      </span>
+        <span className={`absolute bottom-0 inset-x-0 text-center text-[5px] font-black uppercase tracking-wider py-[1px] ${
+          targetGrid === 'ally'
+            ? 'bg-emerald-600/90 text-emerald-100'
+            : approach === 'vault'
+              ? 'bg-amber-600/90 text-amber-100'
+              : 'bg-indigo-600/90 text-indigo-100'
+        }`}>
+          {targetGrid === 'ally' ? 'BUFF' : approach === 'vault' ? 'VAULT' : 'FRONT'}
+        </span>
     </div>
   );
+}
+
+// Legacy wrapper for backward compatibility with places that still pass just a shape
+function TargetShapeThumbnail({ shape }: { shape: TargetShape }) {
+  return <HitboxThumbnail shape={shape} />;
 }
 
 // Full Cover Skill Image Background Loader with element gradient fallbacks
@@ -534,35 +599,15 @@ export default function TurnSequencer({
     onChange(updatedTurns);
   };
 
-  // Grid Allied click placement
+  // Grid Allied click — only selects / deselects a character for the options
+  // deck. Repositioning is handled exclusively by drag-and-drop.
   const handleTileClick = (tileIdx: number) => {
     const charAtTile = characters.find((c) => c.position === tileIdx);
-
-    if (openSelectorCharId) {
-      if (charAtTile) {
-        const selectedChar = characters.find(
-          (c) => c.id === openSelectorCharId,
-        );
-        if (selectedChar && selectedChar.id !== charAtTile.id) {
-          const oldPos = selectedChar.position ?? 0;
-          const updatedChars = characters.map((c) => {
-            if (c.id === openSelectorCharId) return { ...c, position: tileIdx };
-            if (c.id === charAtTile.id) return { ...c, position: oldPos };
-            return c;
-          });
-          if (onUpdateCharacters) onUpdateCharacters(updatedChars);
-        }
-      } else {
-        const updatedChars = characters.map((c) => {
-          if (c.id === openSelectorCharId) return { ...c, position: tileIdx };
-          return c;
-        });
-        if (onUpdateCharacters) onUpdateCharacters(updatedChars);
-      }
-    } else {
-      if (charAtTile) {
-        setOpenSelectorCharId(charAtTile.id);
-      }
+    if (charAtTile) {
+      // Toggle: clicking the already-selected character deselects it
+      setOpenSelectorCharId((prev) =>
+        prev === charAtTile.id ? null : charAtTile.id,
+      );
     }
   };
 
@@ -581,42 +626,78 @@ export default function TurnSequencer({
     }
   };
 
-  // Live overlay highlights
-  const gridOverlayTiles = useMemo(() => {
-    if (!hoveredAction) return [];
+  // Live overlay highlights — resolve the costume's hitbox pattern so the 
+  // boss grid preview matches the in-game pattern. Shows up if an action is
+  // hovered, OR if a character is currently selected in the options deck.
+  const { gridOverlayTiles, targetOriginTile, targetGrid } = useMemo(() => {
+    // 1. Identify which character to preview
+    let charId: string | null = null;
+    let explicitTurnIdx = activeTurnIndex;
 
-    const char = characters.find((c) => c.id === hoveredAction.charId);
-    if (!char) return [];
+    if (hoveredAction) {
+      charId = hoveredAction.charId;
+      explicitTurnIdx = hoveredAction.turnIdx;
+    } else if (openSelectorCharId) {
+      charId = openSelectorCharId;
+    }
 
-    const turnSetup = turns[hoveredAction.turnIdx];
+    if (!charId) return { gridOverlayTiles: [], targetOriginTile: null, targetGrid: "enemy" as const };
+
+    const char = characters.find((c) => c.id === charId);
+    if (!char) return { gridOverlayTiles: [], targetOriginTile: null, targetGrid: "enemy" as const };
+
+    // 2. Identify the action (if any) to get the specific costume
+    const turnSetup = turns[explicitTurnIdx];
     const action = turnSetup.actions.find((a) => a.characterId === char.id);
-    if (!action || action.actionType === "skip") return [];
+    
+    if (action && action.actionType === "skip") {
+      return { gridOverlayTiles: [], targetOriginTile: null, targetGrid: "enemy" as const };
+    }
 
     let shape: TargetShape = "single";
-    if (action.actionType === "costume" && action.costumeId) {
+    let hitboxPattern: [number, number][] | undefined = undefined;
+    let approach: ApproachType = "very_front";
+    let targetGrid: "enemy" | "ally" = "enemy";
+
+    if (action && action.actionType === "costume" && action.costumeId) {
       const costume = (char.costumes || []).find(
         (c) => c.id === action.costumeId,
       );
       if (costume) {
         shape = costume.skill.targetShape;
+        hitboxPattern = costume.skill.hitboxPattern;
+        approach = costume.approach ?? "very_front";
+        targetGrid = costume.skill.targetGrid ?? "enemy";
       }
-    } else if (action.actionType === "knockback") {
+    } else if (action && action.actionType === "knockback") {
       shape = "single";
+    } else {
+      // Default to basic attack or their first costume if no action is set
+      shape = "single";
+      if (char.costumes && char.costumes.length > 0) {
+        approach = char.costumes[0].approach ?? "very_front";
+      }
     }
 
-    return getTilesHit(shape, hoveredAction.targetTile);
-  }, [hoveredAction, characters, turns]);
+    const charPosition = char.position ?? 0;
+    
+    let originTile = 0;
+    if (targetGrid === "ally") {
+      originTile = charPosition;
+    } else {
+      originTile = calculateAutoTarget(charPosition, boss.hitbox, approach);
+    }
+    
+    const hitTiles = getTilesHit(shape, originTile, hitboxPattern);
 
-  const overlayHighlightColor = useMemo(() => {
-    if (!hoveredAction) return "red";
-    const char = characters.find((c) => c.id === hoveredAction.charId);
-    if (!char) return "red";
-    if (char.element === "fire") return "red";
-    if (char.element === "water") return "blue";
-    if (char.element === "wind") return "green";
-    if (char.element === "light") return "amber";
-    return "purple";
-  }, [hoveredAction, characters]);
+    return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid };
+  }, [hoveredAction, openSelectorCharId, activeTurnIndex, characters, turns, boss.hitbox]);
+
+  // Use a bright amber/gold for the skill preview overlay so it clearly
+  // stands out from the boss's red weak points and blue regular tiles.
+  const overlayHighlightColor = useMemo((): 'red' | 'blue' | 'purple' | 'green' | 'amber' => {
+    return "amber";
+  }, []);
 
   // Consolidated SP bar — always 20 diamond slots like the in-game gauge:
   //   [unused steel][base cost yellow][burst red, always rightmost][unavailable dark]
@@ -962,12 +1043,14 @@ export default function TurnSequencer({
                         Vault
                       </span>
                       <span className="text-[9px] text-zinc-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                        ⚡ Atk: 100%
+                        ✖ {selectedCharForDeck.baseAtk >= selectedCharForDeck.baseMatk
+                          ? selectedCharForDeck.baseAtk
+                          : selectedCharForDeck.baseMatk}
                       </span>
                     </div>
                   </div>
                   <div className="z-10 pl-2">
-                    <TargetShapeThumbnail shape="single" />
+                    <HitboxThumbnail shape="single" approach="vault" targetGrid="enemy" />
                   </div>
                 </div>
 
@@ -981,6 +1064,16 @@ export default function TurnSequencer({
                     cost.skill.id,
                     activeTurnIndex,
                   );
+                  // Resolve approach and hitbox
+                  const costumeApproach = cost.approach ?? 'very_front';
+                  const costumeHitbox = cost.skill.hitboxPattern;
+                  const costumeTargetGrid = cost.skill.targetGrid ?? 'enemy';
+                  const costumeDisplayEffects = cost.displayEffects;
+                  // Compute damage preview: ATK × scaling%
+                  const primaryStat = cost.skill.damageType === 'magic'
+                    ? selectedCharForDeck.baseMatk
+                    : selectedCharForDeck.baseAtk;
+                  const dmgPreview = Math.round(primaryStat * (cost.skill.scaling / 100));
 
                   return (
                     <div
@@ -1002,7 +1095,7 @@ export default function TurnSequencer({
                         }
                       }}
                       className={`
-                      relative h-16 rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
+                      relative rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
                       ${isSkillSelected ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.15)] scale-[1.01]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
                       ${skillState.onCd ? "cursor-not-allowed border-zinc-900 bg-zinc-950/10" : ""}
                     `}
@@ -1017,8 +1110,18 @@ export default function TurnSequencer({
 
                       <div className="flex items-center gap-2.5 z-10 flex-1 min-w-0">
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[150px]">
+                          {/* Approach badge + costume name */}
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[8px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[70px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                            <span className={`text-[6px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
+                              costumeTargetGrid === 'ally'
+                                ? 'bg-emerald-600/90 text-emerald-100'
+                                : costumeApproach === 'vault'
+                                  ? 'bg-amber-600/90 text-amber-100'
+                                  : 'bg-indigo-600/90 text-indigo-100'
+                            }`}>
+                              {costumeTargetGrid === 'ally' ? 'BUFF' : costumeApproach === 'vault' ? 'VAULT' : 'FRONT'}
+                            </span>
+                            <span className="text-[8px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[60px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                               {cost.name}
                             </span>
                             {skillState.onCd && (
@@ -1027,9 +1130,30 @@ export default function TurnSequencer({
                               </span>
                             )}
                           </div>
-                          <span className="text-[9px] font-black text-white truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                            {cost.skill.name}
-                          </span>
+                          {/* Skill name + damage preview */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black text-white truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                              {cost.skill.name}
+                            </span>
+                            {cost.skill.scaling > 0 && (
+                              <span className="text-[8px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                                ✖ {dmgPreview}
+                              </span>
+                            )}
+                          </div>
+                          {/* Display effects */}
+                          {costumeDisplayEffects && costumeDisplayEffects.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {costumeDisplayEffects.map((eff, effIdx) => (
+                                <span
+                                  key={effIdx}
+                                  className="text-[6px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/40 rounded px-1 py-[1px] truncate max-w-[130px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                                >
+                                  {eff}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           {renderOptionDiamonds(
                             cost.skill.spCost,
                             isSkillSelected
@@ -1088,7 +1212,12 @@ export default function TurnSequencer({
                       )}
 
                       <div className="z-10 pl-2">
-                        <TargetShapeThumbnail shape={cost.skill.targetShape} />
+                        <HitboxThumbnail
+                          shape={cost.skill.targetShape}
+                          hitboxPattern={costumeHitbox}
+                          approach={costumeApproach}
+                          targetGrid={costumeTargetGrid}
+                        />
                       </div>
                     </div>
                   );
@@ -1156,19 +1285,25 @@ export default function TurnSequencer({
               <AlliedGrid
                 characters={characters}
                 selectedCharId={openSelectorCharId}
-                onTileClick={handleTileClick}
+                onTileClick={(idx) => {
+                  const c = characters.find((ch) => ch.position === idx);
+                  if (c) {
+                    setOpenSelectorCharId(c.id);
+                  }
+                }}
                 onSwapTiles={handleSwapTiles}
                 faceImageByCharId={gridFaceByCharId}
+                highlightedTiles={targetGrid === 'ally' ? gridOverlayTiles : []}
               />
             </div>
 
             {/* Attack vector pointer toward the boss */}
-            <div className="flex flex-col items-center justify-center gap-1.5 py-1 shrink-0">
+            <div className={`flex flex-col items-center justify-center gap-1.5 py-1 shrink-0 transition-opacity duration-300 ${targetGrid === 'ally' ? 'opacity-10' : 'opacity-100'}`}>
               <span className="text-indigo-500/85 animate-pulse font-black text-xl">
                 ➔
               </span>
               <span className="text-[7px] font-black text-zinc-600 uppercase tracking-wider">
-                Attack
+                {targetGrid === 'ally' ? 'Buffing' : 'Attack'}
               </span>
             </div>
 
@@ -1182,11 +1317,12 @@ export default function TurnSequencer({
               <GridEditor
                 selectedTiles={boss.hitbox}
                 weakPoints={boss.weakPoints}
-                highlightedTiles={gridOverlayTiles}
+                highlightedTiles={targetGrid === 'enemy' ? gridOverlayTiles : []}
                 highlightColor={overlayHighlightColor}
                 readOnly={true}
                 variant="battle"
                 weakPointMultiplier={boss.weakPointMultiplier}
+                targetOriginTile={targetGrid === 'enemy' ? targetOriginTile : null}
               />
             </div>
           </div>
