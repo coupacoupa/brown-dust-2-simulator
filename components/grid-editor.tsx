@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 
 interface GridEditorProps {
   selectedTiles: number[]; // Flat indices 0-11

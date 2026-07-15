@@ -9,7 +9,7 @@
 // "Skill used" order — the rotation tiles reuse the same numbers.
 
 import React, { useMemo, useState } from "react";
-import { Boss, BossRecord, ElementType } from "@/types";
+import { Boss, BossRecord } from "@/types";
 import { resolveBossRotation, uniqueBossSkills } from "@/lib/bosses";
 import { formatNumber } from "@/lib/format";
 import { ELEMENT_BOSS_GRADIENTS } from "@/lib/elements";

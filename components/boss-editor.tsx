@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Boss, ElementType } from '@/types';
+import { Boss } from '@/types';
 import GridEditor from './grid-editor';
 
 interface BossEditorProps {
