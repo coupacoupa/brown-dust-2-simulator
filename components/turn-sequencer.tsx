@@ -12,7 +12,14 @@ import {
   Costume,
   ApproachType
 } from "@/types";
-import { getTilesHit, calculateAutoTarget } from "@/lib/simulator";
+import { getTilesHit } from "@/lib/sim/targeting";
+import {
+  computeSpTimeline,
+  getSkillCooldownState,
+  resolveAction,
+  resolveTargetOrigin,
+  MAX_BURST_LEVEL,
+} from "@/lib/sim/actions";
 import { resolveBossRotation } from "@/lib/bosses";
 import GridEditor from "./grid-editor";
 import AlliedGrid, { getInitials } from "./allied-grid";
@@ -458,101 +465,12 @@ export default function TurnSequencer({
     return map;
   }, [characters, equippedCostumeId]);
 
-  // Helper: check if a specific skill is on cooldown
-  const getSkillCooldownState = (
-    charId: string,
-    skillId: string,
-    targetTurnIdx: number,
-  ) => {
-    for (let prevTurnIdx = 0; prevTurnIdx < targetTurnIdx; prevTurnIdx++) {
-      const prevSetup = turns[prevTurnIdx];
-      const char = characters.find((c) => c.id === charId);
-      if (!char) continue;
-
-      const prevAction = prevSetup.actions.find(
-        (a) => a.characterId === charId,
-      );
-      if (!prevAction) continue;
-
-      let usedSkillId: string | null = null;
-      if (prevAction.actionType === "costume" && prevAction.costumeId) {
-        const costume = (char.costumes || []).find(
-          (c) => c.id === prevAction.costumeId,
-        );
-        if (costume) {
-          usedSkillId = costume.skill.id;
-        }
-      }
-
-      if (usedSkillId && usedSkillId === skillId) {
-        const costume = (char.costumes || []).find(
-          (c) => c.skill.id === skillId,
-        );
-        if (costume) {
-          const cd = costume.skill.cooldown;
-          const cooldownEndsAtTurnIdx = prevTurnIdx + cd;
-          if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
-            return {
-              onCd: true,
-              remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1,
-            };
-          }
-        }
-      }
-    }
-    return { onCd: false, remainingTurns: 0 };
-  };
-
-  // SP States calculation (base skill cost and burst SP tracked separately
-  // so the consolidated bar can color burst spending red)
-  const spStatesByTurn = useMemo(() => {
-    const states: {
-      startSp: number;
-      spentBase: number;
-      spentBurst: number;
-      endSp: number;
-      isNegative: boolean;
-    }[] = [];
-    let rollingSp = startingSp;
-
-    turns.forEach((turnSetup, tIdx) => {
-      if (tIdx > 0) {
-        rollingSp = Math.min(maxSp, rollingSp + spRecoveryPerTurn);
-      }
-
-      const startSp = rollingSp;
-      let spentBase = 0;
-      let spentBurst = 0;
-
-      turnSetup.actions.forEach((action) => {
-        const char = characters.find((c) => c.id === action.characterId);
-        if (!char) return;
-
-        if (action.actionType === "costume" && action.costumeId) {
-          const costume = (char.costumes || []).find(
-            (c) => c.id === action.costumeId,
-          );
-          if (costume) {
-            spentBase += Math.max(0, costume.skill.spCost);
-            spentBurst += action.burstLevel || 0;
-          }
-        }
-      });
-
-      rollingSp -= spentBase + spentBurst;
-      const endSp = rollingSp;
-
-      states.push({
-        startSp,
-        spentBase,
-        spentBurst,
-        endSp,
-        isNegative: endSp < 0,
-      });
-    });
-
-    return states;
-  }, [turns, characters, startingSp, spRecoveryPerTurn, maxSp]);
+  // SP timeline (base skill cost and burst SP tracked separately so the
+  // consolidated bar can color burst spending red) — shared with the engine
+  const spStatesByTurn = useMemo(
+    () => computeSpTimeline(characters, turns, startingSp, spRecoveryPerTurn, maxSp),
+    [turns, characters, startingSp, spRecoveryPerTurn, maxSp],
+  );
 
   const activeSpState = spStatesByTurn[activeTurnIndex] || {
     startSp: startingSp,
@@ -646,51 +564,21 @@ export default function TurnSequencer({
     const char = characters.find((c) => c.id === charId);
     if (!char) return { gridOverlayTiles: [], targetOriginTile: null, targetGrid: "enemy" as const };
 
-    // 2. Identify the action (if any) to get the specific costume
-    const turnSetup = turns[explicitTurnIdx];
-    const action = turnSetup.actions.find((a) => a.characterId === char.id);
-    
-    if (action && action.actionType === "skip") {
+    // 2. Resolve the scripted action (falling back to a basic attack when the
+    // character has no action this turn) through the shared battle rules.
+    const action =
+      turns[explicitTurnIdx].actions.find((a) => a.characterId === char.id) ??
+      ({ characterId: char.id, actionType: "attack", targetTile: 4 } as const);
+    const resolved = resolveAction(char, action);
+
+    if (resolved.isSkip) {
       return { gridOverlayTiles: [], targetOriginTile: null, targetGrid: "enemy" as const };
     }
 
-    let shape: TargetShape = "single";
-    let hitboxPattern: [number, number][] | undefined = undefined;
-    let approach: ApproachType = "very_front";
-    let targetGrid: "enemy" | "ally" = "enemy";
+    const originTile = resolveTargetOrigin(char, resolved, boss.hitbox);
+    const hitTiles = getTilesHit(resolved.targetShape, originTile, resolved.hitboxPattern);
 
-    if (action && action.actionType === "costume" && action.costumeId) {
-      const costume = (char.costumes || []).find(
-        (c) => c.id === action.costumeId,
-      );
-      if (costume) {
-        shape = costume.skill.targetShape;
-        hitboxPattern = costume.skill.hitboxPattern;
-        approach = costume.approach ?? "very_front";
-        targetGrid = costume.skill.targetGrid ?? "enemy";
-      }
-    } else if (action && action.actionType === "knockback") {
-      shape = "single";
-    } else {
-      // Default to basic attack or their first costume if no action is set
-      shape = "single";
-      if (char.costumes && char.costumes.length > 0) {
-        approach = char.costumes[0].approach ?? "very_front";
-      }
-    }
-
-    const charPosition = char.position ?? 0;
-    
-    let originTile = 0;
-    if (targetGrid === "ally") {
-      originTile = charPosition;
-    } else {
-      originTile = calculateAutoTarget(charPosition, boss.hitbox, approach);
-    }
-    
-    const hitTiles = getTilesHit(shape, originTile, hitboxPattern);
-
-    return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid };
+    return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid: resolved.targetGrid };
   }, [hoveredAction, openSelectorCharId, activeTurnIndex, characters, turns, boss.hitbox]);
 
   // Use a bright amber/gold for the skill preview overlay so it clearly
@@ -749,7 +637,7 @@ export default function TurnSequencer({
   const renderOptionDiamonds = (
     baseCost: number,
     burstLevel: number = 0,
-    maxBurst: number = 3,
+    maxBurst: number = MAX_BURST_LEVEL,
   ) => {
     const total = baseCost + maxBurst;
     return (
@@ -1060,6 +948,8 @@ export default function TurnSequencer({
                     selectedCharAction.actionType === "costume" &&
                     selectedCharAction.costumeId === cost.id;
                   const skillState = getSkillCooldownState(
+                    characters,
+                    turns,
                     selectedCharForDeck.id,
                     cost.skill.id,
                     activeTurnIndex,
@@ -1195,14 +1085,14 @@ export default function TurnSequencer({
                             onClick={() => {
                               const currentBurst =
                                 selectedCharAction.burstLevel || 0;
-                              if (currentBurst < 3) {
+                              if (currentBurst < MAX_BURST_LEVEL) {
                                 handleActionChange(selectedCharActionIdx, {
                                   burstLevel: currentBurst + 1,
                                 });
                               }
                             }}
                             disabled={
-                              (selectedCharAction.burstLevel || 0) === 3
+                              (selectedCharAction.burstLevel || 0) === MAX_BURST_LEVEL
                             }
                             className="text-[9px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
                           >

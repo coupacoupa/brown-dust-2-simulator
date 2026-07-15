@@ -8,7 +8,9 @@
       "Bash(sed -i 's|app/lib/roster.ts|data/characters.ts|g' scripts/generate-roster.mjs)",
       "Bash(npx tsc *)",
       "Bash(git add *)",
-      "Bash(git commit -q -m ' *)"
+      "Bash(git commit -q -m ' *)",
+      "Bash(git rm *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

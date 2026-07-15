@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Character, TurnSetup, SimulationResult } from "@/types";
+import { computeSpTimeline } from "@/lib/sim/actions";
 
 // One team's slice of the battle flow. Teams fight in order (1 → 2 → 3);
 // `offset` is how many player turns earlier teams already used, so this
@@ -32,29 +33,6 @@ const formatCompact = (num: number) =>
       ? `${(num / 1_000).toFixed(1)}K`
       : `${num}`;
 
-// Rolling SP per team — SP resets when a fresh team takes the field, so
-// overdraft never carries across the team boundary.
-const spOverdraftForTeam = (
-  team: TeamFlowEntry,
-  startingSp: number,
-  spRecovery: number,
-  maxSp: number,
-): boolean[] => {
-  let rollingSp = startingSp;
-  return team.turns.map((turnSetup, tIdx) => {
-    if (tIdx > 0) rollingSp = Math.min(maxSp, rollingSp + spRecovery);
-    let spent = 0;
-    turnSetup.actions.forEach((action) => {
-      if (action.actionType !== "costume" || !action.costumeId) return;
-      const char = team.characters.find((c) => c.id === action.characterId);
-      const costume = char?.costumes?.find((c) => c.id === action.costumeId);
-      if (costume) spent += Math.max(0, costume.skill.spCost + (action.burstLevel || 0));
-    });
-    rollingSp -= spent;
-    return rollingSp < 0;
-  });
-};
-
 // Battle-flow rail: one container per team, in fight order, each holding its
 // own turn tabs numbered globally (Team 2 continues from Team 1's last turn).
 // Selecting a turn in another container also switches the active team.
@@ -69,8 +47,15 @@ export default function TurnStrip({
   spRecovery,
   maxSp,
 }: TurnStripProps) {
+  // SP resets when a fresh team takes the field, so overdraft never carries
+  // across the team boundary.
   const overdraftByTeam = useMemo(
-    () => teams.map((team) => spOverdraftForTeam(team, startingSp, spRecovery, maxSp)),
+    () =>
+      teams.map((team) =>
+        computeSpTimeline(team.characters, team.turns, startingSp, spRecovery, maxSp).map(
+          (state) => state.isNegative,
+        ),
+      ),
     [teams, startingSp, spRecovery, maxSp],
   );
 

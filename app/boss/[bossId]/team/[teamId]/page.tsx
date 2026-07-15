@@ -27,7 +27,7 @@ import TurnSequencer from "@/components/turn-sequencer";
 import TurnStrip from "@/components/turn-strip";
 import FormulaBreakdown from "@/components/formula-breakdown";
 import DamageCharts from "@/components/damage-charts";
-import { runSimulation } from "@/lib/simulator";
+import { runSimulation } from "@/lib/sim/engine";
 
 // The simulation workspace for one saved team: three lineups fighting the boss
 // as one continuous flow (Team 1's turns, then Team 2's, then Team 3's), with
@@ -104,11 +104,9 @@ export default function TeamWorkspacePage() {
     if (!loaded || !boss) return [null, null, null];
     return variantTurns.map((turns, idx) => {
       const chars = variantCharacters[idx] ?? [];
-      return chars.length > 0
-        ? runSimulation(chars, boss, turns, startingSp, spRecovery, maxSp)
-        : null;
+      return chars.length > 0 ? runSimulation(chars, boss, turns) : null;
     });
-  }, [loaded, boss, variantCharacters, variantTurns, startingSp, spRecovery, maxSp]);
+  }, [loaded, boss, variantCharacters, variantTurns]);
 
   const simulationResult = variantResults[activeVariantIdx] ?? null;
 
