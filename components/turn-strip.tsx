@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Character, TurnSetup, SimulationResult } from "../types";
+import { Character, TurnSetup, SimulationResult } from "@/types";
 
 // One team's slice of the battle flow. Teams fight in order (1 → 2 → 3);
 // `offset` is how many player turns earlier teams already used, so this

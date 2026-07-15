@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node \"C:/Users/coupa/AppData/Local/Temp/claude/d--Repo-brown-dust-2-simulator/077e672f-1994-43f2-808c-22f4aca1a141/scratchpad/inspect-charinfo.js\")"
+      "Bash(node \"C:/Users/coupa/AppData/Local/Temp/claude/d--Repo-brown-dust-2-simulator/077e672f-1994-43f2-808c-22f4aca1a141/scratchpad/inspect-charinfo.js\")",
+      "Bash(sed -i 's|\"@/lib/roster\"|\"@/data/characters\"|; s|'\"'\"'@/lib/roster'\"'\"'|'\"'\"'@/data/characters'\"'\"'|' app/roster/page.tsx components/character-editor.tsx)",
+      "Bash(sed -i 's|\"./roster\"|\"@/data/characters\"|' lib/storage.ts)",
+      "Bash(sed -i 's|\"./assets\"|\"@/lib/assets\"|' data/characters.ts)",
+      "Bash(sed -i 's|app/lib/roster.ts|data/characters.ts|g' scripts/generate-roster.mjs)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)"
     ]
   }
 }

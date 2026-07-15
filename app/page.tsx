@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { BossRecord, ElementType } from "./types";
-import { loadBosses, loadTeams } from "./lib/storage";
-import { ElementIcon } from "./components/character-editor";
+import { BossRecord, ElementType } from "@/types";
+import { loadBosses, loadTeams } from "@/lib/storage";
+import { ElementIcon } from "@/components/character-editor";
 
 const ELEMENT_CARD_GRADIENTS: Record<ElementType, string> = {
   fire: "from-red-950/60 via-zinc-950 to-zinc-950",

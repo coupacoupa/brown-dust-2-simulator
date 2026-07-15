@@ -14,8 +14,8 @@
 // line up with the asset repo. scripts/generate-roster.mjs can scaffold entries
 // for fresh game data, but THIS file is the hand-edited truth.
 
-import { Character, Costume } from "../types";
-import { invenIllust, skillIllust } from "./assets";
+import { Character, Costume } from "@/types";
+import { invenIllust, skillIllust } from "@/lib/assets";
 
 // Placeholder costume: real id/name/art, generic single-target 200% skill.
 const basicCostume = (

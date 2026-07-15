@@ -2,9 +2,9 @@
 // and saved teams. Everything is client-side for now ("account" = this
 // browser); swapping in a real backend later only means replacing this file.
 
-import { BossRecord, RosterEntry, SavedTeam, Character, TurnSetup, TurnAction } from "../types";
+import { BossRecord, RosterEntry, SavedTeam, Character, TurnSetup, TurnAction } from "@/types";
 import { SEED_BOSSES } from "./bosses";
-import { CHARACTER_TEMPLATES } from "./roster";
+import { CHARACTER_TEMPLATES } from "@/data/characters";
 
 const BOSSES_KEY = "bd2sim.bosses.v1";
 const ROSTER_KEY = "bd2sim.roster.v1";

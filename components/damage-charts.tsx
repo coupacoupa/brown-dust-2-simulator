@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { SimulationResult } from '../types';
+import { SimulationResult } from '@/types';
 
 interface DamageChartsProps {
   result: SimulationResult;

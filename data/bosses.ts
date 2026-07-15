@@ -1,13 +1,8 @@
-import {
-  Boss,
-  BossRecord,
-  BossRotationStep,
-  BossSkillDef,
-  BossGridCell,
-} from "../types";
+import { BossGridCell, BossRecord } from "@/types";
 
 // ---------------------------------------------------------------------------
-// Built-in boss catalog.
+// Built-in boss catalog (data only — parsing/rotation logic lives in
+// lib/bosses.ts).
 //
 // Each record is written like a future database row set:
 //   bosses        → the BossRecord itself (identity, defenses, stat sheet,
@@ -15,68 +10,19 @@ import {
 //   boss_skills   → `skillDefs` (stable slug ids as primary keys)
 //   boss_rotation → `rotation` (ordered steps referencing skill ids, each
 //                   optionally opening the weak points: "WEAK 100% / 200%")
-//
-// `createdAt` is a fixed release stamp so the landing page's newest-first
-// order is stable; admin-created bosses stamp Date.now().
 // ---------------------------------------------------------------------------
 
-export interface SeedBossConfig extends Omit<BossRecord, "hitbox" | "weakPoints" | "weakPointMultiplier" | "def" | "mres"> {
+// Authoring shape for seed bosses: the physical layout is written as a `grid`
+// of cells; hitbox/weakPoints/multipliers are derived by parseSeedBoss().
+export interface SeedBossConfig
+  extends Omit<BossRecord, "hitbox" | "weakPoints" | "weakPointMultiplier" | "def" | "mres"> {
   grid: BossGridCell[];
   weakPointMultiplier?: number;
   def?: number;
   mres?: number;
 }
 
-function parseSeedBoss(config: SeedBossConfig): BossRecord {
-  const hitbox: number[] = [];
-  const weakPoints: number[] = [];
-  const weakPointMultipliers: Record<number, number> = {};
-  const baseMultiplier = config.weakPointMultiplier ?? 1.5;
-  const cols = config.gridCols ?? 3;
-
-  config.grid.forEach((cell) => {
-    const index = cell.col * 3 + cell.row;
-    hitbox.push(index);
-    if (cell.type === "weak") {
-      weakPoints.push(index);
-      weakPointMultipliers[index] = cell.weakMultiplier ?? baseMultiplier;
-    }
-  });
-
-  hitbox.sort((a, b) => a - b);
-  weakPoints.sort((a, b) => a - b);
-
-  // Copy stats from the selected default level (or level 1) to the root level
-  const defaultLevelNum = config.level ?? 25;
-  const levelDef = config.stats?.[defaultLevelNum] || (config.stats ? Object.values(config.stats)[0] : undefined);
-
-  const levelStats = levelDef
-    ? {
-        maxHp: levelDef.hp,
-        atk: levelDef.magic_atk !== undefined ? levelDef.magic_atk : levelDef.atk ?? 0,
-        def: levelDef.def,
-        mres: levelDef.magic_resist,
-        critRate: levelDef.crit_rate ?? 0,
-        critDmg: levelDef.crit_dmg ?? 0,
-        elementDmg: levelDef.element_dmg,
-        elementRes: levelDef.element_res,
-      }
-    : {
-        def: config.def ?? 0,
-        mres: config.mres ?? 0,
-      };
-
-  return {
-    ...config,
-    ...levelStats,
-    hitbox,
-    weakPoints,
-    weakPointMultiplier: baseMultiplier,
-    weakPointMultipliers,
-  } as BossRecord;
-}
-
-const SEED_BOSS_CONFIGS: SeedBossConfig[] = [
+export const SEED_BOSS_CONFIGS: SeedBossConfig[] = [
   {
     id: "boss_octovius",
     name: "Octovius I",
@@ -190,50 +136,3 @@ const SEED_BOSS_CONFIGS: SeedBossConfig[] = [
     endDate: "2026-07-19",
   },
 ];
-
-export const SEED_BOSSES: BossRecord[] = SEED_BOSS_CONFIGS.map(parseSeedBoss);
-
-// ---------------------------------------------------------------------------
-// Rotation resolution — the single read path for every rotation display
-// (boss preview panel, battle HUD queue). Handles all three data shapes:
-// new skillDefs+rotation, legacy flat `skills`, and bosses with nothing
-// scripted yet (admin drafts) via a generic fallback.
-// ---------------------------------------------------------------------------
-
-export interface ResolvedRotationStep {
-  skill: BossSkillDef;
-  weakExposurePct?: number;
-}
-
-export function resolveBossRotation(boss: Boss): ResolvedRotationStep[] {
-  if (boss.skillDefs?.length && boss.rotation?.length) {
-    const byId = new Map(boss.skillDefs.map((s) => [s.id, s]));
-    const steps: ResolvedRotationStep[] = [];
-    for (const step of boss.rotation) {
-      const skill = byId.get(step.skillId);
-      if (skill) steps.push({ skill, weakExposurePct: step.weakExposurePct });
-    }
-    if (steps.length) return steps;
-  }
-  // Legacy stored bosses: flat entries where isWeak marked the exposing casts
-  if (boss.skills?.length) {
-    return boss.skills.map((s, i) => ({
-      skill: { id: `legacy_${i}`, name: s.name, icon: s.icon, description: "" },
-      weakExposurePct: s.isWeak ? 100 : undefined,
-    }));
-  }
-  return [];
-}
-
-// Unique skills of a boss in rotation order — the game's "Skill used" strip.
-export function uniqueBossSkills(boss: Boss): BossSkillDef[] {
-  const seen = new Set<string>();
-  const out: BossSkillDef[] = [];
-  for (const step of resolveBossRotation(boss)) {
-    if (!seen.has(step.skill.id)) {
-      seen.add(step.skill.id);
-      out.push(step.skill);
-    }
-  }
-  return out;
-}

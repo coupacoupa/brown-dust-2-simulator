@@ -1,4 +1,4 @@
-import { ElementType } from '../types';
+import { ElementType } from '@/types';
 
 // Asset locations (public/brown-dust-2-asset/…)
 //

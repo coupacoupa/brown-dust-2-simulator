@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { BossRecord, SavedTeam } from "../../types";
+import { BossRecord, SavedTeam } from "@/types";
 import {
   getBoss,
   teamsForBoss,
@@ -12,8 +12,9 @@ import {
   deleteTeam,
   loadRoster,
   upsertBoss,
-} from "../../lib/storage";
-import BossInfoPanel from "../../components/boss-info-panel";
+} from "@/lib/storage";
+import { applyBossLevel } from "@/lib/bosses";
+import BossInfoPanel from "@/components/boss-info-panel";
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 
@@ -44,22 +45,9 @@ export default function BossDetailPage() {
   };
 
   const handleLevelChange = (newLevel: number) => {
-    if (!boss || !boss.stats) return;
-    const target = boss.stats[newLevel];
-    if (!target) return;
-    const updatedBoss = {
-      ...boss,
-      level: newLevel,
-      maxHp: target.hp,
-      atk: target.magic_atk !== undefined ? target.magic_atk : target.atk ?? 0,
-      def: target.def,
-      mres: target.magic_resist,
-      critRate: target.crit_rate ?? 0,
-      critDmg: target.crit_dmg ?? 0,
-      elementDmg: target.element_dmg,
-      elementRes: target.element_res,
-      updatedAt: Date.now(),
-    };
+    if (!boss) return;
+    const updatedBoss = applyBossLevel(boss, newLevel);
+    if (updatedBoss === boss) return;
     setBoss(updatedBoss);
     upsertBoss(updatedBoss);
   };

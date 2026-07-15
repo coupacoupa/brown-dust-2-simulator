@@ -11,9 +11,9 @@ import {
   SimulationResult,
   Costume,
   ApproachType
-} from "../types";
-import { getTilesHit, calculateAutoTarget } from "../lib/simulator";
-import { resolveBossRotation } from "../lib/bosses";
+} from "@/types";
+import { getTilesHit, calculateAutoTarget } from "@/lib/simulator";
+import { resolveBossRotation } from "@/lib/bosses";
 import GridEditor from "./grid-editor";
 import AlliedGrid, { getInitials } from "./allied-grid";
 import { ElementIcon } from "./character-editor";

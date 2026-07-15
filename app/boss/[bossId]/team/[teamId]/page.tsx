@@ -11,7 +11,7 @@ import {
   SimulationResult,
   TurnAction,
   TurnSetup,
-} from "../../../../types";
+} from "@/types";
 import {
   getBoss,
   getTeam,
@@ -20,13 +20,14 @@ import {
   rosterEntryFor,
   isHypothetical,
   upsertBoss,
-} from "../../../../lib/storage";
-import CharacterEditor from "../../../../components/character-editor";
-import TurnSequencer from "../../../../components/turn-sequencer";
-import TurnStrip from "../../../../components/turn-strip";
-import FormulaBreakdown from "../../../../components/formula-breakdown";
-import DamageCharts from "../../../../components/damage-charts";
-import { runSimulation } from "../../../../lib/simulator";
+} from "@/lib/storage";
+import { applyBossLevel } from "@/lib/bosses";
+import CharacterEditor from "@/components/character-editor";
+import TurnSequencer from "@/components/turn-sequencer";
+import TurnStrip from "@/components/turn-strip";
+import FormulaBreakdown from "@/components/formula-breakdown";
+import DamageCharts from "@/components/damage-charts";
+import { runSimulation } from "@/lib/simulator";
 
 // The simulation workspace for one saved team: three lineups fighting the boss
 // as one continuous flow (Team 1's turns, then Team 2's, then Team 3's), with
@@ -281,22 +282,9 @@ export default function TeamWorkspacePage() {
   }, [loaded, teamName, variants, variantTurns, activeVariantIdx, startingSp, spRecovery, maxSp, liveLastResults]);
 
   const handleLevelChange = (newLevel: number) => {
-    if (!boss || !boss.stats) return;
-    const target = boss.stats[newLevel];
-    if (!target) return;
-    const updatedBoss = {
-      ...boss,
-      level: newLevel,
-      maxHp: target.hp,
-      atk: target.magic_atk !== undefined ? target.magic_atk : target.atk ?? 0,
-      def: target.def,
-      mres: target.magic_resist,
-      critRate: target.crit_rate ?? 0,
-      critDmg: target.crit_dmg ?? 0,
-      elementDmg: target.element_dmg,
-      elementRes: target.element_res,
-      updatedAt: Date.now(),
-    };
+    if (!boss) return;
+    const updatedBoss = applyBossLevel(boss, newLevel);
+    if (updatedBoss === boss) return;
     setBoss(updatedBoss);
     upsertBoss(updatedBoss);
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { FormulaContributor, TurnFormulaBreakdown } from "../types";
+import { FormulaContributor, TurnFormulaBreakdown } from "@/types";
 
 interface FormulaBreakdownProps {
   breakdown: TurnFormulaBreakdown | undefined;

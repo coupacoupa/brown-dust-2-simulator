@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Character, ElementType } from '../types';
+import { Character, ElementType } from '@/types';
 import { ElementIcon } from './character-editor';
 
 interface AlliedGridProps {

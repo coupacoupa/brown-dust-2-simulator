@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Character, ElementType, RosterEntry } from '../types';
-import { CHARACTER_TEMPLATES } from '../lib/roster';
-import { ELEMENT_ICONS } from '../lib/assets';
-import { rosterEntryFor, isHypothetical } from '../lib/storage';
+import { Character, ElementType, RosterEntry } from '@/types';
+import { CHARACTER_TEMPLATES } from '@/data/characters';
+import { ELEMENT_ICONS } from '@/lib/assets';
+import { rosterEntryFor, isHypothetical } from '@/lib/storage';
 
 interface CharacterEditorProps {
   teams: (Character | null)[][];

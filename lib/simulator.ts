@@ -11,7 +11,7 @@ import {
   TurnFormulaBreakdown,
   FormulaContributor,
   ApproachType
-} from '../types';
+} from '@/types';
 
 
 // Hitbox resolver: convert pattern offsets → flat boss-grid indices ──
