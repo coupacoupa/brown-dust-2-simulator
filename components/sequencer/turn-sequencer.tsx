@@ -133,7 +133,7 @@ export default function TurnSequencer({
     if (resolved.isSkip) return none;
 
     const originTile = resolveTargetOrigin(char, resolved, boss.hitbox);
-    const hitTiles = getTilesHit(resolved.targetShape, originTile, resolved.hitboxPattern);
+    const hitTiles = getTilesHit(originTile, resolved.hitboxPattern);
 
     return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid: resolved.targetGrid };
   }, [openSelectorCharId, activeTurnIndex, characters, turns, boss.hitbox]);

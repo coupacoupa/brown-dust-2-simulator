@@ -42,10 +42,27 @@ export interface Skill {
   // target origin tile (the tick mark in the game UI).  [0,0] = origin.
   // Positive row = down, positive col = right (deeper into boss).
   // When set this overrides the generic TargetShape-based calculation.
-  hitboxPattern?: [number, number][];
+  hitboxPattern: [number, number][];
   // Which grid the shape is projected onto. Defaults to 'enemy'.
   targetGrid?: 'enemy' | 'ally';
 }
+
+export interface CostumeUpgrade {
+  scaling?: number;
+  spCost?: number;
+  cooldown?: number;
+  hitCount?: number;
+  effects?: SkillEffect[];
+}
+
+export interface SkillPotential {
+  id: string;
+  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'other';
+  value?: number; // e.g. 15 for +15% damage
+  newTargetShape?: TargetShape;
+  newHitboxPattern?: [number, number][];
+}
+
 
 export interface Costume {
   id: string; // Game costume id, e.g. '000101'
@@ -60,6 +77,15 @@ export interface Costume {
   approach?: ApproachType;
   // Display-only effect labels shown on the costume card, e.g. ["Knock back ↑ 1"]
   displayEffects?: string[];
+  // Upgrades from +0 to +5 (array of 6 items)
+  upgrades?: CostumeUpgrade[];
+  // Available skill potentials
+  potentials?: SkillPotential[];
+}
+
+export interface ActiveCostume extends Costume {
+  upgradeLevel: number;
+  activePotentials: string[];
 }
 
 export interface Character {
@@ -75,12 +101,13 @@ export interface Character {
   baseDef: number;      // e.g. 10 for 10% physical reduction
   baseMres: number;     // e.g. 10 for 10% magic resistance
   basePropDmg: number;  // e.g. 0 for +0% property damage
-  costumes: Costume[];
+  costumes: ActiveCostume[];
   level?: number;         // e.g. 100
-  upgradeLevel?: number;  // e.g. 5 for +5
   position?: number;      // Flat index 0-11 for allied grid placement
   image?: string;         // Optional path to character profile image
 }
+
+export type CharacterTemplate = Omit<Character, 'id' | 'costumes'> & { costumes: Costume[] };
 
 // LEGACY rotation entry — older stored bosses (localStorage) may still carry
 // this flat shape. New bosses define `skillDefs` + `rotation` instead; both
@@ -196,7 +223,10 @@ export interface RosterEntry {
   charKey: string; // template charId, falling back to name
   owned: boolean;
   level: number;
-  upgradeLevel: number;
+  costumes: Record<string, {
+    upgradeLevel: number;
+    activePotentials: string[];
+  }>;
 }
 
 // A named team save scoped to one boss. Holds all three lineups (Team 1/2/3)

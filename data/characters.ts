@@ -37,6 +37,7 @@ const basicCostume = (
     damageType: "physical",
     targetShape: "single",
     effects: [],
+    hitboxPattern: [[0, 0]],
   },
 });
 
@@ -46,7 +47,7 @@ const costumeArt = (stem: string) => ({
   image: skillIllust(stem),
 });
 
-export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
+export const CHARACTER_TEMPLATES: CharacterTemplate[] = [
   {
     charId: "0001",
     name: "Lathel",
@@ -67,37 +68,107 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
         id: "000101",
         name: "Herb Tracker",
         ...costumeArt("char000101_1"),
-        approach: "vault",
+        approach: "very_front",
         skill: {
           id: "s000101",
           name: "Strike of Promise",
-          spCost: 2,
-          cooldown: 1,
-          hitCount: 1,
+          spCost: 3,
+          cooldown: 5,
+          hitCount: 2,
           scaling: 180,
           damageType: "physical",
           targetShape: "single",
-          effects: [],
-          hitboxPattern: [[0, 0]],
+          effects: [
+            {
+              id: "herb_lathel_atk_buff",
+              type: "buff_atk",
+              value: 50,
+              duration: 2,
+              target: "self",
+            }
+          ],
+          hitboxPattern: [[0, 0], [-1, -1]],
         },
+        upgrades: [
+          { spCost: 3, cooldown: 5, scaling: 180 }, // +0
+          { spCost: 3, cooldown: 5, scaling: 230 }, // +1
+          { spCost: 3, cooldown: 5, scaling: 275 }, // +2
+          { spCost: 2, cooldown: 5, scaling: 275 }, // +3
+          { spCost: 2, cooldown: 5, scaling: 315 }, // +4
+          { spCost: 2, cooldown: 5, scaling: 350 }, // +5
+        ],
+        potentials: [
+          {
+            id: "herb_lathel_dmg_1",
+            type: "damage",
+            value: 15,
+          },
+          {
+            id: "herb_lathel_dmg_2",
+            type: "damage",
+            value: 15,
+          },
+          {
+            id: "herb_lathel_range",
+            type: "range_increase",
+            newHitboxPattern: [[0, 0], [-1, -1], [-2, -2]],
+          }
+        ]
       },
       {
         id: "000102",
         name: "Lonely Survivor",
         ...costumeArt("char000102_44"),
-        approach: "vault",
+        approach: "very_front",
+        displayEffects: [
+          "HP -5% Self",
+          "ATK +50% (2t) Self"
+        ],
         skill: {
           id: "s000102",
-          name: "Wild Slash",
-          spCost: 2,
-          cooldown: 2,
-          hitCount: 1,
-          scaling: 220,
+          name: "Bloodcraze",
+          spCost: 4,
+          cooldown: 5,
+          hitCount: 3,
+          scaling: 65,
           damageType: "physical",
-          targetShape: "single",
-          effects: [],
-          hitboxPattern: [[0, 0]],
+          targetShape: "col",
+          effects: [
+            {
+              id: "lathel_survivor_atk_buff",
+              type: "buff_atk",
+              value: 50,
+              duration: 2,
+              target: "self",
+            }
+          ],
+          hitboxPattern: [[0, 0], [-1, 0], [-2, 0]],
         },
+        upgrades: [
+          { spCost: 4, cooldown: 5, scaling: 65 },  // +0
+          { spCost: 4, cooldown: 5, scaling: 90 },  // +1
+          { spCost: 4, cooldown: 5, scaling: 115 }, // +2
+          { spCost: 3, cooldown: 5, scaling: 115 }, // +3
+          { spCost: 3, cooldown: 5, scaling: 135 }, // +4
+          { spCost: 3, cooldown: 5, scaling: 155 }, // +5
+        ],
+        potentials: [
+          {
+            id: "lathel_survivor_dmg_1",
+            type: "damage",
+            value: 15,
+          },
+          {
+            id: "lathel_survivor_dmg_2",
+            type: "damage",
+            value: 15,
+          },
+          {
+            id: "lathel_survivor_sp",
+            type: "sp_reduce",
+            value: 1,
+          }
+        ]
       },
       {
         id: "000103",
@@ -121,11 +192,13 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 85,
               duration: 2,
               target: "all_allies",
+
             },
           ],
           hitboxPattern: [[0, 0]],
         },
       },
+
       {
         id: "000104",
         name: "Dark Knight",
@@ -148,19 +221,56 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
         id: "000105",
         name: "Promise of Vengeance",
         ...costumeArt("char000105_42"),
-        approach: "vault",
+        approach: "very_front",
+        displayEffects: [
+          "HP -5% Self",
+          "ATK +50% (2t) Self"
+        ],
         skill: {
           id: "s000105",
           name: "Vengeful Slash",
-          spCost: 2,
-          cooldown: 3,
+          spCost: 3,
+          cooldown: 5,
           hitCount: 1,
-          scaling: 320,
+          scaling: 450,
           damageType: "physical",
-          targetShape: "cross",
-          effects: [],
-          hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
+          targetShape: "single",
+          effects: [
+            {
+              id: "lathel_vengeance_atk_buff",
+              type: "buff_atk",
+              value: 50,
+              duration: 2,
+              target: "self",
+            }
+          ],
+          hitboxPattern: [[0, 0]],
         },
+        upgrades: [
+          { spCost: 3, cooldown: 5, scaling: 450 },  // +0
+          { spCost: 3, cooldown: 5, scaling: 600 },  // +1
+          { spCost: 3, cooldown: 5, scaling: 750 },  // +2
+          { spCost: 2, cooldown: 5, scaling: 750 },  // +3 (SP cost down)
+          { spCost: 2, cooldown: 5, scaling: 875 },  // +4
+          { spCost: 2, cooldown: 5, scaling: 1000 }, // +5
+        ],
+        potentials: [
+          {
+            id: "lathel_vengeance_dmg_1",
+            type: "damage",
+            value: 75,
+          },
+          {
+            id: "lathel_vengeance_dmg_2",
+            type: "damage",
+            value: 75,
+          },
+          {
+            id: "lathel_vengeance_buff",
+            type: "effect_value_increase",
+            value: 10,
+          }
+        ]
       },
       {
         id: "000106",
@@ -366,6 +476,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 30,
               duration: 2,
               target: "target_enemy",
+
             },
           ],
           hitboxPattern: [[0, 0]],
@@ -702,6 +813,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 60,
               duration: 2,
               target: "all_allies",
+
             },
           ],
           hitboxPattern: [[0, 0]],
@@ -729,6 +841,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 35,
               duration: 2,
               target: "target_enemy",
+
             },
           ],
           hitboxPattern: [[-1, 0], [0, 0], [1, 0], [2, 0]],
@@ -756,6 +869,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 70,
               duration: 2,
               target: "all_allies",
+
             },
           ],
           hitboxPattern: [[0, -1], [0, 0], [0, 1]],
@@ -875,6 +989,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 80,
               duration: 2,
               target: "area_allies",
+
             },
             {
               id: "diana_eff2",
@@ -910,6 +1025,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 40,
               duration: 2,
               target: "area_allies",
+
             },
           ],
           hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
@@ -1582,8 +1698,10 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 85,
               duration: 2,
               target: "all_allies",
+
             },
           ],
+          hitboxPattern: [[0, 0]],
         },
       },
       {
@@ -1606,6 +1724,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 75,
               duration: 2,
               target: "all_allies",
+
             },
             {
               id: "helena_eff2",
@@ -1615,6 +1734,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               target: "all_allies",
             },
           ],
+          hitboxPattern: [[0, 0]],
         },
       },
     ],
@@ -2446,6 +2566,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               value: 70,
               duration: 2,
               target: "all_allies",
+
             },
             {
               id: "arines_eff2",
@@ -2455,6 +2576,7 @@ export const CHARACTER_TEMPLATES: Omit<Character, "id">[] = [
               target: "all_allies",
             },
           ],
+          hitboxPattern: [[0, 0]],
         },
       },
     ],

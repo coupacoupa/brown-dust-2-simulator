@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Character, ElementType, RosterEntry } from '@/types';
+import { Character, CharacterTemplate, ElementType, RosterEntry } from '@/types';
 import { CHARACTER_TEMPLATES } from '@/data/characters';
 import { rosterEntryFor, isHypothetical, uid } from '@/lib/storage';
 import { formatNumber } from '@/lib/format';
 import { ElementIcon } from './ui/element-icon';
 import { PortraitCard } from './ui/portrait-card';
+import CharacterStatsEditor from './character-stats-editor';
 
 interface CharacterEditorProps {
   teams: (Character | null)[][];
@@ -19,7 +20,11 @@ interface CharacterEditorProps {
   // The user's synced collection. When provided, deploys inherit roster
   // level/upgrade and slots diverging from it get a "hypothetical" marker.
   roster?: RosterEntry[];
+  onUpdateRoster?: (charKey: string, entryData: Partial<RosterEntry>) => void;
+  onUpdateRosterCostume?: (charKey: string, costumeId: string, costumeState: { upgradeLevel: number, activePotentials: string[] }) => void;
 }
+
+const templateKey = (t: { charId?: string; name: string }) => t.charId ?? t.name;
 
 export default function CharacterEditor({
   teams,
@@ -29,12 +34,17 @@ export default function CharacterEditor({
   onSelectSlot,
   onChangeTeamAt,
   onConfirm,
-  roster
+  roster,
+  onUpdateRoster,
+  onUpdateRosterCostume,
 }: CharacterEditorProps) {
   // Roster Filters State
   const [elementFilter, setElementFilter] = useState<'all' | ElementType>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'physical' | 'magic'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  
+  const [isReplaceMode, setIsReplaceMode] = useState(false);
+  const [selectedRosterChar, setSelectedRosterChar] = useState<Character | null>(null);
 
   // Drag and Drop State (team-aware so portraits can move between teams)
   const [dragged, setDragged] = useState<{ teamIdx: number; slotIdx: number } | null>(null);
@@ -64,7 +74,6 @@ export default function CharacterEditor({
 
   // A character can only be deployed once across all teams. Keyed by
   // charId, falling back to name (same convention as RosterEntry.charKey).
-  const templateKey = (c: { charId?: string; name: string }) => c.charId ?? c.name;
   const deployedTeamByKey = useMemo(() => {
     const map = new Map<string, number>();
     teams.forEach((team, tIdx) => {
@@ -112,7 +121,7 @@ export default function CharacterEditor({
   // Add character from standby roster. An explicitly highlighted slot wins;
   // otherwise the closest gap across Team 1 → Team 3 is filled, so a full
   // Team 1 overflows into Team 2.
-  const handleAddCharacter = (template: Omit<Character, 'id'>) => {
+  const handleAddCharacter = (template: CharacterTemplate) => {
     if (deployedTeamByKey.has(templateKey(template))) return;
 
     // A highlighted EMPTY slot wins; otherwise fill the closest gap across
@@ -153,9 +162,16 @@ export default function CharacterEditor({
       ...JSON.parse(JSON.stringify(template)),
       id: uid("char"),
       level: rosterEntry?.level ?? template.level ?? 100,
-      upgradeLevel: rosterEntry?.upgradeLevel ?? template.upgradeLevel ?? 5,
       position: defaultPos
     };
+
+    newChar.costumes = newChar.costumes.map(costume => {
+      const state = rosterEntry?.costumes?.[costume.id];
+      if (state) {
+        return { ...costume, upgradeLevel: state.upgradeLevel ?? 0, activePotentials: state.activePotentials || [] };
+      }
+      return { ...costume, upgradeLevel: 0, activePotentials: [] };
+    });
 
     const updated = [...targetTeam];
     const replaceChar = updated[targetSlotIdx];
@@ -259,9 +275,37 @@ export default function CharacterEditor({
     setDragOver(null);
   };
 
-  const handleSelectSlot = (teamIdx: number, slotIdx: number) => {
-    onSelectTeam(teamIdx);
-    onSelectSlot(slotIdx);
+  // Change selected slot to view stats or swap
+  const handleSelectSlot = (tIdx: number, idx: number) => {
+    setSelectedRosterChar(null);
+    onSelectTeam(tIdx);
+    onSelectSlot(idx);
+  };
+
+  // Click handler for roster portraits
+  const handleRosterClick = (template: CharacterTemplate) => {
+    if (isReplaceMode) {
+      handleAddCharacter(template);
+    } else {
+      const entry = roster ? rosterEntryFor(roster, template) : null;
+      const char: Character = {
+        ...JSON.parse(JSON.stringify(template)),
+        id: uid("char"),
+        level: entry?.level ?? template.level ?? 100,
+        position: 4
+      };
+      
+      char.costumes = char.costumes.map(costume => {
+        const state = entry?.costumes?.[costume.id];
+        if (state) {
+          return { ...costume, upgradeLevel: state.upgradeLevel ?? 0, activePotentials: state.activePotentials || [] };
+        }
+        return { ...costume, upgradeLevel: 0, activePotentials: [] };
+      });
+
+      setSelectedRosterChar(char);
+      onSelectSlot(null);
+    }
   };
 
   return (
@@ -335,30 +379,30 @@ export default function CharacterEditor({
 
                     if (char) {
                       return (
-                        <div
-                          key={char.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectSlot(tIdx, idx);
-                          }}
-                          draggable="true"
-                          onDragStart={(e) => handleSlotDragStart(e, tIdx, idx)}
-                          onDragOver={(e) => handleSlotDragOver(e, tIdx, idx)}
-                          onDrop={(e) => handleSlotDrop(e, tIdx, idx)}
-                          onDragEnd={handleSlotDragEnd}
-                          onDragLeave={() => setDragOver(null)}
-                          className={`
-                            group relative aspect-square rounded-lg overflow-hidden border transition-all duration-150 cursor-grab active:cursor-grabbing select-none
-                            ${isSelected ? 'border-indigo-400 ring-2 ring-indigo-400/70 ring-offset-1 ring-offset-black' : 'border-zinc-800 hover:border-zinc-600'}
-                            ${isDragOver ? 'border-dashed border-indigo-400 scale-[1.05]' : ''}
-                            ${isDragging ? 'opacity-30' : ''}
-                          `}
+                        <div key={char.id} className="w-full relative pb-[100%]">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectSlot(tIdx, idx);
+                            }}
+                            draggable="true"
+                            onDragStart={(e) => handleSlotDragStart(e, tIdx, idx)}
+                            onDragOver={(e) => handleSlotDragOver(e, tIdx, idx)}
+                            onDrop={(e) => handleSlotDrop(e, tIdx, idx)}
+                            onDragEnd={handleSlotDragEnd}
+                            onDragLeave={() => setDragOver(null)}
+                            className={`
+                              absolute inset-0 group rounded-lg overflow-hidden border transition-all duration-150 cursor-grab active:cursor-grabbing select-none
+                              ${isSelected ? 'border-indigo-400 ring-2 ring-indigo-400/70 ring-offset-1 ring-offset-black' : 'border-zinc-800 hover:border-zinc-600'}
+                              ${isDragOver ? 'border-dashed border-indigo-400 scale-[1.05]' : ''}
+                              ${isDragging ? 'opacity-30' : ''}
+                            `}
                         >
                           <PortraitCard
                             name={char.name}
                             element={char.element}
                             level={char.level ?? 100}
-                            upgradeLevel={char.upgradeLevel ?? 0}
+                            upgradeLevel={char.costumes?.length ? Math.max(...char.costumes.map(c => c.upgradeLevel ?? 0)) : 0}
                             customImage={char.image}
                           />
                           {roster && isHypothetical(char, roster) && (
@@ -378,28 +422,33 @@ export default function CharacterEditor({
                             ×
                           </button>
                         </div>
+                      </div>
                       );
                     }
 
                     // Empty Slot Drop Target
                     return (
-                      <div
-                        key={`empty_${tIdx}_${idx}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectSlot(tIdx, idx);
-                        }}
-                        onDragOver={(e) => handleSlotDragOver(e, tIdx, idx)}
-                        onDrop={(e) => handleSlotDrop(e, tIdx, idx)}
-                        onDragLeave={() => setDragOver(null)}
-                        className={`
-                          aspect-square rounded-lg border border-dashed flex flex-col items-center justify-center gap-0.5 transition-all duration-150 cursor-pointer select-none
-                          ${isSelected ? 'border-indigo-400 bg-indigo-950/20 ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-black text-indigo-400' : 'border-zinc-800 bg-zinc-950/40 text-zinc-650 hover:border-zinc-600 hover:text-zinc-450'}
-                          ${isDragOver ? 'border-indigo-400 bg-indigo-950/20 text-indigo-400 scale-[1.05]' : ''}
-                        `}
-                      >
-                        <span className="text-xl font-black leading-none">+</span>
-                        <span className="text-[8px] font-black uppercase tracking-wider">Slot {idx + 1}</span>
+                      <div key={idx} className="w-full relative pb-[100%]">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectSlot(tIdx, idx);
+                          }}
+                          onDragOver={(e) => handleSlotDragOver(e, tIdx, idx)}
+                          onDrop={(e) => handleSlotDrop(e, tIdx, idx)}
+                          onDragLeave={() => setDragOver(null)}
+                          className={`
+                            absolute inset-0 rounded-lg border border-dashed flex flex-col items-center justify-center gap-0.5 transition-all duration-150 cursor-pointer select-none
+                            ${isSelected ? 'border-indigo-400 bg-indigo-950/20 ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-black text-indigo-400' : 'border-zinc-800 bg-zinc-950/40 text-zinc-650 hover:border-zinc-600 hover:text-zinc-450'}
+                            ${isDragOver ? 'border-indigo-400 bg-indigo-950/20 text-indigo-400 scale-[1.05]' : ''}
+                          `}
+                        >
+                          <span className="text-xl font-black leading-none">+</span>
+                          <span className="text-[8px] font-black uppercase tracking-wider">Slot {idx + 1}</span>
+                          <div className="absolute bottom-1 right-1 flex items-center justify-center w-5 h-5 bg-black/80 rounded border border-zinc-700 pointer-events-none">
+                            <span className="text-[10px] font-black text-zinc-300">{idx + 1}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -413,9 +462,40 @@ export default function CharacterEditor({
           </p>
         </div>
 
-        {/* RIGHT COLUMN: STANDBY ROSTER PORTRAIT GRID */}
-        <div className="xl:col-span-9 flex flex-col gap-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl p-5">
-          <div className="flex flex-col md:flex-row items-stretch justify-between gap-3 border-b border-zinc-900 pb-3">
+        {/* RIGHT COLUMN: STANDBY ROSTER PORTRAIT GRID OR CHARACTER STATS EDITOR */}
+        <div className="xl:col-span-9 flex flex-col gap-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl p-5 h-full">
+          {selectedSlotIdx !== null && activeTeam[selectedSlotIdx] !== null ? (
+            <CharacterStatsEditor 
+              character={activeTeam[selectedSlotIdx]!}
+              onChange={(updated) => {
+                const updatedTeam = [...activeTeam];
+                updatedTeam[selectedSlotIdx] = updated;
+                onChangeTeam(updatedTeam);
+              }}
+              onClose={() => onSelectSlot(null)}
+            />
+          ) : selectedRosterChar ? (
+            <CharacterStatsEditor 
+              character={selectedRosterChar}
+              onChange={(updated, updatedCostumeId) => {
+                setSelectedRosterChar(updated);
+                if (updatedCostumeId && onUpdateRosterCostume) {
+                  const costume = updated.costumes.find(c => c.id === updatedCostumeId);
+                  if (costume) {
+                    onUpdateRosterCostume(templateKey(updated), updatedCostumeId, {
+                      upgradeLevel: costume.upgradeLevel,
+                      activePotentials: costume.activePotentials,
+                    });
+                  }
+                } else if (onUpdateRoster) {
+                  onUpdateRoster(templateKey(updated), { level: updated.level });
+                }
+              }}
+              onClose={() => setSelectedRosterChar(null)}
+            />
+          ) : (
+            <>
+              <div className="flex flex-col md:flex-row items-stretch justify-between gap-3 border-b border-zinc-900 pb-3">
             {/* Element filter tabs, game-style */}
             <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-850 p-1 rounded-lg self-start">
               {(['all', 'water', 'fire', 'wind', 'light', 'dark'] as const).map((el) => (
@@ -474,31 +554,33 @@ export default function CharacterEditor({
               const deployedTeamIdx = deployedTeamByKey.get(templateKey(temp));
               const deployed = deployedTeamIdx !== undefined;
               return (
-                <button
-                  key={temp.charId ?? temp.name}
-                  type="button"
-                  disabled={deployed}
-                  onClick={() => handleAddCharacter(temp)}
-                  title={
-                    deployed
-                      ? `${temp.name} is already deployed in Team ${deployedTeamIdx + 1}`
-                      : unowned
-                        ? `${temp.name} is not in your roster — deploying it makes a hypothetical build`
-                        : `Deploy ${temp.name} to Team ${activeTeamIdx + 1}`
-                  }
-                  className={`group relative aspect-square rounded-lg overflow-hidden border transition-all duration-150 select-none ${
-                    deployed
-                      ? 'border-zinc-900 opacity-35 grayscale cursor-not-allowed'
-                      : `border-zinc-800 hover:border-indigo-400 hover:ring-2 hover:ring-indigo-400/50 cursor-pointer ${
-                          unowned ? 'opacity-50 grayscale-[0.6] hover:opacity-90 hover:grayscale-0' : ''
-                        }`
-                  }`}
-                >
+                <div key={temp.charId ?? temp.name} className="w-full relative pb-[100%]">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { if (!isReplaceMode || !deployed) handleRosterClick(temp) }}
+                    title={
+                      !isReplaceMode 
+                        ? `Edit ${temp.name}'s stats`
+                        : deployed
+                          ? `${temp.name} is already deployed in Team ${deployedTeamIdx + 1}`
+                          : unowned
+                            ? `${temp.name} is not in your roster — deploying it makes a hypothetical build`
+                            : `Deploy ${temp.name} to Team ${activeTeamIdx + 1}`
+                    }
+                    className={`absolute inset-0 group rounded-lg overflow-hidden border transition-all duration-150 select-none ${
+                      isReplaceMode && deployed
+                        ? 'border-zinc-900 opacity-35 grayscale cursor-not-allowed pointer-events-none'
+                        : `border-zinc-800 hover:border-indigo-400 hover:ring-2 hover:ring-indigo-400/50 cursor-pointer ${
+                            unowned ? 'opacity-50 grayscale-[0.6] hover:opacity-90 hover:grayscale-0' : ''
+                          }`
+                    }`}
+                  >
                   <PortraitCard
                     name={temp.name}
                     element={temp.element}
                     level={entry?.level ?? temp.level ?? 100}
-                    upgradeLevel={entry?.upgradeLevel ?? temp.upgradeLevel ?? 0}
+                    upgradeLevel={entry?.costumes && Object.keys(entry.costumes).length > 0 ? Math.max(...Object.values(entry.costumes).map(c => c.upgradeLevel)) : 0}
                     customImage={temp.image}
                   />
                   {deployed ? (
@@ -513,7 +595,8 @@ export default function CharacterEditor({
                   {!deployed && (
                     <div className="absolute inset-0 bg-indigo-400/0 group-hover:bg-indigo-400/10 transition-colors pointer-events-none" />
                   )}
-                </button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -524,25 +607,29 @@ export default function CharacterEditor({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 border-t border-zinc-900 pt-2.5">
-            <span className="text-xs">🔖</span>
-            <span className="text-[11px] font-bold text-zinc-400 tracking-wide">
-              Standby {filteredTemplates.length} Character(s)
-            </span>
+          <div className="flex justify-end gap-3 pt-3 mt-auto border-t border-zinc-900">
+            {!isReplaceMode ? (
+              <button
+                type="button"
+                onClick={() => setIsReplaceMode(true)}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-[0_0_12px_rgba(79,70,229,0.25)] cursor-pointer"
+              >
+                Replace ⟲
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsReplaceMode(false)}
+                className="px-5 py-2.5 bg-emerald-650 hover:bg-emerald-600 active:scale-[0.98] text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-[0_0_12px_rgba(16,185,129,0.25)] cursor-pointer"
+              >
+                Confirm Setup ✓
+              </button>
+            )}
           </div>
+            </>
+          )}
         </div>
 
-      </div>
-
-      {/* Confirm setup → jump to the turn sequencer */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onConfirm}
-          className="px-5 py-2.5 bg-emerald-650 hover:bg-emerald-600 active:scale-[0.98] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-[0_0_12px_rgba(16,185,129,0.25)] cursor-pointer"
-        >
-          Confirm Setup ✓
-        </button>
       </div>
     </div>
   );

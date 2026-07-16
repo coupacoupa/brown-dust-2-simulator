@@ -149,7 +149,6 @@ export default function RosterPage() {
                   name={temp.name}
                   element={temp.element}
                   level={entry.level}
-                  upgradeLevel={entry.upgradeLevel}
                   customImage={temp.image}
                 />
                 <span
@@ -179,22 +178,6 @@ export default function RosterPage() {
                       disabled={!entry.owned}
                       onChange={(e) =>
                         patchEntry(key, { level: Math.max(1, Math.min(120, parseInt(e.target.value) || 1)) })
-                      }
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-[10px] font-bold text-zinc-200 text-center focus:outline-none focus:border-indigo-500 disabled:opacity-40"
-                    />
-                  </label>
-                  <label className="flex items-center gap-1 flex-1">
-                    <span className="text-[8px] font-black text-zinc-550 uppercase">+UP</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={15}
-                      value={entry.upgradeLevel}
-                      disabled={!entry.owned}
-                      onChange={(e) =>
-                        patchEntry(key, {
-                          upgradeLevel: Math.max(0, Math.min(15, parseInt(e.target.value) || 0)),
-                        })
                       }
                       className="w-full bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-[10px] font-bold text-zinc-200 text-center focus:outline-none focus:border-indigo-500 disabled:opacity-40"
                     />

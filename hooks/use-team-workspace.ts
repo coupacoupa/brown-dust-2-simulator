@@ -18,9 +18,11 @@ import {
   loadRoster,
   rosterEntryFor,
   isHypothetical,
+  saveRoster,
 } from "@/lib/storage";
 import { applyBossLevel } from "@/lib/bosses";
 import { runSimulation } from "@/lib/sim/engine";
+import { CHARACTER_TEMPLATES } from "@/data/characters";
 
 // All state and persistence for the team workspace page: one saved team with
 // three lineup variants fighting the boss as one continuous flow (Team 1's
@@ -59,7 +61,25 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     }
     recordRef.current = { id: team.id, bossId: team.bossId, createdAt: team.createdAt };
     setTeamName(team.name);
-    setVariants(team.variants);
+
+    // Sync saved characters with the latest game data templates
+    const syncedVariants = team.variants.map(v => 
+      v.map(char => {
+        if (!char) return null;
+        const template = CHARACTER_TEMPLATES.find(t => (t.charId ?? t.name) === (char.charId ?? char.name));
+        if (!template) return char;
+        return {
+          ...JSON.parse(JSON.stringify(template)),
+          id: char.id,
+          level: char.level,
+          upgradeLevel: char.upgradeLevel,
+          activePotentials: char.activePotentials,
+          position: char.position,
+        } as Character;
+      })
+    );
+    setVariants(syncedVariants);
+
     setVariantTurns(team.variantTurns);
     setActiveVariantIdx(team.activeVariantIdx);
     setStartingSp(team.startingSp);
@@ -170,7 +190,6 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     });
   };
 
-  // Re-apply roster levels/upgrades to every member of the active variant
   const syncFromRoster = () => {
     const freshRoster = loadRoster();
     setRoster(freshRoster);
@@ -179,8 +198,86 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
       copy[activeVariantIdx] = copy[activeVariantIdx].map((c) => {
         if (!c) return null;
         const entry = rosterEntryFor(freshRoster, c);
-        return entry ? { ...c, level: entry.level, upgradeLevel: entry.upgradeLevel } : c;
+        if (!entry) return c;
+        const newCostumes = c.costumes.map(costume => {
+          const state = entry.costumes[costume.id];
+          if (!state) return costume;
+          return { ...costume, upgradeLevel: state.upgradeLevel ?? 0, activePotentials: state.activePotentials || [] };
+        });
+        return { ...c, level: entry.level, costumes: newCostumes };
       });
+      return copy;
+    });
+  };
+
+  const updateRosterEntry = (charKey: string, entryData: Partial<RosterEntry>) => {
+    setRoster((prev) => {
+      const copy = [...prev];
+      const idx = copy.findIndex((e) => e.charKey === charKey);
+      if (idx !== -1) {
+        copy[idx] = { ...copy[idx], ...entryData };
+      } else {
+        copy.push({ charKey, owned: true, level: 100, costumes: {}, ...entryData });
+      }
+      saveRoster(copy);
+      return copy;
+    });
+
+    // Automatically sync these stats to any deployed instances of this character across all variants
+    setVariants((prev) => {
+      const copy = [...prev];
+      for (let i = 0; i < copy.length; i++) {
+        copy[i] = copy[i].map((c) => {
+          if (!c) return null;
+          const key = c.charId ?? c.name;
+          if (key === charKey) {
+            return {
+              ...c,
+              ...(entryData.level !== undefined && { level: entryData.level }),
+            };
+          }
+          return c;
+        });
+      }
+      return copy;
+    });
+  };
+
+  const updateRosterCostume = (charKey: string, costumeId: string, costumeState: { upgradeLevel: number, activePotentials: string[] }) => {
+    setRoster((prev) => {
+      const copy = [...prev];
+      const idx = copy.findIndex((e) => e.charKey === charKey);
+      if (idx !== -1) {
+        copy[idx] = { 
+          ...copy[idx], 
+          costumes: {
+            ...copy[idx].costumes,
+            [costumeId]: costumeState
+          }
+        };
+      }
+      saveRoster(copy);
+      return copy;
+    });
+
+    setVariants((prev) => {
+      const copy = [...prev];
+      for (let i = 0; i < copy.length; i++) {
+        copy[i] = copy[i].map((c) => {
+          if (!c) return null;
+          const key = c.charId ?? c.name;
+          if (key === charKey) {
+            const updatedCostumes = c.costumes.map(costume => {
+              if (costume.id === costumeId) {
+                return { ...costume, ...costumeState };
+              }
+              return costume;
+            });
+            return { ...c, costumes: updatedCostumes };
+          }
+          return c;
+        });
+      }
       return copy;
     });
   };
@@ -306,6 +403,8 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     setVariantAt,
     updateActiveCharacters,
     syncFromRoster,
+    updateRosterEntry,
+    updateRosterCostume,
     setActiveTurns,
     selectFlowTurn,
     addTurn,

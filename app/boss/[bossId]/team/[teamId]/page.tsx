@@ -19,7 +19,7 @@ export default function TeamWorkspacePage() {
   const ws = useTeamWorkspace(bossId, teamId);
 
   const [activeTab, setActiveTab] = useState<"sequencer" | "team">("sequencer");
-  const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(0);
+  const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(null);
 
   if (ws.notFound || ws.boss === null) {
     return (
@@ -168,6 +168,8 @@ export default function TeamWorkspacePage() {
           onChangeTeamAt={ws.setVariantAt}
           onConfirm={() => setActiveTab("sequencer")}
           roster={ws.roster}
+          onUpdateRoster={ws.updateRosterEntry}
+          onUpdateRosterCostume={ws.updateRosterCostume}
         />
       )}
 

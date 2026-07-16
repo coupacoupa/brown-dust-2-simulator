@@ -155,10 +155,8 @@ export default function GridEditor({
   // and the three flanks stack vertically, mirroring the allied grid.
   // Logical indices are unchanged: index = depthRow * 3 + flankCol.
   if (variant === 'battle') {
-    const maxColInHitbox = selectedTiles.length > 0 ? Math.max(...selectedTiles.map(t => Math.floor(t / 3))) : 0;
-    const visualCols = Math.max(maxColInHitbox + 1, 1);
-    const maxRowInHitbox = selectedTiles.length > 0 ? Math.max(...selectedTiles.map(t => t % 3)) : 0;
-    const visualRows = Math.max(maxRowInHitbox + 1, 1);
+    const visualCols = 4;
+    const visualRows = 3;
 
     const tileIndexAt = (y: number, x: number) => x * 3 + y;
     const depthLabels = Array.from({ length: visualCols }).map((_, i) => `${i}`); // left → right (columns)

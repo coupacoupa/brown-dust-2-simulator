@@ -104,7 +104,7 @@ export function runSimulation(
 
       const { hitCount, scaling, damageType, effects } = resolved;
       const targetOriginTile = resolveTargetOrigin(char, resolved, boss.hitbox);
-      const tilesTargeted = getTilesHit(resolved.targetShape, targetOriginTile, resolved.hitboxPattern);
+      const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern);
 
       // Apply buffs/debuffs *before* damage calculation if this action applies them
       const newBuffsApplied: string[] = [];

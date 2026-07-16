@@ -28,15 +28,15 @@ export const SEED_BOSS_CONFIGS: SeedBossConfig[] = [
     name: "Octovius I",
     element: "wind",
     grid: [
-      { row: 0, col: 0, type: "normal", skillId: "octovius_sticky_leg" },
-      { row: 0, col: 1, type: "normal" },
-      { row: 0, col: 2, type: "weak", weakMultiplier: 3.0, skillId: "octovius_tidal_strike" }, // Top-Back Corner
-      { row: 1, col: 0, type: "normal", skillId: "octovius_massive_leg" },
-      { row: 1, col: 1, type: "weak", weakMultiplier: 2.0 }, // Middle
-      { row: 1, col: 2, type: "normal", skillId: "octovius_tuna_slam" },
-      { row: 2, col: 0, type: "normal", skillId: "octovius_dry_out" },
-      { row: 2, col: 1, type: "normal" },
-      { row: 2, col: 2, type: "weak", weakMultiplier: 3.0, skillId: "octovius_summer_splash" }, // Bottom-Back Corner
+      { row: 0, col: 1, type: "normal", skillId: "octovius_sticky_leg" },
+      { row: 0, col: 2, type: "normal" },
+      { row: 0, col: 3, type: "weak", weakMultiplier: 3.0, skillId: "octovius_tidal_strike" }, // Top-Back Corner
+      { row: 1, col: 1, type: "normal", skillId: "octovius_massive_leg" },
+      { row: 1, col: 2, type: "weak", weakMultiplier: 2.0 }, // Middle
+      { row: 1, col: 3, type: "normal", skillId: "octovius_tuna_slam" },
+      { row: 2, col: 1, type: "normal", skillId: "octovius_dry_out" },
+      { row: 2, col: 2, type: "normal" },
+      { row: 2, col: 3, type: "weak", weakMultiplier: 3.0, skillId: "octovius_summer_splash" }, // Bottom-Back Corner
     ],
     huntingRules: { startingSp: 20, spRecoveryPerTurn: 5, maxSp: 20 },
     immunities: ["Knockback", "Silence"],

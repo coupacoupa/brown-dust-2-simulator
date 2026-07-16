@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Character, TurnAction, TurnSetup } from "@/types";
-import { getSkillCooldownState, MAX_BURST_LEVEL } from "@/lib/sim/actions";
+import { getSkillCooldownState, MAX_BURST_LEVEL, resolveSkillStats } from "@/lib/sim/actions";
 import { CardSkillBackground } from "../ui/card-skill-background";
 import { HitboxThumbnail } from "../ui/hitbox-thumbnail";
 
@@ -121,13 +121,14 @@ export default function OptionsDeck({
               cost.skill.id,
               activeTurnIndex,
             );
+            const resolvedSkill = resolveSkillStats(selectedChar, cost);
             const costumeApproach = cost.approach ?? 'very_front';
-            const costumeTargetGrid = cost.skill.targetGrid ?? 'enemy';
+            const costumeTargetGrid = resolvedSkill.targetGrid ?? 'enemy';
             // Damage preview: ATK × scaling%
-            const primaryStat = cost.skill.damageType === 'magic'
+            const primaryStat = resolvedSkill.damageType === 'magic'
               ? selectedChar.baseMatk
               : selectedChar.baseAtk;
-            const dmgPreview = Math.round(primaryStat * (cost.skill.scaling / 100));
+            const dmgPreview = Math.round(primaryStat * (resolvedSkill.scaling / 100));
 
             return (
               <div
@@ -182,9 +183,9 @@ export default function OptionsDeck({
                     {/* Skill name + damage preview */}
                     <div className="flex items-center gap-1.5">
                       <span className="text-[9px] font-black text-white truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                        {cost.skill.name}
+                        {resolvedSkill.name}
                       </span>
-                      {cost.skill.scaling > 0 && (
+                      {resolvedSkill.scaling > 0 && (
                         <span className="text-[8px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                           ✖ {dmgPreview}
                         </span>
@@ -204,7 +205,7 @@ export default function OptionsDeck({
                       </div>
                     )}
                     <OptionDiamonds
-                      baseCost={cost.skill.spCost}
+                      baseCost={resolvedSkill.spCost}
                       burstLevel={isSkillSelected ? selectedAction.burstLevel || 0 : 0}
                     />
                   </div>
@@ -254,8 +255,8 @@ export default function OptionsDeck({
 
                 <div className="z-10 pl-2">
                   <HitboxThumbnail
-                    shape={cost.skill.targetShape}
-                    hitboxPattern={cost.skill.hitboxPattern}
+                    shape={resolvedSkill.targetShape}
+                    hitboxPattern={resolvedSkill.hitboxPattern}
                     approach={costumeApproach}
                     targetGrid={costumeTargetGrid}
                   />

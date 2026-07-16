@@ -27,11 +27,57 @@ export interface ResolvedAction {
   damageType: DamageType;
   targetShape: TargetShape;
   effects: SkillEffect[];
-  hitboxPattern?: [number, number][];
+  hitboxPattern: [number, number][];
   targetGrid: "enemy" | "ally";
   approach: ApproachType;
   skillId: string | null;
 }
+
+// Dynamically computes the skill stats based on the character's upgrade level and active potentials.
+export function resolveSkillStats(char: Character, costume: any) {
+  const skill = costume.skill;
+  const upgradeLvl = costume.upgradeLevel || 0;
+  const upgrade = costume.upgrades?.[upgradeLvl];
+
+  let baseSpCost = upgrade?.spCost ?? skill.spCost;
+  let baseScaling = upgrade?.scaling ?? skill.scaling;
+  let baseHitCount = upgrade?.hitCount ?? skill.hitCount;
+  let baseCooldown = upgrade?.cooldown ?? skill.cooldown;
+  let baseEffects = upgrade?.effects ?? skill.effects;
+  let baseTargetShape = skill.targetShape;
+  let baseHitboxPattern = skill.hitboxPattern;
+
+  const activePotentials = costume.activePotentials || [];
+
+  if (costume.potentials) {
+    for (const pot of costume.potentials) {
+      if (activePotentials.includes(pot.id)) {
+        if (pot.type === "damage" && pot.value) {
+          baseScaling += pot.value;
+        } else if (pot.type === "sp_reduce" && pot.value) {
+          baseSpCost = Math.max(0, baseSpCost - pot.value);
+        } else if (pot.type === "cooldown_reduce" && pot.value) {
+          baseCooldown = Math.max(0, baseCooldown - pot.value);
+        } else if (pot.type === "range_increase") {
+          if (pot.newTargetShape) baseTargetShape = pot.newTargetShape;
+          if (pot.newHitboxPattern) baseHitboxPattern = pot.newHitboxPattern;
+        }
+      }
+    }
+  }
+
+  return {
+    ...skill,
+    spCost: baseSpCost,
+    scaling: baseScaling,
+    hitCount: baseHitCount,
+    cooldown: baseCooldown,
+    effects: baseEffects,
+    targetShape: baseTargetShape,
+    hitboxPattern: baseHitboxPattern,
+  };
+}
+
 
 export function resolveAction(char: Character, action: TurnAction): ResolvedAction {
   const resolved: ResolvedAction = {
@@ -43,7 +89,7 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
     damageType: "physical",
     targetShape: "single",
     effects: [],
-    hitboxPattern: undefined,
+    hitboxPattern: [[0, 0]],
     targetGrid: "enemy",
     approach: "very_front",
     skillId: null,
@@ -68,7 +114,7 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
   } else if (action.actionType === "costume" && action.costumeId) {
     const costume = (char.costumes || []).find((c) => c.id === action.costumeId);
     if (costume) {
-      const skill = costume.skill;
+      const skill = resolveSkillStats(char, costume);
       const burst = action.burstLevel || 0;
       resolved.skillId = skill.id;
       resolved.name = `${costume.name} Skill${burst > 0 ? ` (BURST +${burst})` : ""}`;
@@ -136,8 +182,9 @@ export function computeSpTimeline(
       if (action.actionType !== "costume" || !action.costumeId) return;
       const char = characters.find((c) => c.id === action.characterId);
       const costume = char?.costumes?.find((c) => c.id === action.costumeId);
-      if (costume) {
-        spentBase += Math.max(0, costume.skill.spCost);
+      if (char && costume) {
+        const skill = resolveSkillStats(char, costume);
+        spentBase += Math.max(0, skill.spCost);
         spentBurst += action.burstLevel || 0;
       }
     });
@@ -176,7 +223,8 @@ export function getSkillCooldownState(
     const prevCostume = char.costumes?.find((c) => c.id === prevAction.costumeId);
     if (prevCostume?.skill.id !== skillId) continue;
 
-    const cooldownEndsAtTurnIdx = prevTurnIdx + costume.skill.cooldown;
+    const prevSkill = resolveSkillStats(char, prevCostume);
+    const cooldownEndsAtTurnIdx = prevTurnIdx + prevSkill.cooldown;
     if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
       return { onCd: true, remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1 };
     }

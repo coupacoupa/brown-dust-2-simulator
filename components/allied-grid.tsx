@@ -29,7 +29,7 @@ function TileFace({
 
   if (!image || imgError) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-sm font-black text-zinc-100 uppercase tracking-wide">
           {getInitials(name)}
         </span>
@@ -42,7 +42,7 @@ function TileFace({
       src={image}
       alt={name}
       onError={() => setImgError(true)}
-      className="absolute inset-0 w-full h-full object-cover animate-fadeIn"
+      className="absolute inset-0 w-full h-full object-cover animate-fadeIn pointer-events-none"
       style={{ objectPosition: 'center 22%' }}
       draggable={false}
     />
@@ -95,6 +95,10 @@ export default function AlliedGrid({
     }
   };
 
+  const handleDragLeave = (e: React.DragEvent, idx: number) => {
+    setDragOverIdx((prev) => (prev === idx ? null : prev));
+  };
+
   const handleDrop = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (draggedTileIdx !== null && draggedTileIdx !== idx) {
@@ -132,6 +136,7 @@ export default function AlliedGrid({
               onDragStart={(e) => handleDragStart(e, index, char.id)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
+              onDragLeave={(e) => handleDragLeave(e, index)}
               onDragEnd={handleDragEnd}
               className={`
                 relative aspect-square rounded-xl border-2 overflow-hidden
@@ -147,7 +152,7 @@ export default function AlliedGrid({
                 image={faceImageByCharId?.[char.id]}
               />
 
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-1 pt-3 pb-0.5 flex items-baseline justify-between gap-1">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-1 pt-3 pb-0.5 flex items-baseline justify-between gap-1 pointer-events-none">
                 <span className="text-[8px] font-black text-white uppercase tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
                   {char.name}
                 </span>
@@ -156,12 +161,12 @@ export default function AlliedGrid({
                 </span>
               </div>
 
-              <div className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5">
+              <div className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 pointer-events-none">
                 <ElementIcon element={char.element} className="w-3 h-3" />
               </div>
 
               {isDragging && (
-                <div className="absolute inset-0 bg-black/50 z-20 flex items-center justify-center backdrop-blur-sm">
+                <div className="absolute inset-0 bg-black/50 z-20 flex items-center justify-center backdrop-blur-sm pointer-events-none">
                   <span className="text-[10px] font-bold text-white/50 tracking-widest uppercase">Moving</span>
                 </div>
               )}
@@ -177,18 +182,20 @@ export default function AlliedGrid({
               onClick={() => onTileClick(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
-              onDragLeave={() => setDragOverIdx(null)}
+              onDragLeave={(e) => handleDragLeave(e, index)}
               className={`
                 relative aspect-square rounded-xl border-2 border-dashed
                 flex items-center justify-center transition-all duration-200 cursor-pointer text-[10px] text-zinc-600 font-bold tracking-widest
                 ${isDragOver ? 'border-indigo-500 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)] scale-[1.02]' : 'border-zinc-800 bg-zinc-900/30 hover:border-zinc-600 hover:bg-zinc-800/50'}
               `}
             >
-              {isDragOver ? (
-                <span className="text-indigo-400 animate-pulse">Drop</span>
-              ) : (
-                "+"
-              )}
+              <span className="pointer-events-none">
+                {isDragOver ? (
+                  <span className="text-indigo-400 animate-pulse">Drop</span>
+                ) : (
+                  "+"
+                )}
+              </span>
               {isHighlighted && (
                 <span className="absolute inset-0 rounded-xl border-2 border-emerald-400/50 bg-emerald-500/10 animate-ping pointer-events-none z-30" style={{ animationDuration: '2s' }} />
               )}

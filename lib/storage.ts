@@ -98,21 +98,55 @@ export const charKeyOf = (t: { charId?: string; name: string }) => t.charId ?? t
 // Default roster: everything owned at template level/upgrade. Users prune to
 // match their account; teams then pull these values as the source of truth.
 export function defaultRoster(): RosterEntry[] {
-  return CHARACTER_TEMPLATES.map((t) => ({
-    charKey: charKeyOf(t),
-    owned: true,
-    level: t.level ?? 100,
-    upgradeLevel: t.upgradeLevel ?? 0,
-  }));
+  return CHARACTER_TEMPLATES.map((t) => {
+    const costumes: Record<string, { upgradeLevel: number; activePotentials: string[] }> = {};
+    for (const c of t.costumes) {
+      costumes[c.id] = { upgradeLevel: 0, activePotentials: [] };
+    }
+    return {
+      charKey: charKeyOf(t),
+      owned: true,
+      level: t.level ?? 100,
+      costumes,
+    };
+  });
 }
 
 export function loadRoster(): RosterEntry[] {
-  const stored = readJson<RosterEntry[]>(ROSTER_KEY);
-  if (!stored) return defaultRoster();
-  // Backfill entries for characters added to the game after the user last saved
-  const seen = new Set(stored.map((e) => e.charKey));
-  const missing = defaultRoster().filter((e) => !seen.has(e.charKey));
-  return [...stored, ...missing];
+  const stored = readJson<any[]>(ROSTER_KEY);
+  let next = stored;
+  if (!stored) {
+    next = defaultRoster();
+  } else {
+    // Legacy migration: Map root-level upgradeLevel/activePotentials to all costumes
+    next = stored.map((e) => {
+      const charTemplate = CHARACTER_TEMPLATES.find((t) => charKeyOf(t) === e.charKey);
+      if (e.upgradeLevel !== undefined || e.activePotentials !== undefined) {
+        const legacyUpgrade = e.upgradeLevel ?? 0;
+        const legacyPots = e.activePotentials ?? [];
+        const migratedCostumes: Record<string, { upgradeLevel: number; activePotentials: string[] }> = {};
+        
+        if (charTemplate) {
+          for (const c of charTemplate.costumes) {
+            migratedCostumes[c.id] = { upgradeLevel: legacyUpgrade, activePotentials: [...legacyPots] };
+          }
+        }
+        return {
+          charKey: e.charKey,
+          owned: e.owned ?? true,
+          level: e.level ?? 100,
+          costumes: e.costumes ?? migratedCostumes,
+        };
+      }
+      return e;
+    });
+
+    // Backfill entries for characters added to the game after the user last saved
+    const seen = new Set(next.map((e) => e.charKey));
+    const missing = defaultRoster().filter((e) => !seen.has(e.charKey));
+    next = [...next, ...missing];
+  }
+  return next as RosterEntry[];
 }
 
 export function saveRoster(roster: RosterEntry[]) {
@@ -128,7 +162,22 @@ export function rosterEntryFor(roster: RosterEntry[], char: { charId?: string; n
 export function isHypothetical(char: Character, roster: RosterEntry[]): boolean {
   const entry = rosterEntryFor(roster, char);
   if (!entry || !entry.owned) return true;
-  return (char.level ?? 100) !== entry.level || (char.upgradeLevel ?? 0) !== entry.upgradeLevel;
+  if ((char.level ?? 100) !== entry.level) return true;
+  
+  // If any costume has a higher upgrade level or different potentials than the roster, it's hypothetical
+  for (const charCostume of char.costumes) {
+    const rosterCostume = entry.costumes?.[charCostume.id];
+    if (!rosterCostume) continue;
+    
+    const charUpgrade = charCostume.upgradeLevel ?? 0;
+    const rosterUpgrade = rosterCostume.upgradeLevel ?? 0;
+    if (charUpgrade > rosterUpgrade) return true;
+    
+    const charPots = charCostume.activePotentials || [];
+    const rosterPots = rosterCostume.activePotentials || [];
+    if (charPots.length > rosterPots.length) return true;
+  }
+  return false;
 }
 
 // ---------- Saved teams ----------

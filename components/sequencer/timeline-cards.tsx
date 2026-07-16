@@ -93,7 +93,7 @@ export default function TimelineCards({
 
           const waifuHP =
             (char.level || 100) * 135 +
-            (char.upgradeLevel || 0) * 450 +
+            (selectedCostume ? selectedCostume.upgradeLevel : char.costumes?.length ? Math.max(...char.costumes.map(c => c.upgradeLevel ?? 0)) : 0) * 450 +
             (char.baseAtk || 500) +
             1200;
 

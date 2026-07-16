@@ -17,7 +17,16 @@ export function resolveHitboxTiles(
   const originCol = originTile % gridCols;
   const tiles: number[] = [];
 
-  for (const [dr, dc] of pattern) {
+  for (const [dr_card, dc_card] of pattern) {
+    // Card space: dr_card is negative for "Up" (Forward/Deeper).
+    // Boss grid space: r is Depth, where positive is Deeper (visually Right).
+    // Therefore, we invert dr_card to map Forward on the card to Deeper on the grid.
+    const dr = -dr_card;
+    // Card space: dc_card is negative for "Left".
+    // Boss grid space: c is Lane, where negative is Top/Left (visually Up).
+    // Therefore, dc_card directly maps to dc.
+    const dc = dc_card;
+
     const r = originRow + dr;
     const c = originCol + dc;
     if (r >= 0 && r < gridRows && c >= 0 && c < gridCols) {
@@ -58,72 +67,12 @@ export function calculateAutoTarget(
 }
 
 // Get flat indices hit by a skill shape given a center tile (0-11) on a 3x4 grid.
-// When a custom hitboxPattern is provided, it takes precedence.
 export function getTilesHit(
-  shape: TargetShape,
   center: number,
-  hitboxPattern?: [number, number][],
+  hitboxPattern: [number, number][],
 ): number[] {
-  // Custom hitbox pattern takes priority over shape-based calculation
-  if (hitboxPattern && hitboxPattern.length > 0) {
-    return resolveHitboxTiles(center, hitboxPattern);
+  if (!hitboxPattern || hitboxPattern.length === 0) {
+    return [];
   }
-
-  const cx = center % 3;
-  const cy = Math.floor(center / 3);
-  const hits: number[] = [];
-
-  const addIfValid = (x: number, y: number) => {
-    if (x >= 0 && x < 3 && y >= 0 && y < 4) {
-      hits.push(y * 3 + x);
-    }
-  };
-
-  switch (shape) {
-    case 'single':
-      addIfValid(cx, cy);
-      break;
-    case 'row':
-      for (let x = 0; x < 3; x++) {
-        addIfValid(x, cy);
-      }
-      break;
-    case 'col':
-      for (let y = 0; y < 4; y++) {
-        addIfValid(cx, y);
-      }
-      break;
-    case 'plus':
-      addIfValid(cx, cy); // center
-      addIfValid(cx, cy - 1); // top
-      addIfValid(cx, cy + 1); // bottom
-      addIfValid(cx - 1, cy); // left
-      addIfValid(cx + 1, cy); // right
-      break;
-    case 'cross':
-      addIfValid(cx, cy); // center
-      addIfValid(cx - 1, cy - 1); // top-left
-      addIfValid(cx + 1, cy - 1); // top-right
-      addIfValid(cx - 1, cy + 1); // bottom-left
-      addIfValid(cx + 1, cy + 1); // bottom-right
-      break;
-    case 'square': {
-      // 2x2 centered at target (or offset if at edge)
-      const startX = cx === 2 ? 1 : cx;
-      const startY = cy === 3 ? 2 : cy;
-      for (let y = startY; y < startY + 2; y++) {
-        for (let x = startX; x < startX + 2; x++) {
-          addIfValid(x, y);
-        }
-      }
-      break;
-    }
-    case 'all':
-      for (let i = 0; i < 12; i++) {
-        hits.push(i);
-      }
-      break;
-  }
-
-  return Array.from(new Set(hits));
+  return resolveHitboxTiles(center, hitboxPattern);
 }
