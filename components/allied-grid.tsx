@@ -171,7 +171,7 @@ export default function AlliedGrid({
                 </div>
               )}
               {isHighlighted && (
-                <span className="absolute inset-0 rounded-xl border-2 border-emerald-400/80 bg-emerald-500/20 animate-ping pointer-events-none z-30" style={{ animationDuration: '2s' }} />
+                <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/15 shadow-[0_0_6px_rgba(16,185,129,0.3)] pointer-events-none z-30" />
               )}
             </div>
           );
@@ -197,7 +197,7 @@ export default function AlliedGrid({
                 )}
               </span>
               {isHighlighted && (
-                <span className="absolute inset-0 rounded-xl border-2 border-emerald-400/50 bg-emerald-500/10 animate-ping pointer-events-none z-30" style={{ animationDuration: '2s' }} />
+                <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_4px_rgba(16,185,129,0.2)] pointer-events-none z-30" />
               )}
             </div>
           );

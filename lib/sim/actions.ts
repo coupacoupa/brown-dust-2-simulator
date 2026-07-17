@@ -1,4 +1,5 @@
 import {
+  ActiveCostume,
   ApproachType,
   Character,
   DamageType,
@@ -34,15 +35,17 @@ export interface ResolvedAction {
 }
 
 // Dynamically computes the skill stats based on the character's upgrade level and active potentials.
-export function resolveSkillStats(char: Character, costume: any) {
+export function resolveSkillStats(char: Character, costume: ActiveCostume) {
   const skill = costume.skill;
   const upgradeLvl = costume.upgradeLevel || 0;
-  const upgrade = costume.upgrades?.[upgradeLvl];
+  const maxLvl = costume.upgrades ? costume.upgrades.length - 1 : 0;
+  const safeLvl = Math.min(Math.max(0, upgradeLvl), maxLvl);
+  const upgrade = costume.upgrades?.[safeLvl];
 
-  let baseSpCost = upgrade?.spCost ?? skill.spCost;
-  let baseScaling = upgrade?.scaling ?? skill.scaling;
-  let baseHitCount = upgrade?.hitCount ?? skill.hitCount;
-  let baseCooldown = upgrade?.cooldown ?? skill.cooldown;
+  let baseSpCost = upgrade?.spCost ?? 0;
+  let baseScaling = upgrade?.scaling ?? 0;
+  const baseHitCount = upgrade?.hitCount ?? skill.hitCount;
+  let baseCooldown = upgrade?.cooldown ?? 0;
   let baseEffects = upgrade?.effects ?? skill.effects;
   let baseTargetShape = skill.targetShape;
   let baseHitboxPattern = skill.hitboxPattern;
@@ -61,6 +64,13 @@ export function resolveSkillStats(char: Character, costume: any) {
         } else if (pot.type === "range_increase") {
           if (pot.newTargetShape) baseTargetShape = pot.newTargetShape;
           if (pot.newHitboxPattern) baseHitboxPattern = pot.newHitboxPattern;
+        } else if (pot.type === "effect_value_increase" && pot.value) {
+          baseEffects = baseEffects.map((eff: SkillEffect) => {
+            if (pot.targetEffectId ? eff.id === pot.targetEffectId : true) {
+              return { ...eff, value: eff.value + pot.value! };
+            }
+            return eff;
+          });
         }
       }
     }
@@ -178,6 +188,18 @@ export function computeSpTimeline(
     let spentBase = 0;
     let spentBurst = 0;
 
+    // Turn 1 Preemptive SP cost deduction
+    if (turnIdx === 0 && turnSetup.preemptiveCostumeIds) {
+      turnSetup.preemptiveCostumeIds.forEach((costumeId) => {
+        const char = characters.find((c) => c.costumes.some((ost) => ost.id === costumeId));
+        const costume = char?.costumes?.find((ost) => ost.id === costumeId);
+        if (char && costume) {
+          const skill = resolveSkillStats(char, costume);
+          spentBase += Math.max(0, skill.spCost);
+        }
+      });
+    }
+
     turnSetup.actions.forEach((action) => {
       if (action.actionType !== "costume" || !action.costumeId) return;
       const char = characters.find((c) => c.id === action.characterId);
@@ -215,6 +237,15 @@ export function getSkillCooldownState(
   const char = characters.find((c) => c.id === charId);
   const costume = char?.costumes?.find((c) => c.skill.id === skillId);
   if (!char || !costume) return { onCd: false, remainingTurns: 0 };
+
+  // Check if cast as a preemptive action on Turn 1 (which represents Turn 0/battle start)
+  if (turns[0]?.preemptiveCostumeIds?.includes(costume.id)) {
+    const prevSkill = resolveSkillStats(char, costume);
+    const cooldownEndsAtTurnIdx = 0 + prevSkill.cooldown;
+    if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
+      return { onCd: true, remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1 };
+    }
+  }
 
   for (let prevTurnIdx = 0; prevTurnIdx < targetTurnIdx; prevTurnIdx++) {
     const prevAction = turns[prevTurnIdx]?.actions.find((a) => a.characterId === charId);

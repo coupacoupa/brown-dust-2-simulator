@@ -15,6 +15,7 @@ interface OptionsDeckProps {
   selectedActionIdx: number;
   onActionChange: (actionIdx: number, updates: Partial<TurnAction>) => void;
   onEquipCostume: (charId: string, costumeId: string) => void;
+  onPreemptiveToggle?: (costumeId: string, enabled: boolean) => void;
 }
 
 // Option select list SP cost diamonds
@@ -64,6 +65,7 @@ export default function OptionsDeck({
   selectedActionIdx,
   onActionChange,
   onEquipCostume,
+  onPreemptiveToggle,
 }: OptionsDeckProps) {
   return (
     <div className="flex flex-col gap-3 w-55 shrink-0">
@@ -75,39 +77,44 @@ export default function OptionsDeck({
 
       {selectedChar && selectedActionIdx !== -1 && selectedAction ? (
         <div className="flex flex-col gap-3">
-          {/* Option 1: Basic Attack (Vault) - Game Style */}
-          <div
-            onClick={() => {
-              onActionChange(selectedActionIdx, {
-                actionType: "attack",
-                costumeId: undefined,
-                burstLevel: 0,
-              });
-            }}
-            className={`
-            relative h-16 rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
-            ${selectedAction.actionType === "attack" ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.1)]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
-          `}
-          >
-            {/* Basic attack (Vault) uses a plain dark grey background */}
-            <div className="absolute inset-0 bg-zinc-800" />
+          {(() => {
+            const defaultApproach = selectedChar.costumes[0]?.approach ?? "very_front";
+            const isVault = defaultApproach === "vault";
+            return (
+              <div
+                onClick={() => {
+                  onActionChange(selectedActionIdx, {
+                    actionType: "attack",
+                    costumeId: undefined,
+                    burstLevel: 0,
+                  });
+                }}
+                className={`
+                relative h-16 rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
+                ${selectedAction.actionType === "attack" ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.1)]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
+              `}
+              >
+                {/* Basic attack uses a plain dark grey background */}
+                <div className="absolute inset-0 bg-zinc-800" />
 
-            <div className="flex items-center gap-3.5 z-10 flex-1 min-w-0">
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[11px] font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                  Vault
-                </span>
-                <span className="text-[9px] text-zinc-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                  ✖ {selectedChar.baseAtk >= selectedChar.baseMatk
-                    ? selectedChar.baseAtk
-                    : selectedChar.baseMatk}
-                </span>
+                <div className="flex items-center gap-3.5 z-10 flex-1 min-w-0">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[11px] font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                      {isVault ? "Vault" : "Front"}
+                    </span>
+                    <span className="text-[9px] text-zinc-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                      ✖ {selectedChar.baseAtk >= selectedChar.baseMatk
+                        ? selectedChar.baseAtk
+                        : selectedChar.baseMatk}
+                    </span>
+                  </div>
+                </div>
+                <div className="z-10 pl-2">
+                  <HitboxThumbnail shape="single" approach={defaultApproach} targetGrid="enemy" />
+                </div>
               </div>
-            </div>
-            <div className="z-10 pl-2">
-              <HitboxThumbnail shape="single" approach="vault" targetGrid="enemy" />
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Costume cards (face illustration covers the background completely) */}
           {(selectedChar.costumes || []).map((cost) => {
@@ -124,6 +131,8 @@ export default function OptionsDeck({
             const resolvedSkill = resolveSkillStats(selectedChar, cost);
             const costumeApproach = cost.approach ?? 'very_front';
             const costumeTargetGrid = resolvedSkill.targetGrid ?? 'enemy';
+            const isPreemptive = resolvedSkill.isPreemptive === true;
+            const isPreemptiveEnabled = turns[0]?.preemptiveCostumeIds?.includes(cost.id) ?? false;
             // Damage preview: ATK × scaling%
             const primaryStat = resolvedSkill.damageType === 'magic'
               ? selectedChar.baseMatk
@@ -161,7 +170,7 @@ export default function OptionsDeck({
                 <div className="flex items-center gap-2.5 z-10 flex-1 min-w-0">
                   <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[150px]">
                     {/* Approach badge + costume name */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className={`text-[6px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
                         costumeTargetGrid === 'ally'
                           ? 'bg-emerald-600/90 text-emerald-100'
@@ -174,6 +183,21 @@ export default function OptionsDeck({
                       <span className="text-[8px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[60px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                         {cost.name}
                       </span>
+                      {isPreemptive && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPreemptiveToggle?.(cost.id, !isPreemptiveEnabled);
+                          }}
+                          className={`cursor-pointer text-[5px] font-black uppercase tracking-wider px-1 py-[0.5px] rounded transition-all duration-150 border ${
+                            isPreemptiveEnabled
+                              ? 'bg-amber-500 border-amber-400 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.4)] font-black'
+                              : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500'
+                          }`}
+                        >
+                          P.Action
+                        </span>
+                      )}
                       {skillState.onCd && (
                         <span className="text-[7px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                           CD:{skillState.remainingTurns}t

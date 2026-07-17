@@ -19,6 +19,8 @@ export interface SkillEffect {
     | 'buff_crit_rate' 
     | 'buff_crit_dmg' 
     | 'buff_prop_dmg' 
+    | 'buff_energy_guard'
+    | 'buff_barrier'
     | 'debuff_def' 
     | 'debuff_mres' 
     | 'debuff_vulnerability'; // Amplifies all damage taken
@@ -30,10 +32,7 @@ export interface SkillEffect {
 export interface Skill {
   id: string;
   name: string;
-  spCost: number;
-  cooldown: number; // in turns
   hitCount: number; // number of hits (for chain building)
-  scaling: number; // percentage, e.g., 250 means 250%
   damageType: DamageType;
   targetShape: TargetShape;
   effects: SkillEffect[];
@@ -45,12 +44,13 @@ export interface Skill {
   hitboxPattern: [number, number][];
   // Which grid the shape is projected onto. Defaults to 'enemy'.
   targetGrid?: 'enemy' | 'ally';
+  isPreemptive?: boolean; // Toggled to run automatically at start of Turn 1
 }
 
 export interface CostumeUpgrade {
-  scaling?: number;
-  spCost?: number;
-  cooldown?: number;
+  scaling: number;
+  spCost: number;
+  cooldown: number;
   hitCount?: number;
   effects?: SkillEffect[];
 }
@@ -61,6 +61,8 @@ export interface SkillPotential {
   value?: number; // e.g. 15 for +15% damage
   newTargetShape?: TargetShape;
   newHitboxPattern?: [number, number][];
+  targetEffectId?: string; // Optional target effect ID to modify
+  name?: string; // Optional user-facing custom potential label
 }
 
 
@@ -107,7 +109,7 @@ export interface Character {
   image?: string;         // Optional path to character profile image
 }
 
-export type CharacterTemplate = Omit<Character, 'id' | 'costumes'> & { costumes: Costume[] };
+export type CharacterTemplate = Omit<Character, 'id' | 'costumes' | 'baseAtk' | 'baseMatk' | 'baseCritRate' | 'baseCritDmg' | 'baseDef' | 'baseMres' | 'basePropDmg'> & { costumes: Costume[] };
 
 // LEGACY rotation entry — older stored bosses (localStorage) may still carry
 // this flat shape. New bosses define `skillDefs` + `rotation` instead; both
@@ -261,32 +263,7 @@ export interface TurnAction {
 export interface TurnSetup {
   turnIndex: number; // 0-indexed (Turn 1, Turn 2, etc.)
   actions: TurnAction[]; // Order of actions (1st to 5th character)
-}
-
-export interface SimulationLog {
-  turn: number;
-  characterName: string;
-  actionName: string;
-  targetTile: number;
-  damageType: DamageType;
-  hitCount: number;
-  hits: {
-    partIndex: number;
-    isWeakPoint: boolean;
-    chainCount: number;
-    buffMultiplier: number;
-    debuffMultiplier: number;
-    elementMultiplier: number;
-    rawDamageMin: number;
-    rawDamageExpected: number;
-    rawDamageMax: number;
-    isCrit: boolean; // for individual hit representation in detailed logs
-  }[];
-  totalDamageMin: number;
-  totalDamageExpected: number;
-  totalDamageMax: number;
-  appliedBuffs: string[];
-  appliedDebuffs: string[];
+  preemptiveCostumeIds?: string[]; // Costume IDs enabled as preemptive actions on Turn 1
 }
 
 // One line in a formula bucket's drill-down: who/what contributed, a
@@ -335,5 +312,4 @@ export interface SimulationResult {
   damagePerTurn: { turn: number; min: number; expected: number; max: number }[];
   damagePerCharacter: { characterId: string; characterName: string; min: number; expected: number; max: number }[];
   formulaPerTurn: TurnFormulaBreakdown[];
-  logs: SimulationLog[];
 }

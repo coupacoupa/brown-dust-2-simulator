@@ -70,7 +70,11 @@ export function calculateAutoTarget(
 export function getTilesHit(
   center: number,
   hitboxPattern: [number, number][],
+  shape?: TargetShape,
 ): number[] {
+  if (shape === "all") {
+    return Array.from({ length: 12 }, (_, i) => i);
+  }
   if (!hitboxPattern || hitboxPattern.length === 0) {
     return [];
   }

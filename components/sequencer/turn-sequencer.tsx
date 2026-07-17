@@ -103,6 +103,20 @@ export default function TurnSequencer({
     onChange(turns.map((t, idx) => (idx === activeTurnIndex ? { ...t, actions: actionsCopy } : t)));
   };
 
+  // Toggle preemptive actions on Turn 1
+  const handlePreemptiveToggle = (costumeId: string, enabled: boolean) => {
+    const turn1Setup = { ...turns[0] };
+    const currentPreemptive = turn1Setup.preemptiveCostumeIds || [];
+    let updatedPreemptive: string[];
+    if (enabled) {
+      if (currentPreemptive.includes(costumeId)) return;
+      updatedPreemptive = [...currentPreemptive, costumeId];
+    } else {
+      updatedPreemptive = currentPreemptive.filter((id) => id !== costumeId);
+    }
+    onChange(turns.map((t, idx) => (idx === 0 ? { ...t, preemptiveCostumeIds: updatedPreemptive } : t)));
+  };
+
   // Allied grid drag swaps reposition characters
   const handleSwapTiles = (fromIdx: number, toIdx: number) => {
     const charA = characters.find((c) => c.position === fromIdx);
@@ -133,7 +147,7 @@ export default function TurnSequencer({
     if (resolved.isSkip) return none;
 
     const originTile = resolveTargetOrigin(char, resolved, boss.hitbox);
-    const hitTiles = getTilesHit(originTile, resolved.hitboxPattern);
+    const hitTiles = getTilesHit(originTile, resolved.hitboxPattern, resolved.targetShape);
 
     return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid: resolved.targetGrid };
   }, [openSelectorCharId, activeTurnIndex, characters, turns, boss.hitbox]);
@@ -187,6 +201,7 @@ export default function TurnSequencer({
             onEquipCostume={(charId, costumeId) =>
               setEquippedCostumeId((prev) => ({ ...prev, [charId]: costumeId }))
             }
+            onPreemptiveToggle={handlePreemptiveToggle}
           />
         </div>
 

@@ -2,14 +2,13 @@ import {
   Boss,
   Character,
   ElementType,
-  SimulationLog,
   SimulationResult,
   SkillEffect,
   TurnFormulaBreakdown,
   TurnSetup,
 } from "@/types";
 import { getTilesHit } from "./targeting";
-import { resolveAction, resolveTargetOrigin } from "./actions";
+import { resolveAction, resolveTargetOrigin, resolveSkillStats } from "./actions";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "./breakdown";
 
 // Calculate elemental multiplier
@@ -46,7 +45,6 @@ export function runSimulation(
   boss: Boss,
   turns: TurnSetup[],
 ): SimulationResult {
-  const logs: SimulationLog[] = [];
   const damagePerTurn: { turn: number; min: number; expected: number; max: number }[] = [];
   const formulaPerTurn: TurnFormulaBreakdown[] = [];
   const damagePerCharacter: { [id: string]: { min: number; expected: number; max: number } } = {};
@@ -70,6 +68,43 @@ export function runSimulation(
     let turnExpectedDamage = 0;
     let turnMaxDamage = 0;
 
+    // Execute preemptive actions at the start of Turn 1
+    if (turnIdx === 0 && turnSetup.preemptiveCostumeIds) {
+      turnSetup.preemptiveCostumeIds.forEach((costumeId) => {
+        const char = characters.find((c) => c.costumes.some((ost) => ost.id === costumeId));
+        const costume = char?.costumes?.find((ost) => ost.id === costumeId);
+        if (!char || !costume) return;
+
+        const resolved = resolveSkillStats(char, costume);
+        // Preemptive skills target allies relative to the caster's position
+        const targetOriginTile = char.position ?? 0;
+        const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern, resolved.targetShape);
+
+        resolved.effects.forEach((eff) => {
+          const activeEffect = (): ActiveEffect => ({
+            type: eff.type,
+            value: eff.value,
+            remainingTurns: eff.duration,
+            sourceCharacterId: char.id,
+          });
+
+          if (eff.target === 'self') {
+            characterBuffs[char.id].push(activeEffect());
+          } else if (eff.target === 'all_allies') {
+            characters.forEach((ally) => characterBuffs[ally.id].push(activeEffect()));
+          } else if (eff.target === 'area_allies') {
+            characters.forEach((ally) => {
+              if (ally.position !== undefined && tilesTargeted.includes(ally.position)) {
+                characterBuffs[ally.id].push(activeEffect());
+              }
+            });
+          } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
+            bossDebuffs.push(activeEffect());
+          }
+        });
+      });
+    }
+
     // Damage events this turn — the formula-breakdown panel is derived from
     // these after the turn resolves (see lib/sim/breakdown.ts).
     const events: ActionDamageEvent[] = [];
@@ -85,30 +120,14 @@ export function runSimulation(
       const resolved = resolveAction(char, action);
 
       if (resolved.isSkip) {
-        logs.push({
-          turn: displayTurn,
-          characterName: char.name,
-          actionName: 'Skip',
-          targetTile: 0,
-          damageType: 'physical',
-          hitCount: 0,
-          hits: [],
-          totalDamageMin: 0,
-          totalDamageExpected: 0,
-          totalDamageMax: 0,
-          appliedBuffs: [],
-          appliedDebuffs: [],
-        });
         return;
       }
 
       const { hitCount, scaling, damageType, effects } = resolved;
       const targetOriginTile = resolveTargetOrigin(char, resolved, boss.hitbox);
-      const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern);
+      const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern, resolved.targetShape);
 
       // Apply buffs/debuffs *before* damage calculation if this action applies them
-      const newBuffsApplied: string[] = [];
-      const newDebuffsApplied: string[] = [];
 
       effects.forEach((eff) => {
         const description = `${eff.type.replace('buff_', '').replace('debuff_', '').toUpperCase()} +${eff.value}% (${eff.duration}t)`;
@@ -121,10 +140,8 @@ export function runSimulation(
 
         if (eff.target === 'self') {
           characterBuffs[char.id].push(activeEffect());
-          newBuffsApplied.push(`Self: ${description}`);
         } else if (eff.target === 'all_allies') {
           characters.forEach((ally) => characterBuffs[ally.id].push(activeEffect()));
-          newBuffsApplied.push(`Allies: ${description}`);
         } else if (eff.target === 'area_allies') {
           // Buff applies to allies whose position falls within the targeted allied tiles
           characters.forEach((ally) => {
@@ -132,10 +149,8 @@ export function runSimulation(
               characterBuffs[ally.id].push(activeEffect());
             }
           });
-          newBuffsApplied.push(`AoE: ${description}`);
         } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
           bossDebuffs.push(activeEffect());
-          newDebuffsApplied.push(`Boss: ${description}`);
         }
       });
 
@@ -189,7 +204,6 @@ export function runSimulation(
           ? tilesTargeted.filter((tileIndex) => boss.hitbox.includes(tileIndex))
           : [];
 
-      const detailedHits: SimulationLog['hits'] = [];
       const eventHits: ActionDamageEvent['hits'] = [];
       let skillMinDmg = 0;
       let skillExpectedDmg = 0;
@@ -223,19 +237,6 @@ export function runSimulation(
             if (hitExpected > 0) {
               eventHits.push({ expected: hitExpected, chainMultiplier, weakMultiplier, isWeakPoint });
             }
-
-            detailedHits.push({
-              partIndex,
-              isWeakPoint,
-              chainCount,
-              buffMultiplier: damageType === 'physical' ? atkBuff : matkBuff,
-              debuffMultiplier: damageType === 'physical' ? defDebuff : mresDebuff,
-              elementMultiplier: propertyMultiplier,
-              rawDamageMin: Math.round(hitMin),
-              rawDamageExpected: Math.round(hitExpected),
-              rawDamageMax: Math.round(hitMax),
-              isCrit: false, // visual detail
-            });
           });
 
           // Every damage number that pops up adds 1 chain, so one hit landing
@@ -281,21 +282,6 @@ export function runSimulation(
           hits: eventHits,
         });
       }
-
-      logs.push({
-        turn: displayTurn,
-        characterName: char.name,
-        actionName: resolved.name,
-        targetTile: targetOriginTile,
-        damageType,
-        hitCount: hitParts.length > 0 ? hitCount : 0,
-        hits: detailedHits,
-        totalDamageMin: Math.round(skillMinDmg),
-        totalDamageExpected: Math.round(skillExpectedDmg),
-        totalDamageMax: Math.round(skillMaxDmg),
-        appliedBuffs: newBuffsApplied,
-        appliedDebuffs: newDebuffsApplied,
-      });
     });
 
     turnMinDamage = Math.round(turnMinDamage);
@@ -339,6 +325,5 @@ export function runSimulation(
     damagePerTurn,
     damagePerCharacter: finalDamagePerCharacter,
     formulaPerTurn,
-    logs,
   };
 }

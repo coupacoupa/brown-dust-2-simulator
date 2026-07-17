@@ -15,22 +15,29 @@ export function HitboxThumbnail({
   approach?: 'very_front' | 'vault';
   targetGrid?: 'enemy' | 'ally';
 }) {
-  const shapeOffsets: Record<TargetShape, [number, number][]> = {
-    single: [[0, 0]],
-    row: [[0, -1], [0, 0], [0, 1]],
-    col: [[-1, 0], [0, 0], [1, 0], [2, 0]],
-    plus: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
-    cross: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
-    square: [[0, 0], [0, 1], [1, 0], [1, 1]],
-    all: Array.from({ length: 12 }).map((_, i) => [
-      Math.floor(i / 3) - 1,
-      (i % 3) - 1,
-    ] as [number, number]),
-  };
-
-  const patternOffsets = hitboxPattern && hitboxPattern.length > 0 
-    ? hitboxPattern 
-    : (shapeOffsets[shape] || [[0, 0]]);
+  if (shape === "all") {
+    const isAlly = targetGrid === "ally";
+    const bgClass = isAlly
+      ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.3)]"
+      : "bg-rose-950/80 border-rose-500/50 text-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]";
+    return (
+      <div className="relative w-12 h-16 bg-zinc-950/80 border border-zinc-800 rounded flex flex-col items-center justify-center overflow-hidden shrink-0 select-none pb-2">
+        <div className={`border rounded-[4px] text-[8px] font-black uppercase tracking-wider px-2 py-0.5 ${bgClass}`}>
+          All
+        </div>
+        <span className={`absolute bottom-0 inset-x-0 text-center text-[5px] font-black uppercase tracking-wider py-[1px] ${
+          targetGrid === "ally"
+            ? "bg-emerald-600/90 text-emerald-100"
+            : approach === "vault"
+              ? "bg-amber-600/90 text-amber-100"
+              : "bg-indigo-600/90 text-indigo-100"
+        }`}>
+          {targetGrid === "ally" ? "BUFF" : approach === "vault" ? "VAULT" : "FRONT"}
+        </span>
+      </div>
+    );
+  }
+  const patternOffsets = hitboxPattern || [];
 
   let maxDr = 0;
   let maxDc = 0;

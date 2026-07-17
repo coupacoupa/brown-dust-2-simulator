@@ -115,7 +115,7 @@ export default function CharacterStatsEditor({ character, onChange, onClose }: C
                             className="cursor-pointer accent-indigo-500"
                           />
                           <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-indigo-300' : 'text-zinc-400'}`}>
-                            {pot.type} {pot.value ? `+${pot.value}` : ''}
+                            {pot.name || `${pot.type} ${pot.value ? `+${pot.value}` : ''}`}
                           </span>
                         </label>
                       );

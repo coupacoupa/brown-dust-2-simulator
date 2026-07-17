@@ -68,12 +68,19 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
         if (!char) return null;
         const template = CHARACTER_TEMPLATES.find(t => (t.charId ?? t.name) === (char.charId ?? char.name));
         if (!template) return char;
+        const legacyUpgrade = (char as any).upgradeLevel;
+        const legacyPots = (char as any).activePotentials;
+        const mergedCostumes = template.costumes.map(c => {
+          const savedCostume = char.costumes?.find(sc => sc.id === c.id);
+          if (savedCostume) return { ...c, ...savedCostume };
+          if (legacyUpgrade !== undefined) return { ...c, upgradeLevel: legacyUpgrade, activePotentials: legacyPots || [] };
+          return c;
+        });
         return {
           ...JSON.parse(JSON.stringify(template)),
           id: char.id,
           level: char.level,
-          upgradeLevel: char.upgradeLevel,
-          activePotentials: char.activePotentials,
+          costumes: mergedCostumes,
           position: char.position,
         } as Character;
       })

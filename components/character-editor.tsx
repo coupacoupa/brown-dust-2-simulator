@@ -64,7 +64,7 @@ export default function CharacterEditor({
     const propPower = char.basePropDmg * 65;
     const costumesPower = (char.costumes || []).length * 800;
     const levelBonus = (char.level || 100) * 15;
-    const upgradeBonus = (char.upgradeLevel || 0) * 250;
+    const upgradeBonus = (char.costumes || []).reduce((acc, c) => acc + (c.upgradeLevel || 0), 0) * 250;
     return Math.round(atkPower + critPower + defPower + propPower + costumesPower + levelBonus + upgradeBonus);
   };
 
@@ -110,7 +110,7 @@ export default function CharacterEditor({
     return CHARACTER_TEMPLATES.filter(temp => {
       const matchSearch = temp.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchElement = elementFilter === 'all' || temp.element === elementFilter;
-      const isMagic = temp.baseMatk > temp.baseAtk;
+      const isMagic = temp.costumes.some(c => c.skill.damageType === 'magic');
       const matchRole = roleFilter === 'all' ||
         (roleFilter === 'physical' && !isMagic) ||
         (roleFilter === 'magic' && isMagic);

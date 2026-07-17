@@ -2,7 +2,7 @@
 // and saved teams. Everything is client-side for now ("account" = this
 // browser); swapping in a real backend later only means replacing this file.
 
-import { BossRecord, RosterEntry, SavedTeam, Character, TurnSetup, TurnAction } from "@/types";
+import { BossRecord, RosterEntry, SavedTeam, Character, CharacterTemplate, TurnSetup, TurnAction } from "@/types";
 import { SEED_BOSSES } from "./bosses";
 import { CHARACTER_TEMPLATES } from "@/data/characters";
 
@@ -15,10 +15,12 @@ export const uid = (prefix: string) =>
 
 const canStore = () => typeof window !== "undefined";
 
+const memoryStore = new Map<string, string>();
+
 function readJson<T>(key: string): T | null {
   if (!canStore()) return null;
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = memoryStore.get(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
@@ -28,9 +30,9 @@ function readJson<T>(key: string): T | null {
 function writeJson(key: string, value: unknown) {
   if (!canStore()) return;
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    memoryStore.set(key, JSON.stringify(value));
   } catch {
-    // Quota errors just mean the save silently fails; the in-memory state stays usable.
+    // Silently fail on errors
   }
 }
 
@@ -229,19 +231,33 @@ export function createTurnsForCharacters(chars: Character[], turnCount = DEFAULT
 // Instantiate a template as a team member, applying the roster's level/upgrade
 // so a fresh deploy always mirrors what the user actually owns.
 export function buildCharacterFromRoster(
-  template: Omit<Character, "id">,
+  template: CharacterTemplate,
   roster: RosterEntry[],
   position: number,
 ): Character {
   const entry = rosterEntryFor(roster, template);
   const char: Character = {
-    ...(JSON.parse(JSON.stringify(template)) as Omit<Character, "id">),
+    baseAtk: 0,
+    baseMatk: 0,
+    baseCritRate: 10,
+    baseCritDmg: 50,
+    baseDef: 0,
+    baseMres: 0,
+    basePropDmg: 0,
+    ...(JSON.parse(JSON.stringify(template)) as CharacterTemplate),
+    costumes: template.costumes.map((c: any) => ({ ...c, upgradeLevel: 0, activePotentials: [] })),
     id: uid("char"),
     position,
-  };
+  } as Character;
   if (entry) {
     char.level = entry.level;
-    char.upgradeLevel = entry.upgradeLevel;
+    char.costumes = char.costumes.map(c => {
+      const state = entry.costumes[c.id];
+      if (state) {
+        return { ...c, upgradeLevel: state.upgradeLevel ?? 0, activePotentials: state.activePotentials || [] };
+      }
+      return c;
+    });
   }
   return char;
 }
