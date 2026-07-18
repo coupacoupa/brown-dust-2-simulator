@@ -121,6 +121,7 @@ export const bernie: CharacterTemplate = {
         {
           id: "100801_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

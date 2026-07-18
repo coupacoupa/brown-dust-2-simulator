@@ -65,6 +65,7 @@ export const eleaneer: CharacterTemplate = {
         {
           id: "061101_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -131,6 +132,7 @@ export const eleaneer: CharacterTemplate = {
         {
           id: "061102_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -190,11 +192,13 @@ export const eleaneer: CharacterTemplate = {
         {
           id: "061103_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
           id: "061103_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

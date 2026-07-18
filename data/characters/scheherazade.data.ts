@@ -13,7 +13,7 @@ export const scheherazade: CharacterTemplate = {
       id: "000301",
       name: "The Lapis Witch",
       ...costumeArt("char000301_7"),
-      approach: "vault",
+      approach: "very_front",
       hasBurst: true,
       skill: {
         id: "s000301",
@@ -61,7 +61,7 @@ export const scheherazade: CharacterTemplate = {
       id: "000303",
       name: "The Magic School Professor",
       ...costumeArt("char000303_43"),
-      approach: "vault",
+      approach: "very_front",
       skill: {
         id: "s000303",
         name: "Aqua Silence",
@@ -190,109 +190,24 @@ export const scheherazade: CharacterTemplate = {
       id: "000304",
       name: "Code Name S",
       ...costumeArt("char000304_48"),
-      approach: "vault",
-      displayEffects: ['Magic Resist -30% (2t) Boss'],
+      approach: "very_front",
       skill: {
         id: "s000304",
         name: "Sapphire Boomerang",
         hitCount: 3,
         damageType: "magic",
-        effects: [
-          {
-            id: "sche_codename_eff1",
-            type: "debuff_mres",
-            value: 30,
-            duration: 2,
-            target: "target_enemy",
-          },
-        ],
+        // Skill applies Silence + Remove Buffs (neither is damage-relevant and
+        // has no effect type); it does NOT reduce Magic Resistance.
+        effects: [],
         hitboxPattern: [[0, 0], [-1, 0], [-2, 0], [-1, -1]],
       },
       upgrades: [
-        {
-          spCost: 4,
-          cooldown: 5,
-          scaling: 95,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        },
-        {
-          spCost: 4,
-          cooldown: 5,
-          scaling: 120,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        },
-        {
-          spCost: 4,
-          cooldown: 5,
-          scaling: 145,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 145,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        }, // SP cost down
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 165,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 185,
-          effects: [
-            {
-              id: "sche_codename_eff1",
-              type: "debuff_mres",
-              value: 30,
-              duration: 2,
-              target: "target_enemy",
-            },
-          ],
-        },
+        { spCost: 4, cooldown: 5, scaling: 95 },
+        { spCost: 4, cooldown: 5, scaling: 120 },
+        { spCost: 4, cooldown: 5, scaling: 145 },
+        { spCost: 3, cooldown: 5, scaling: 145 }, // SP cost down
+        { spCost: 3, cooldown: 5, scaling: 165 },
+        { spCost: 3, cooldown: 5, scaling: 185 },
       ],
       potentials: [
         {
@@ -313,7 +228,7 @@ export const scheherazade: CharacterTemplate = {
       id: "000306",
       name: "Pool Party",
       ...costumeArt("char000306_92"),
-      approach: "vault",
+      approach: "very_front",
       hasBurst: true,
       skill: {
         id: "s000306",

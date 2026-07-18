@@ -120,6 +120,7 @@ export const carlson: CharacterTemplate = {
         {
           id: "103201_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

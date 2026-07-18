@@ -71,6 +71,7 @@ export const ventana: CharacterTemplate = {
         {
           id: "067002_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -137,6 +138,7 @@ export const ventana: CharacterTemplate = {
         {
           id: "067003_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

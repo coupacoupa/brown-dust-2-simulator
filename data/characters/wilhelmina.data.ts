@@ -71,6 +71,7 @@ export const wilhelmina: CharacterTemplate = {
         {
           id: "067601_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -193,6 +194,7 @@ export const wilhelmina: CharacterTemplate = {
         {
           id: "067604_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

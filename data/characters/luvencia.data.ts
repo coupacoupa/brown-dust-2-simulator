@@ -65,6 +65,7 @@ export const luvencia: CharacterTemplate = {
         {
           id: "067502_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -138,6 +139,7 @@ export const luvencia: CharacterTemplate = {
         {
           id: "067503_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

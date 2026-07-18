@@ -201,6 +201,7 @@ export const gray: CharacterTemplate = {
         {
           id: "000402_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],
@@ -268,6 +269,7 @@ export const gray: CharacterTemplate = {
         {
           id: "000403_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -335,6 +337,7 @@ export const gray: CharacterTemplate = {
         {
           id: "000406_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

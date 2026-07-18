@@ -175,6 +175,7 @@ export const emma: CharacterTemplate = {
         {
           id: "101302_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

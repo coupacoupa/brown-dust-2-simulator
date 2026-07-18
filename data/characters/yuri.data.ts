@@ -121,6 +121,7 @@ export const yuri: CharacterTemplate = {
         {
           id: "065102_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -193,6 +194,7 @@ export const yuri: CharacterTemplate = {
         {
           id: "065103_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

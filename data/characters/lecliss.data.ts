@@ -65,11 +65,13 @@ export const lecliss: CharacterTemplate = {
         {
           id: "060601_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
           id: "060601_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

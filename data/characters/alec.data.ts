@@ -71,6 +71,7 @@ export const alec: CharacterTemplate = {
         {
           id: "060301_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],
@@ -131,11 +132,13 @@ export const alec: CharacterTemplate = {
         {
           id: "060302_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
           id: "060302_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

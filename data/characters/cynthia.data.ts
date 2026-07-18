@@ -59,6 +59,7 @@ export const cynthia: CharacterTemplate = {
         {
           id: "063301_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

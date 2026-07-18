@@ -70,16 +70,18 @@ export interface CostumeUpgrade {
 
 export interface SkillPotential {
   id: string;
-  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'other';
+  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'add_effect' | 'other';
   value?: number; // e.g. 15 for +15% damage
   newTargetShape?: TargetShape;
   newHitboxPattern?: [number, number][];
   targetEffectId?: string; // Optional target effect ID to modify
+  newEffect?: SkillEffect; // For 'add_effect': the brand-new effect this potential grants
   name?: string; // Optional user-facing custom potential label
   additionalEffects?: {
-    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'other';
+    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'add_effect' | 'other';
     value?: number;
     targetEffectId?: string;
+    newEffect?: SkillEffect;
     name?: string;
   }[];
 }

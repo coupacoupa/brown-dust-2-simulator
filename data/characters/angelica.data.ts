@@ -59,6 +59,7 @@ export const angelica: CharacterTemplate = {
         {
           id: "066401_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -131,6 +132,7 @@ export const angelica: CharacterTemplate = {
         {
           id: "066402_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -191,6 +193,7 @@ export const angelica: CharacterTemplate = {
         {
           id: "066403_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -202,6 +205,7 @@ export const angelica: CharacterTemplate = {
         {
           id: "066403_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

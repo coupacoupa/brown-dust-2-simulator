@@ -59,11 +59,13 @@ export const morpeah: CharacterTemplate = {
         {
           id: "003401_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
           id: "003401_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -123,16 +125,19 @@ export const morpeah: CharacterTemplate = {
         {
           id: "003402_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
           id: "003402_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
           id: "003402_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],
@@ -194,6 +199,7 @@ export const morpeah: CharacterTemplate = {
         {
           id: "003403_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

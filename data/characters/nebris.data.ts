@@ -310,6 +310,7 @@ export const nebris: CharacterTemplate = {
         {
           id: "003303_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

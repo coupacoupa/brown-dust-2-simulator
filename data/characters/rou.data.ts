@@ -138,6 +138,7 @@ export const rou: CharacterTemplate = {
         {
           id: "000502_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -198,6 +199,7 @@ export const rou: CharacterTemplate = {
         {
           id: "000504_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -263,6 +265,7 @@ export const rou: CharacterTemplate = {
         {
           id: "000506_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

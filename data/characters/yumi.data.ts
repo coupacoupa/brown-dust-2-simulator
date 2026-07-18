@@ -64,6 +64,7 @@ export const yumi: CharacterTemplate = {
         {
           id: "020401_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

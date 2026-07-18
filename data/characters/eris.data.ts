@@ -132,6 +132,7 @@ export const eris: CharacterTemplate = {
         {
           id: "020002_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

@@ -72,6 +72,7 @@ export const zenith: CharacterTemplate = {
         {
           id: "061402_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -133,6 +134,7 @@ export const zenith: CharacterTemplate = {
         {
           id: "061404_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

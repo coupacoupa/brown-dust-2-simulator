@@ -59,6 +59,7 @@ export const seir: CharacterTemplate = {
         {
           id: "101101_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {
@@ -251,6 +252,7 @@ export const seir: CharacterTemplate = {
         {
           id: "101103_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -261,6 +263,7 @@ export const seir: CharacterTemplate = {
         {
           id: "101103_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

@@ -133,6 +133,7 @@ export const refithea: CharacterTemplate = {
         {
           id: "066801_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

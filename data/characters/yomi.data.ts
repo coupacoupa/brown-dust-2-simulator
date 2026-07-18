@@ -70,6 +70,7 @@ export const yomi: CharacterTemplate = {
         {
           id: "020201_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

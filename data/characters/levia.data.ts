@@ -206,6 +206,7 @@ export const levia: CharacterTemplate = {
         {
           id: "067303_pot1",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

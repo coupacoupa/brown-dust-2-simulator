@@ -58,6 +58,7 @@ export const karuga: CharacterTemplate = {
         {
           id: "021001_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

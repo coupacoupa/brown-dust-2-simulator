@@ -71,6 +71,7 @@ export const blade: CharacterTemplate = {
         {
           id: "003701_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

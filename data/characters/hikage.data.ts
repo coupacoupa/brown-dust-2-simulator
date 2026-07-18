@@ -70,6 +70,7 @@ export const hikage: CharacterTemplate = {
         {
           id: "020501_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

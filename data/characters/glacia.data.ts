@@ -133,6 +133,7 @@ export const glacia: CharacterTemplate = {
         {
           id: "066902_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],
@@ -193,6 +194,7 @@ export const glacia: CharacterTemplate = {
         {
           id: "066906_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

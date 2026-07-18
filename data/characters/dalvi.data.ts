@@ -72,6 +72,7 @@ export const dalvi: CharacterTemplate = {
         {
           id: "061302_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

@@ -193,6 +193,7 @@ export const olstein: CharacterTemplate = {
         {
           id: "000604_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {

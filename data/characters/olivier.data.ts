@@ -320,6 +320,7 @@ export const olivier: CharacterTemplate = {
         {
           id: "003604_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP -1",
         },
         {
@@ -331,6 +332,7 @@ export const olivier: CharacterTemplate = {
         {
           id: "003604_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

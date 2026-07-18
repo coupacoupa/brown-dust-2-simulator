@@ -139,6 +139,7 @@ export const loen: CharacterTemplate = {
         {
           id: "003202_pot3",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
       ],

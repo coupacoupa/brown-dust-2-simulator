@@ -128,11 +128,13 @@ export const elise: CharacterTemplate = {
         {
           id: "060801_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
           id: "060801_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -257,6 +259,7 @@ export const elise: CharacterTemplate = {
         {
           id: "060802_pot2",
           type: "cooldown_reduce",
+          value: 4,
           name: "Cooldown -4 turns",
         },
         {

@@ -212,6 +212,7 @@ export const michaela: CharacterTemplate = {
         {
           id: "067402_pot3",
           type: "cooldown_reduce",
+          value: 4,
           name: "Cooldown -4 turns",
         },
       ],
@@ -279,6 +280,7 @@ export const michaela: CharacterTemplate = {
         {
           id: "067403_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

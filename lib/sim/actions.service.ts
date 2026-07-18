@@ -60,7 +60,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
     for (const pot of costume.potentials) {
       if (activePotentials.includes(pot.id)) {
         const effectsToApply = [
-          { type: pot.type, value: pot.value, targetEffectId: pot.targetEffectId, name: pot.name },
+          { type: pot.type, value: pot.value, targetEffectId: pot.targetEffectId, newEffect: pot.newEffect, name: pot.name },
           ...(pot.additionalEffects || []),
         ];
         for (const item of effectsToApply) {
@@ -84,6 +84,9 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
               }
               return eff;
             });
+          } else if (item.type === "add_effect" && item.newEffect) {
+            // Potential grants a brand-new skill effect (e.g. a DEF/MRES shred).
+            baseEffects = [...baseEffects, item.newEffect];
           } else if (item.type === "other" && item.name && /Restore \d+ SP/i.test(item.name)) {
             const match = item.name.match(/Restore (\d+) SP/i);
             const spVal = match ? parseInt(match[1], 10) : 0;

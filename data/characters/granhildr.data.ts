@@ -70,6 +70,7 @@ export const granhildr: CharacterTemplate = {
         {
           id: "067101_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -198,6 +199,7 @@ export const granhildr: CharacterTemplate = {
         {
           id: "067102_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -258,6 +260,7 @@ export const granhildr: CharacterTemplate = {
         {
           id: "067103_pot2",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
         {

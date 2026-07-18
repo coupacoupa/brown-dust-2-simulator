@@ -59,6 +59,7 @@ export const wiggle: CharacterTemplate = {
         {
           id: "100501_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -113,6 +114,7 @@ export const wiggle: CharacterTemplate = {
         {
           id: "100502_pot1",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],

@@ -66,6 +66,7 @@ export const rafina: CharacterTemplate = {
         {
           id: "060701_pot2",
           type: "cooldown_reduce",
+          value: 2,
           name: "Cooldown -2 turns",
         },
         {
@@ -200,6 +201,7 @@ export const rafina: CharacterTemplate = {
         {
           id: "060702_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
@@ -267,6 +269,7 @@ export const rafina: CharacterTemplate = {
         {
           id: "060706_pot3",
           type: "sp_reduce",
+          value: 1,
           name: "SP cost -1",
         },
       ],
