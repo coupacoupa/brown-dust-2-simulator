@@ -1,4 +1,4 @@
-import { ApproachType, BossRangeStamp, TargetShape } from "@/domain.type";
+import { ApproachType, BossRangeStamp, BossSkillDef, TargetShape } from "@/domain.type";
 
 // Grid geometry: converting skill shapes / hitbox patterns into flat tile
 // indices on the 3-col × 4-row battle grids.
@@ -66,6 +66,15 @@ export function resolveHitboxTiles(
   }
 
   return Array.from(new Set(tiles));
+}
+
+// Ally tiles a FIXED boss move covers — the RANGE stamp projected onto the
+// board, or an explicit hitTiles list. Position-independent (that's what
+// "Fixed" means), so both the incoming-damage engine and the UI overlay read
+// their target set from here. Non-fixed / no-kind skills hit nothing.
+export function resolveFixedBossTiles(skill: BossSkillDef): number[] {
+  if (skill.kind !== "fixed") return [];
+  return skill.range ? projectBossStamp(skill.range) : (skill.hitTiles ?? []);
 }
 
 // Auto-targeting: determines the anchor tile on the boss grid (0-11) based on

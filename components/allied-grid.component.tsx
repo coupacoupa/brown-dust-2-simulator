@@ -15,6 +15,8 @@ interface AlliedGridProps {
   faceImageByCharId?: Record<string, string | undefined>;
   // Array of grid indices (0-11) that should be highlighted for AoE buffs
   highlightedTiles?: number[];
+  // Grid indices the boss's attack this turn will hit (rose danger overlay)
+  dangerTiles?: number[];
 }
 
 // Square tile face portrait with initials fallback
@@ -56,6 +58,7 @@ export default function AlliedGrid({
   onSwapTiles,
   faceImageByCharId = {},
   highlightedTiles = [],
+  dangerTiles = [],
 }: AlliedGridProps) {
   // Logical model is unchanged: index = depthRow * 3 + flankCol, where
   // depthRow 0 = FRONT … 3 = BACK and flankCol 0 = LEFT … 2 = RIGHT.
@@ -125,6 +128,7 @@ export default function AlliedGrid({
         const isDragOver = dragOverIdx === index;
         const isDragging = draggedTileIdx === index;
         const isHighlighted = highlightedTiles.includes(index);
+        const isDanger = dangerTiles.includes(index);
 
         if (char) {
           const borderClass = getElementColorBorder(char.element);
@@ -173,6 +177,9 @@ export default function AlliedGrid({
               {isHighlighted && (
                 <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/15 shadow-[0_0_6px_rgba(16,185,129,0.3)] pointer-events-none z-30" />
               )}
+              {isDanger && (
+                <span className="absolute inset-0 rounded-xl border-2 border-rose-500/80 bg-rose-500/25 shadow-[0_0_8px_rgba(244,63,94,0.45)] pointer-events-none z-30 animate-pulse" />
+              )}
             </div>
           );
         } else {
@@ -198,6 +205,9 @@ export default function AlliedGrid({
               </span>
               {isHighlighted && (
                 <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_4px_rgba(16,185,129,0.2)] pointer-events-none z-30" />
+              )}
+              {isDanger && (
+                <span className="absolute inset-0 rounded-xl border-2 border-rose-500/70 bg-rose-500/20 shadow-[0_0_6px_rgba(244,63,94,0.35)] pointer-events-none z-30 animate-pulse" />
               )}
             </div>
           );

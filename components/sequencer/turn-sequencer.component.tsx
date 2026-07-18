@@ -2,8 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import { Boss, Character, SimulationResult, TurnAction, TurnSetup } from "@/domain.type";
-import { getTilesHit } from "@/lib/sim/targeting.util";
+import { getTilesHit, resolveFixedBossTiles } from "@/lib/sim/targeting.util";
 import { computeSpTimeline, resolveAction, resolveTargetOrigin } from "@/lib/sim/actions.service";
+import { resolveBossRotation } from "@/lib/bosses.service";
 import GridEditor from "../grid-editor.component";
 import AlliedGrid from "../allied-grid.component";
 import TimelineCards from "./timeline-cards.component";
@@ -156,6 +157,23 @@ export default function TurnSequencer({
   // Player turn i of THIS team is flow turn (flowTurnOffset + i) overall
   const flowTurnIdx = flowTurnOffset + activeTurnIndex;
 
+  // Where the boss's answering cast lands on the ally board this turn (global
+  // turn 2i+2). Uses the same fixed-tile resolver as the incoming-damage
+  // engine, so the rose overlay matches exactly what will hit. Non-fixed casts
+  // (buffs) and rotationless bosses show nothing.
+  const bossDangerTiles = useMemo(() => {
+    const rotation = resolveBossRotation(boss);
+    if (rotation.length === 0) return [];
+    const skill = rotation[flowTurnIdx % rotation.length].skill;
+    return resolveFixedBossTiles(skill);
+  }, [boss, flowTurnIdx]);
+
+  const bossCastName = useMemo(() => {
+    const rotation = resolveBossRotation(boss);
+    if (rotation.length === 0) return null;
+    return rotation[flowTurnIdx % rotation.length].skill.name;
+  }, [boss, flowTurnIdx]);
+
   // Remaining HP after earlier teams' damage plus this team's player turns up
   // to the active one
   const bossMaxHp = boss.maxHp ?? 5_220_000_000;
@@ -213,8 +231,13 @@ export default function TurnSequencer({
           <div className="flex flex-row flex-wrap items-center justify-center gap-3 py-2">
             {/* Allied Position Placement (Left, facing the boss) */}
             <div className="flex flex-col items-center flex-1 min-w-80 max-w-125">
-              <h5 className="text-[9px] font-black text-zinc-550 uppercase tracking-widest mb-3 text-center">
-                Allied Position (Drag to swap)
+              <h5 className="text-[9px] font-black text-zinc-550 uppercase tracking-widest mb-3 text-center flex items-center gap-1.5">
+                <span>Allied Position (Drag to swap)</span>
+                {bossDangerTiles.length > 0 && bossCastName && (
+                  <span className="text-rose-400 normal-case tracking-wide flex items-center gap-1">
+                    · <span className="animate-pulse">⚠</span> Incoming: {bossCastName}
+                  </span>
+                )}
               </h5>
               <AlliedGrid
                 characters={characters}
@@ -228,6 +251,7 @@ export default function TurnSequencer({
                 onSwapTiles={handleSwapTiles}
                 faceImageByCharId={gridFaceByCharId}
                 highlightedTiles={targetGrid === 'ally' ? gridOverlayTiles : []}
+                dangerTiles={bossDangerTiles}
               />
             </div>
 

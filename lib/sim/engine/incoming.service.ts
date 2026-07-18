@@ -1,5 +1,5 @@
 import { Boss, BossSkillDef, Character } from "@/domain.type";
-import { projectBossStamp, resolveHitboxTiles } from "../targeting.util";
+import { resolveFixedBossTiles, resolveHitboxTiles } from "../targeting.util";
 import { ActiveEffect, BattleState } from "./engine.type";
 
 // Incoming damage — one boss cast resolved against the team. The mirror image
@@ -98,9 +98,9 @@ export function resolveBossCast(
   let victims: Character[] = [];
   if (skill.kind === "fixed") {
     // A RANGE stamp (the in-game preview) is the source of truth when present;
-    // fall back to an explicit hitTiles list otherwise.
-    const hitTiles = skill.range ? projectBossStamp(skill.range) : (skill.hitTiles ?? []);
-    const tiles = new Set(hitTiles);
+    // fall back to an explicit hitTiles list otherwise. Shared with the UI
+    // overlay so the previewed danger tiles always match what actually hits.
+    const tiles = new Set(resolveFixedBossTiles(skill));
     victims = aliveChars.filter((c) => c.position !== undefined && tiles.has(c.position));
   } else {
     const sought = seekVictim(skill.targetTile ?? 0, aliveChars, state);
