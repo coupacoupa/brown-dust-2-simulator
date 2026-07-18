@@ -61,6 +61,12 @@ export function calculateActionDamage(
   let skillMax = 0;
   let localChain = chainCount;
 
+  const augmentationValue = activeBuffs
+    .filter((b) => b.type === 'buff_augmentation')
+    .reduce((sum, b) => sum + b.value, 0);
+
+  let totalWeightedVuln = 0;
+
   // If we don't hit any part of the boss, damage is 0
   if (hitParts.length > 0 && scaling > 0) {
     // Execute hit by hit, tile by tile — every part receives every hit,
@@ -74,9 +80,18 @@ export function calculateActionDamage(
 
         // Conditional scaling activates per hit once the skill's declared
         // condition is met (falls back to chain >= 15 when data omits it).
-        const chainThreshold =
-          resolved.conditional?.type === 'chain_min' ? resolved.conditional.value : 15;
-        const activeScaling = (resolved.conditionalScaling !== undefined && localChain >= chainThreshold)
+        let isConditionMet = false;
+        if (resolved.conditional) {
+          if (resolved.conditional.type === 'chain_min') {
+            isConditionMet = localChain >= resolved.conditional.value;
+          } else if (resolved.conditional.type === 'target_has_dot') {
+            isConditionMet = bossDebuffs.some((d) => d.type === 'dot');
+          }
+        } else {
+          isConditionMet = localChain >= 15;
+        }
+
+        const activeScaling = (resolved.conditionalScaling !== undefined && isConditionMet)
           ? resolved.conditionalScaling
           : scaling;
         const currentBaseDmg = primaryStat * (activeScaling / 100);
@@ -84,8 +99,15 @@ export function calculateActionDamage(
         // Chain multiplier: each chain adds 10% damage
         const chainMultiplier = 1 + localChain * 0.10;
 
+        // Augmentation multiplier: active if localChain <= b.chainLimit (or b.chainLimit is undefined)
+        const hitAugmentValue = activeBuffs
+          .filter((b) => b.type === 'buff_augmentation' && (b.chainLimit === undefined || localChain <= b.chainLimit))
+          .reduce((sum, b) => sum + b.value, 0);
+        const augmentationMultiplier = 1 + hitAugmentValue / 100;
+        const hitVulnMult = vulnerabilityMultiplier * augmentationMultiplier;
+
         const nonCritDmg =
-          currentBaseDmg * defMultiplier * propertyMultiplier * chainMultiplier * vulnerabilityMultiplier * weakMultiplier;
+          currentBaseDmg * defMultiplier * propertyMultiplier * chainMultiplier * hitVulnMult * weakMultiplier;
 
         const hitMin = nonCritDmg; // low roll = no crits
         const hitMax = nonCritDmg * critMultValue; // high roll = all crits
@@ -94,6 +116,8 @@ export function calculateActionDamage(
         skillMin += hitMin;
         skillExpected += hitExpected;
         skillMax += hitMax;
+
+        totalWeightedVuln += hitExpected * hitVulnMult;
 
         if (hitExpected > 0) {
           eventHits.push({ expected: hitExpected, chainMultiplier, weakMultiplier, isWeakPoint });
@@ -119,6 +143,8 @@ export function calculateActionDamage(
     const sourced = (list: ActiveEffect[]) =>
       list.map((e) => ({ source: nameOf(e.sourceCharacterId), value: e.value }));
 
+    const avgVuln = skillExpected > 0 ? totalWeightedVuln / skillExpected : vulnerabilityMultiplier;
+
     event = {
       charName: char.name,
       actionName: resolved.name,
@@ -126,7 +152,7 @@ export function calculateActionDamage(
       baseStat: damageType === 'physical' ? char.baseAtk : char.baseMatk,
       atkBuffPct: damageType === 'physical' ? stats.atkBuff : stats.matkBuff,
       critExpectedMult,
-      vulnMultiplier: vulnerabilityMultiplier,
+      vulnMultiplier: avgVuln,
       propertyMultiplier,
       defMultiplier,
       elAdvantagePct: elAdvantage * 100,
@@ -134,7 +160,13 @@ export function calculateActionDamage(
       bossBaseDefPct: damageType === 'pure' ? null : damageType === 'physical' ? boss.def : boss.mres,
       atkBuffs: sourced(activeBuffs.filter((b) => b.type === relevantBuffType)),
       propBuffs: sourced(activeBuffs.filter((b) => b.type === 'buff_prop_dmg')),
-      vulnDebuffs: sourced(bossDebuffs.filter((d) => d.type === 'debuff_vulnerability')),
+      vulnDebuffs: (() => {
+        const list = sourced(bossDebuffs.filter((d) => d.type === 'debuff_vulnerability'));
+        activeBuffs.filter((b) => b.type === 'buff_augmentation').forEach((b) => {
+          list.push({ source: nameOf(b.sourceCharacterId), value: b.value });
+        });
+        return list;
+      })(),
       defShreds: damageType === 'pure' ? [] : sourced(bossDebuffs.filter((d) => d.type === relevantShred)),
       chainsAdded,
       expected: skillExpected,

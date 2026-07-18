@@ -123,10 +123,30 @@ export function simulateTurn(
   // DoT tick phase — every active poison/bleed/burn on the boss deals its
   // snapshotted per-tick damage this turn (including the turn it was applied).
   // Flat damage: no crit, no chain, not reduced by defense.
+  // Track stack counts per dotLabel to enforce max stack caps
+  const activeStacksCount = new Map<string, number>();
+
   next.bossDebuffs.forEach((dot) => {
     if (dot.type !== 'dot') return;
+    
+    const label = dot.dotLabel ?? 'DoT';
+    const maxCap = dot.maxStacks ?? Infinity;
+    const currentCount = activeStacksCount.get(label) ?? 0;
+
+    if (currentCount >= maxCap) {
+      // Cap already reached; this DoT is ignored / deals 0 damage
+      return;
+    }
+
+    const dotStacks = dot.stacks ?? 1;
+    const allowedStacks = Math.min(dotStacks, maxCap - currentCount);
+    activeStacksCount.set(label, currentCount + allowedStacks);
+
+    // Scale damage proportionally to the allowed stacks relative to the declared stacks
     const baseDmg = dot.dotPerTick ?? 0;
     if (baseDmg <= 0) return;
+    
+    const scaledBaseDmg = (allowedStacks / dotStacks) * baseDmg;
 
     // Apply General and DoT-specific vulnerability active on the boss
     const generalVuln = next.bossDebuffs
@@ -137,7 +157,7 @@ export function simulateTurn(
       .reduce((acc, d) => acc + d.value, 0);
 
     const vulnMult = 1 + (generalVuln + dotVuln) / 100;
-    const dmg = baseDmg * vulnMult;
+    const dmg = scaledBaseDmg * vulnMult;
 
     turnMin += dmg;
     turnExpected += dmg;
@@ -150,11 +170,12 @@ export function simulateTurn(
     perCharacter.set(dot.sourceCharacterId, charDmg);
 
     // Minimal event so DoT damage is attributed in the formula-breakdown panel.
+    const scaledScaling = (allowedStacks / dotStacks) * dot.value;
     const sourceStat = dot.value > 0 ? (baseDmg * 100) / dot.value : 0;
     events.push({
       charName: nameOf(dot.sourceCharacterId),
       actionName: dot.dotLabel ?? 'DoT',
-      scaling: dot.value,
+      scaling: scaledScaling,
       baseStat: sourceStat,
       atkBuffPct: 0,
       critExpectedMult: 1,

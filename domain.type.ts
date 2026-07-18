@@ -26,6 +26,7 @@ export interface SkillEffect {
     | 'buff_taunt'
     | 'buff_counter'
     | 'buff_duration_extend'
+    | 'buff_augmentation'
     | 'debuff_def'
     | 'debuff_mres'
     | 'debuff_atk'   // reduces the boss's physical damage to the team
@@ -41,13 +42,16 @@ export interface SkillEffect {
   // and a display label. Ignored for non-'dot' effects.
   dotSource?: 'caster_atk' | 'caster_matk' | 'enemy_atk' | 'enemy_maxhp';
   dotLabel?: string; // e.g. "Poison", "Bleed", "Burn"
+  chainLimit?: number; // optional chain count limit for the effect to apply (e.g., 5 for Teresse)
+  stacks?: number; // number of stacks this effect counts as (defaults to 1)
+  maxStacks?: number; // maximum stack count allowed on target for this dotLabel
 }
 
 // Condition gating a costume upgrade's `conditionalScaling`: damage instances
 // where the condition holds use the conditional scaling instead of the base
 // one. Evaluated per hit (the chain counter advances mid-action).
 export interface SkillCondition {
-  type: 'chain_min'; // active while the team chain count is >= value
+  type: 'chain_min' | 'target_has_dot'; // active while condition holds
   value: number;
 }
 

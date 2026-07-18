@@ -51,6 +51,7 @@ export function applyEffects(
       value: eff.value,
       remainingTurns: eff.duration,
       sourceCharacterId: sourceChar.id,
+      chainLimit: eff.chainLimit,
       ...(eff.type === 'buff_energy_guard' && recipient.baseHp > 0
         ? { shieldRemaining: recipient.baseHp * (eff.value / 100) }
         : {}),
@@ -119,6 +120,8 @@ export function applyDotEffects(
       sourceCharacterId: sourceChar.id,
       dotPerTick: sourceStat * (eff.value / 100),
       dotLabel: eff.dotLabel ?? 'DoT',
+      stacks: eff.stacks,
+      maxStacks: eff.maxStacks,
     });
   });
 }

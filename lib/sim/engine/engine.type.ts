@@ -17,6 +17,9 @@ export interface ActiveEffect {
   // Energy-guard-only: remaining shield pool (value% × recipient's baseHp,
   // snapshotted at application). Incoming damage depletes this before HP.
   shieldRemaining?: number;
+  chainLimit?: number;
+  stacks?: number;
+  maxStacks?: number;
 }
 
 // A boss-applied stat debuff sitting on one ally (from BossSkillDebuff), or a
