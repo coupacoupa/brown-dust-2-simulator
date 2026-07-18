@@ -57,7 +57,14 @@ export function applyEffects(
     });
     const giveTo = (ally: Character) => {
       if (store.deadCharacters.has(ally.id)) return; // the dead take no buffs
-      store.characterBuffs.get(ally.id)!.push(makeEffect(ally));
+      if (eff.type === 'buff_duration_extend') {
+        const buffs = store.characterBuffs.get(ally.id) || [];
+        buffs.forEach((b) => {
+          b.remainingTurns += eff.value;
+        });
+      } else {
+        store.characterBuffs.get(ally.id)!.push(makeEffect(ally));
+      }
     };
 
     if (eff.target === 'self') {

@@ -125,8 +125,19 @@ export function simulateTurn(
   // Flat damage: no crit, no chain, not reduced by defense.
   next.bossDebuffs.forEach((dot) => {
     if (dot.type !== 'dot') return;
-    const dmg = dot.dotPerTick ?? 0;
-    if (dmg <= 0) return;
+    const baseDmg = dot.dotPerTick ?? 0;
+    if (baseDmg <= 0) return;
+
+    // Apply General and DoT-specific vulnerability active on the boss
+    const generalVuln = next.bossDebuffs
+      .filter((d) => d.type === 'debuff_vulnerability')
+      .reduce((acc, d) => acc + d.value, 0);
+    const dotVuln = next.bossDebuffs
+      .filter((d) => d.type === 'debuff_dot_vulnerability')
+      .reduce((acc, d) => acc + d.value, 0);
+
+    const vulnMult = 1 + (generalVuln + dotVuln) / 100;
+    const dmg = baseDmg * vulnMult;
 
     turnMin += dmg;
     turnExpected += dmg;
@@ -139,7 +150,7 @@ export function simulateTurn(
     perCharacter.set(dot.sourceCharacterId, charDmg);
 
     // Minimal event so DoT damage is attributed in the formula-breakdown panel.
-    const sourceStat = dot.value > 0 ? (dmg * 100) / dot.value : 0;
+    const sourceStat = dot.value > 0 ? (baseDmg * 100) / dot.value : 0;
     events.push({
       charName: nameOf(dot.sourceCharacterId),
       actionName: dot.dotLabel ?? 'DoT',
@@ -147,7 +158,7 @@ export function simulateTurn(
       baseStat: sourceStat,
       atkBuffPct: 0,
       critExpectedMult: 1,
-      vulnMultiplier: 1,
+      vulnMultiplier: vulnMult,
       propertyMultiplier: 1,
       defMultiplier: 1,
       elAdvantagePct: 0,
@@ -155,7 +166,9 @@ export function simulateTurn(
       bossBaseDefPct: null,
       atkBuffs: [],
       propBuffs: [],
-      vulnDebuffs: [],
+      vulnDebuffs: next.bossDebuffs
+        .filter((d) => d.type === 'debuff_vulnerability' || d.type === 'debuff_dot_vulnerability')
+        .map((d) => ({ source: nameOf(d.sourceCharacterId), value: d.value })),
       defShreds: [],
       chainsAdded: 0,
       expected: dmg,

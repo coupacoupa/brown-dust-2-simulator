@@ -24,11 +24,14 @@ export interface SkillEffect {
     | 'buff_evasion'
     | 'buff_chain_reinforcement'
     | 'buff_taunt'
+    | 'buff_counter'
+    | 'buff_duration_extend'
     | 'debuff_def'
     | 'debuff_mres'
     | 'debuff_atk'   // reduces the boss's physical damage to the team
     | 'debuff_matk'  // reduces the boss's magic damage to the team
     | 'debuff_vulnerability'
+    | 'debuff_dot_vulnerability'
     | 'gain_sp'
     | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
   value: number; // e.g., 50 for +50% or count of times; for 'dot', the per-tick % of the source stat
