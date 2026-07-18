@@ -11,6 +11,7 @@ import OptionsDeck from "./options-deck.component";
 import BossHud from "./boss-hud.component";
 import BossSkillQueue from "./boss-skill-queue.component";
 import SpGauge from "./sp-gauge.component";
+import SurvivalStrip from "./survival-strip.component";
 
 interface TurnSequencerProps {
   characters: Character[];
@@ -261,6 +262,12 @@ export default function TurnSequencer({
           </div>
 
           <SpGauge state={activeSpState} />
+
+          <SurvivalStrip
+            characters={characters}
+            simulationResult={simulationResult}
+            activeTurnIndex={activeTurnIndex}
+          />
         </div>
 
         {/* COLUMN 4: BOSS SKILLS QUEUE (fixed width) */}

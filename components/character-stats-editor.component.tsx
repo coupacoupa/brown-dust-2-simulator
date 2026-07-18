@@ -62,6 +62,7 @@ export default function CharacterStatsEditor({ character, onChange, onClose }: C
         {/* Left Col: Base Stats */}
         <div className="flex flex-col gap-3 overflow-y-auto pr-2 scrollbar-thin">
           <h4 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-1 border-b border-zinc-800/50 pb-2">Base Stats</h4>
+          <StatInput label="HP" value={character.baseHp ?? 0} onChange={v => handleStatChange('baseHp', v)} />
           <StatInput label="ATK" value={character.baseAtk} onChange={v => handleStatChange('baseAtk', v)} />
           <StatInput label="Magic ATK" value={character.baseMatk} onChange={v => handleStatChange('baseMatk', v)} />
           <StatInput label="Crit Rate (%)" value={character.baseCritRate} onChange={v => handleStatChange('baseCritRate', v)} />

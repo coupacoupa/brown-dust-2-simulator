@@ -1,4 +1,4 @@
-import { SkillEffect, TurnEffectSnapshot, TurnFormulaBreakdown } from "@/domain.type";
+import { BossSkillDebuff, BossSelfBuff, SkillEffect, TurnEffectSnapshot, TurnFormulaBreakdown, TurnSurvivalSnapshot } from "@/domain.type";
 import { ActionDamageEvent } from "../breakdown.service";
 
 // Shared shapes of the simulation engine. Logic lives in the sibling
@@ -14,6 +14,17 @@ export interface ActiveEffect {
   // for the breakdown/UI. Undefined for non-'dot' effects.
   dotPerTick?: number;
   dotLabel?: string;
+  // Energy-guard-only: remaining shield pool (value% × recipient's baseHp,
+  // snapshotted at application). Incoming damage depletes this before HP.
+  shieldRemaining?: number;
+}
+
+// A boss-applied stat debuff sitting on one ally (from BossSkillDebuff), or a
+// boss self-buff (from BossSelfBuff) — same countdown shape for both.
+export interface BossStatEffect {
+  stat: BossSkillDebuff["stat"] | BossSelfBuff["stat"];
+  valuePct: number;
+  remainingTurns: number;
 }
 
 // The full between-turn state of the fight as a value. simulateTurn() takes
@@ -23,6 +34,15 @@ export interface ActiveEffect {
 export interface BattleState {
   characterBuffs: Map<string, ActiveEffect[]>;
   bossDebuffs: ActiveEffect[];
+  // --- Survival loop ---
+  // Current HP per character. null = HP never entered (baseHp 0): the sim
+  // can't track normal damage for them, but instant death still applies.
+  characterHp: Map<string, number | null>;
+  deadCharacters: Set<string>;
+  // Boss-applied stat debuffs per ally ("Stat Weakening").
+  characterDebuffs: Map<string, BossStatEffect[]>;
+  // The boss's own active stat buffs (from 'buff' moves).
+  bossBuffs: BossStatEffect[];
 }
 
 // min = no crits, max = all crits, expected = crit-rate weighted.
@@ -60,4 +80,6 @@ export interface TurnResult {
   perCharacter: Map<string, DamageBand>; // this turn only, unrounded
   formula: TurnFormulaBreakdown;
   effectSnapshot: TurnEffectSnapshot;
+  survival: TurnSurvivalSnapshot; // team HP after the boss's counterattack
+  newDeaths: string[]; // character ids that died during this turn
 }

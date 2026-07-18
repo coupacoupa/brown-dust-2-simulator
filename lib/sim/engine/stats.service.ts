@@ -1,18 +1,23 @@
 import { Character, SkillEffect } from "@/domain.type";
-import { ActiveEffect, ComputedStats } from "./engine.type";
+import { ActiveEffect, BossStatEffect, ComputedStats } from "./engine.type";
 
 // Stat computation — resolves buffed stats for one character at action time.
-// All same-type effects stack additively.
+// All same-type effects stack additively. Boss-applied stat debuffs ("Stat
+// Weakening") shave the buffed stat multiplicatively, mirroring how ally-cast
+// DEF/MRES shreds reduce the boss's defenses.
 
 export function computeFinalStats(
   char: Character,
   activeBuffs: ActiveEffect[],
   bossDebuffs: ActiveEffect[],
+  charDebuffs: BossStatEffect[] = [],
 ): ComputedStats {
   const sumBuff = (type: SkillEffect['type']) =>
     activeBuffs.filter((b) => b.type === type).reduce((acc, b) => acc + b.value, 0);
   const sumDebuff = (type: SkillEffect['type']) =>
     bossDebuffs.filter((d) => d.type === type).reduce((acc, d) => acc + d.value, 0);
+  const sumWeaken = (stat: BossStatEffect['stat']) =>
+    Math.min(100, charDebuffs.filter((d) => d.stat === stat).reduce((acc, d) => acc + d.valuePct, 0));
 
   const atkBuff = sumBuff('buff_atk');
   const matkBuff = sumBuff('buff_matk');
@@ -27,9 +32,9 @@ export function computeFinalStats(
   return {
     atkBuff,
     matkBuff,
-    finalAtk: char.baseAtk * (1 + atkBuff / 100),
-    finalMatk: char.baseMatk * (1 + matkBuff / 100),
-    finalCritRate: Math.min(100, Math.max(0, char.baseCritRate + critRateBuff)),
+    finalAtk: char.baseAtk * (1 + atkBuff / 100) * (1 - sumWeaken('atk') / 100),
+    finalMatk: char.baseMatk * (1 + matkBuff / 100) * (1 - sumWeaken('matk') / 100),
+    finalCritRate: Math.min(100, Math.max(0, (char.baseCritRate + critRateBuff) * (1 - sumWeaken('crit_rate') / 100))),
     finalCritDmg: char.baseCritDmg + critDmgBuff,
     propDmgBuff,
     defDebuff,

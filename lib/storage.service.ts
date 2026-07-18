@@ -238,6 +238,7 @@ export function buildCharacterFromRoster(
   const char: Character = {
     baseAtk: 0,
     baseMatk: 0,
+    baseHp: 0,
     baseCritRate: 10,
     baseCritDmg: 50,
     baseDef: 0,

@@ -82,6 +82,16 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
           level: char.level,
           costumes: mergedCostumes,
           position: char.position,
+          // Base stats are typed by the user, not part of the template —
+          // carry the saved values through the re-sync or they reset on load.
+          baseAtk: char.baseAtk ?? 0,
+          baseMatk: char.baseMatk ?? 0,
+          baseHp: char.baseHp ?? 0,
+          baseCritRate: char.baseCritRate ?? 10,
+          baseCritDmg: char.baseCritDmg ?? 50,
+          baseDef: char.baseDef ?? 0,
+          baseMres: char.baseMres ?? 0,
+          basePropDmg: char.basePropDmg ?? 0,
         } as Character;
       })
     );
@@ -109,17 +119,6 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     [variantTurns, activeVariantIdx],
   );
 
-  // Simulate every variant; empty teams take no turns and don't advance the flow
-  const variantResults = useMemo<(SimulationResult | null)[]>(() => {
-    if (!loaded || !boss) return [null, null, null];
-    return variantTurns.map((turns, idx) => {
-      const chars = variantCharacters[idx] ?? [];
-      return chars.length > 0 ? runSimulation(chars, boss, turns) : null;
-    });
-  }, [loaded, boss, variantCharacters, variantTurns]);
-
-  const simulationResult = variantResults[activeVariantIdx] ?? null;
-
   // Global player-turn offsets per team (turns used by the teams before it)
   const flowOffsets = useMemo(() => {
     const counts = variantTurns.map((turns, idx) =>
@@ -127,6 +126,21 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     );
     return [0, counts[0], counts[0] + counts[1]];
   }, [variantTurns, variantCharacters]);
+
+  // Simulate every variant; empty teams take no turns and don't advance the
+  // flow. The boss rotation carries across the team swap, so each team's sim
+  // starts at the cast the previous teams left off at.
+  const variantResults = useMemo<(SimulationResult | null)[]>(() => {
+    if (!loaded || !boss) return [null, null, null];
+    return variantTurns.map((turns, idx) => {
+      const chars = variantCharacters[idx] ?? [];
+      return chars.length > 0
+        ? runSimulation(chars, boss, turns, { bossCastOffset: flowOffsets[idx] ?? 0 })
+        : null;
+    });
+  }, [loaded, boss, variantCharacters, variantTurns, flowOffsets]);
+
+  const simulationResult = variantResults[activeVariantIdx] ?? null;
 
   // Keep the selected turn valid when switching variants or shrinking the
   // script — derived clamp, the raw state may briefly point past the end

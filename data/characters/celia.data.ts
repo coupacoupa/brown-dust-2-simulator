@@ -20,40 +20,60 @@ export const celia: CharacterTemplate = {
         name: "Miming Clowns",
         hitCount: 7,
         damageType: "magic",
-        targetShape: "single",
+        // Full 3x3 centered on the target tile (wiki range: all3x3, tick 2-2).
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]],
       },
+      // Reduce enemy ATK by 35/45/55/55/65/65% for 4 turns — lowers the
+      // boss's physical damage to the team (survival sim).
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
           scaling: 18,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 35, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 21,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 45, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 24,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 55, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 24,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 55, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 27,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 65, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 30,
+          effects: [
+            { id: "celia_curse_atk_down", type: "debuff_atk", value: 65, duration: 4, target: "target_enemy" },
+          ],
         },
       ],
       potentials: [
@@ -94,40 +114,60 @@ export const celia: CharacterTemplate = {
         name: "The Ancient Curse",
         hitCount: 5,
         damageType: "magic",
-        targetShape: "single",
+        // Full 3x3 centered on the target tile (wiki range: all3x3, tick 2-2).
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]],
       },
+      // Reduce enemy Magic ATK by 35/45/55/55/65/65% for 4 turns — lowers the
+      // boss's magic damage to the team (survival sim).
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 35, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 31,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 45, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 37,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 55, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 37,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 55, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 43,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 65, duration: 4, target: "target_enemy" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 50,
+          effects: [
+            { id: "celia_descendant_matk_down", type: "debuff_matk", value: 65, duration: 4, target: "target_enemy" },
+          ],
         },
       ],
       potentials: [

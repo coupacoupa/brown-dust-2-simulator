@@ -1,7 +1,38 @@
-import { ApproachType, TargetShape } from "@/domain.type";
+import { ApproachType, BossRangeStamp, TargetShape } from "@/domain.type";
 
 // Grid geometry: converting skill shapes / hitbox patterns into flat tile
 // indices on the 3-col × 4-row battle grids.
+
+// Project a boss RANGE stamp onto the ally board. The stamp is authored in
+// the boss's own panel frame; we take each lit cell's offset from the tick,
+// rotate it CCW (the boss faces the player), and place it relative to the
+// anchor tile (where the tick lands). Board layout: flat index = depth·3 +
+// flank, depth 0 = frontline, flank 0 = top. Off-board cells are clipped.
+export function projectBossStamp(stamp: BossRangeStamp): number[] {
+  const [tickRow, tickCol] = stamp.tick;
+  const steps = ((stamp.rotation ?? 90) / 90) % 4; // number of CCW quarter-turns
+  const anchorDepth = Math.floor(stamp.anchorTile / 3);
+  const anchorFlank = stamp.anchorTile % 3;
+
+  const tiles: number[] = [];
+  for (const [row, col] of stamp.cells) {
+    let dr = row - tickRow;
+    let dc = col - tickCol;
+    // CCW quarter-turn in (row-down, col-right) space: (dr, dc) → (-dc, dr).
+    for (let i = 0; i < steps; i++) {
+      const nr = -dc;
+      const nc = dr;
+      dr = nr;
+      dc = nc;
+    }
+    const depth = anchorDepth + dr;
+    const flank = anchorFlank + dc;
+    if (depth >= 0 && depth < 4 && flank >= 0 && flank < 3) {
+      tiles.push(depth * 3 + flank);
+    }
+  }
+  return Array.from(new Set(tiles));
+}
 
 // Hitbox resolver: convert pattern offsets → flat boss-grid indices.
 // Given a target origin tile (flat index 0-11 on the 3-col boss grid) and

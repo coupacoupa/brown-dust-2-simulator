@@ -63,6 +63,19 @@ export const octoviusI: SeedBossConfig = {
         { stat: "mres", valuePct: 20, durationTurns: 12 },
       ],
       targetDescription: "Regardless of where targets are positioned, performs a range attack centered on the 2nd tile to the left from the player's view.",
+      // RANGE panel: solid 5×3 (3 rows × 5 cols) stamp, tick at its center.
+      // Rotated onto the board (anchor = depth 1 / top flank) this lights the
+      // top+mid flanks across all depths; the bottom flank stays safe.
+      kind: "fixed",
+      range: {
+        cells: [
+          [0, 0], [0, 1], [0, 2], [0, 3], [0, 4],
+          [1, 0], [1, 1], [1, 2], [1, 3], [1, 4],
+          [2, 0], [2, 1], [2, 2], [2, 3], [2, 4],
+        ],
+        tick: [1, 2],
+        anchorTile: 3,
+      },
     },
     {
       id: "octovius_tidal_strike",
@@ -73,6 +86,21 @@ export const octoviusI: SeedBossConfig = {
       scalingPct: 300,
       damageType: "magic",
       targetDescription: "Regardless of where targets are positioned, performs a range attack centered on the middle 1st tile.",
+      // RANGE panel: a radius-2 diamond, tick (♥) at its center. Anchored on
+      // the middle-front tile (mid flank, depth 0); the forward half falls off
+      // the board, so it lands on the front rows.
+      kind: "fixed",
+      range: {
+        cells: [
+                  [0, 2],
+          [1, 1], [1, 2], [1, 3],
+          [2, 0], [2, 1], [2, 2], [2, 3], [2, 4],
+          [3, 1], [3, 2], [3, 3],
+                  [4, 2],
+        ],
+        tick: [2, 2],
+        anchorTile: 1,
+      },
     },
     {
       id: "octovius_massive_leg",
@@ -83,6 +111,19 @@ export const octoviusI: SeedBossConfig = {
       scalingPct: 1000,
       damageType: "magic",
       targetDescription: "Regardless of where targets are positioned, performs a range attack centered on the 2nd tile to the right from the player's view.",
+      // RANGE panel: same solid 5×3 stamp as Sticky Leg, but the leg is on the
+      // opposite flank — anchored on the bottom flank (depth 1). Mirrors Sticky
+      // Leg: lights the mid+bottom flanks across all depths, top flank safe.
+      kind: "fixed",
+      range: {
+        cells: [
+          [0, 0], [0, 1], [0, 2], [0, 3], [0, 4],
+          [1, 0], [1, 1], [1, 2], [1, 3], [1, 4],
+          [2, 0], [2, 1], [2, 2], [2, 3], [2, 4],
+        ],
+        tick: [1, 2],
+        anchorTile: 5,
+      },
     },
     {
       id: "octovius_tuna_slam",
@@ -93,18 +134,31 @@ export const octoviusI: SeedBossConfig = {
       scalingPct: 300,
       damageType: "magic",
       targetDescription: "Regardless of where targets are positioned, performs a range attack centered on the middle 2nd tile.",
+      // RANGE panel: an irregular trident (center bar + two diagonal arms)
+      // anchored on the middle 2nd tile. Verified in-game: the four front-block
+      // corners (0,2,6,8) are the only safe tiles. Authored as an explicit
+      // tile list — cleaner than stamping an asymmetric shape.
+      kind: "fixed",
+      hitTiles: [1, 3, 4, 5, 7, 9, 10, 11],
     },
     {
       id: "octovius_dry_out",
       name: "Dry Out",
       icon: "💨",
       description: "100% chance to <orange>Evade</orange> enemy attacks until all Parts have performed 10 successful <orange>Evasion</orange>s. If affected by <orange>Stat Weakening</orange>, 100% chance to <orange>Evade</orange> enemy attacks until 1 successful <orange>Evasion</orange>s.",
+      // Boss-side evasion is not modeled yet — a no-damage buff turn for now.
+      kind: "buff",
     },
     {
       id: "octovius_summer_splash",
       name: "Summer Splash",
       icon: "☠️",
       description: "<orange>Remove Buffs</orange> from the enemy and cause instant <orange>Death</orange>.",
+      // Enrage: strips buffs then kills the whole team, wherever they stand.
+      kind: "fixed",
+      hitTiles: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      instantDeath: true,
+      removesBuffs: true,
     },
   ],
   rotation: [

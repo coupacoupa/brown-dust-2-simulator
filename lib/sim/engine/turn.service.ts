@@ -1,10 +1,11 @@
-import { Boss, Character, EffectSnapshot, TurnSetup } from "@/domain.type";
+import { Boss, BossSkillDef, Character, EffectSnapshot, TurnSetup, TurnSurvivalSnapshot } from "@/domain.type";
 import { getTilesHit } from "../targeting.util";
 import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
 import { applyDotEffects, applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
 import { calculateActionDamage } from "./damage.service";
+import { resolveBossCast } from "./incoming.service";
 import { BattleState, DamageBand, TurnResult } from "./engine.type";
 
 // Turn step function — one scripted turn as a pure state transition.
@@ -13,23 +14,29 @@ import { BattleState, DamageBand, TurnResult } from "./engine.type";
 // mutated; `next` carries buffs/debuffs (durations already ticked) into the
 // following turn, so callers can cache states at turn boundaries and resume
 // or fork from any of them.
+//
+// `bossCast` is the rotation step the boss answers this turn with (global
+// turn 2i+2); null/undefined = no boss phase (no rotation scripted).
 export function simulateTurn(
   state: BattleState,
   turnSetup: TurnSetup,
   characters: Character[],
   boss: Boss,
   displayTurn: number,
+  bossCast?: BossSkillDef | null,
 ): { result: TurnResult; next: BattleState } {
   const charMap = new Map(characters.map((c) => [c.id, c]));
   const nameOf = (id: string) => charMap.get(id)?.name ?? 'Unknown';
   const next = cloneBattleState(state);
+  // Only the living get buffed by all-ally effects or take actions.
+  const aliveCharacters = characters.filter((c) => !next.deadCharacters.has(c.id));
 
   // Execute preemptive actions at the start of Turn 1
   if (displayTurn === 1) {
     resolvePreemptiveCasts(characters, turnSetup.preemptiveCostumeIds).forEach(({ char, skill }) => {
       const targetOriginTile = char.position ?? 0;
       const tilesTargeted = getTilesHit(targetOriginTile, skill.hitboxPattern, skill.targetShape);
-      applyEffects(skill.effects, char, tilesTargeted, characters, next);
+      applyEffects(skill.effects, char, tilesTargeted, aliveCharacters, next);
     });
   }
 
@@ -51,10 +58,10 @@ export function simulateTurn(
   // character 2 shows char-1's buffs + their own, etc.
   const perCharBuffSnapshots: Record<string, EffectSnapshot[]> = {};
 
-  // Execute character actions in order
+  // Execute character actions in order — the dead take no turns
   turnSetup.actions.forEach((action) => {
     const char = charMap.get(action.characterId);
-    if (!char) return;
+    if (!char || next.deadCharacters.has(char.id)) return;
 
     const resolved = resolveAction(char, action);
     if (resolved.isSkip) {
@@ -73,7 +80,7 @@ export function simulateTurn(
     const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern, resolved.targetShape);
 
     // Apply buffs/debuffs *before* damage calculation if this action applies them
-    applyEffects(resolved.effects, char, tilesTargeted, characters, next);
+    applyEffects(resolved.effects, char, tilesTargeted, aliveCharacters, next);
 
     // Snapshot this character's buffs at the moment they act
     const activeBuffs = next.characterBuffs.get(char.id)!;
@@ -84,15 +91,15 @@ export function simulateTurn(
       sourceCharacterName: nameOf(b.sourceCharacterId),
     }));
 
-    // Compute buffed stats and calculate damage
-    const stats = computeFinalStats(char, activeBuffs, next.bossDebuffs);
+    // Compute buffed stats (boss-applied Stat Weakening included)
+    const stats = computeFinalStats(char, activeBuffs, next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
 
     // DoTs (poison/bleed/burn) snapshot their per-tick damage from the buffed
     // stats now, then tick over the following turns.
     applyDotEffects(resolved.effects, char, stats, boss, next);
 
     const result = calculateActionDamage(
-      char, boss, resolved, stats, activeBuffs, next.bossDebuffs, chainCount, nameOf,
+      char, boss, resolved, stats, activeBuffs, next.bossDebuffs, chainCount, nameOf, next.bossBuffs,
     );
 
     // Accumulate damage
@@ -160,6 +167,30 @@ export function simulateTurn(
   turnExpected = Math.round(turnExpected);
   turnMax = Math.round(turnMax);
 
+  // --- Boss phase (global turn 2i+2): the boss answers with its scripted
+  // rotation cast. Damage flows through the team's defensive tools and HP;
+  // deaths recorded here gate the following turns.
+  const cast = bossCast && aliveCharacters.length > 0
+    ? resolveBossCast(bossCast, boss, characters, next)
+    : null;
+
+  const survival: TurnSurvivalSnapshot = {
+    turn: displayTurn,
+    bossSkillName: bossCast?.name ?? null,
+    incomingDamage: Math.round(cast?.totalDamage ?? 0),
+    hp: characters.map((c) => {
+      const hp = next.characterHp.get(c.id) ?? null;
+      return {
+        characterId: c.id,
+        hp: hp === null ? null : Math.round(hp),
+        shield: Math.round(
+          (next.characterBuffs.get(c.id) ?? []).reduce((acc, b) => acc + (b.shieldRemaining ?? 0), 0),
+        ),
+        alive: !next.deadCharacters.has(c.id),
+      };
+    }),
+  };
+
   // Build the turn snapshot with per-character buff state (captured at the
   // moment each character acted) and the end-of-turn boss debuffs.
   const bossDebuffs: EffectSnapshot[] = next.bossDebuffs.map((d) => ({
@@ -175,6 +206,8 @@ export function simulateTurn(
     perCharacter,
     formula: buildTurnFormulaBreakdown(displayTurn, turnExpected, events),
     effectSnapshot: { turn: displayTurn, characterBuffs: perCharBuffSnapshots, bossDebuffs },
+    survival,
+    newDeaths: cast?.newDeaths ?? [],
   };
 
   // End of turn: decrement effect durations and drop expired ones

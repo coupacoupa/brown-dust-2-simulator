@@ -9,6 +9,10 @@ export function createBattleState(characters: Character[]): BattleState {
   return {
     characterBuffs: new Map(characters.map((c) => [c.id, []])),
     bossDebuffs: [],
+    characterHp: new Map(characters.map((c) => [c.id, c.baseHp > 0 ? c.baseHp : null])),
+    deadCharacters: new Set(),
+    characterDebuffs: new Map(characters.map((c) => [c.id, []])),
+    bossBuffs: [],
   };
 }
 
@@ -18,6 +22,12 @@ export function cloneBattleState(state: BattleState): BattleState {
       Array.from(state.characterBuffs, ([charId, buffs]) => [charId, buffs.map((b) => ({ ...b }))]),
     ),
     bossDebuffs: state.bossDebuffs.map((d) => ({ ...d })),
+    characterHp: new Map(state.characterHp),
+    deadCharacters: new Set(state.deadCharacters),
+    characterDebuffs: new Map(
+      Array.from(state.characterDebuffs, ([charId, debuffs]) => [charId, debuffs.map((d) => ({ ...d }))]),
+    ),
+    bossBuffs: state.bossBuffs.map((b) => ({ ...b })),
   };
 }
 
@@ -35,25 +45,33 @@ export function applyEffects(
     if (eff.type === 'gain_sp') return; // Instantaneous SP restoration doesn't linger as a buff
     if (eff.type === 'dot') return;     // DoTs need stat context — applied via applyDotEffects
 
-    const makeEffect = (): ActiveEffect => ({
+    // Energy guard snapshots its shield pool from the RECIPIENT's max HP.
+    const makeEffect = (recipient: Character): ActiveEffect => ({
       type: eff.type,
       value: eff.value,
       remainingTurns: eff.duration,
       sourceCharacterId: sourceChar.id,
+      ...(eff.type === 'buff_energy_guard' && recipient.baseHp > 0
+        ? { shieldRemaining: recipient.baseHp * (eff.value / 100) }
+        : {}),
     });
+    const giveTo = (ally: Character) => {
+      if (store.deadCharacters.has(ally.id)) return; // the dead take no buffs
+      store.characterBuffs.get(ally.id)!.push(makeEffect(ally));
+    };
 
     if (eff.target === 'self') {
-      store.characterBuffs.get(sourceChar.id)!.push(makeEffect());
+      giveTo(sourceChar);
     } else if (eff.target === 'all_allies') {
-      characters.forEach((ally) => store.characterBuffs.get(ally.id)!.push(makeEffect()));
+      characters.forEach(giveTo);
     } else if (eff.target === 'area_allies') {
       characters.forEach((ally) => {
         if (ally.position !== undefined && tilesTargeted.includes(ally.position)) {
-          store.characterBuffs.get(ally.id)!.push(makeEffect());
+          giveTo(ally);
         }
       });
     } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
-      store.bossDebuffs.push(makeEffect());
+      store.bossDebuffs.push(makeEffect(sourceChar));
     }
   });
 }
@@ -98,7 +116,8 @@ export function applyDotEffects(
   });
 }
 
-// Decrement durations and drop expired effects at end of turn.
+// Decrement durations and drop expired effects at end of turn. A spent
+// energy guard (pool at 0) drops with its duration like any other buff.
 export function tickEffectDurations(store: BattleState): void {
   store.characterBuffs.forEach((buffs, charId) => {
     buffs.forEach((b) => b.remainingTurns--);
@@ -106,4 +125,10 @@ export function tickEffectDurations(store: BattleState): void {
   });
   store.bossDebuffs.forEach((d) => d.remainingTurns--);
   store.bossDebuffs = store.bossDebuffs.filter((d) => d.remainingTurns > 0);
+  store.characterDebuffs.forEach((debuffs, charId) => {
+    debuffs.forEach((d) => d.remainingTurns--);
+    store.characterDebuffs.set(charId, debuffs.filter((d) => d.remainingTurns > 0));
+  });
+  store.bossBuffs.forEach((b) => b.remainingTurns--);
+  store.bossBuffs = store.bossBuffs.filter((b) => b.remainingTurns > 0);
 }

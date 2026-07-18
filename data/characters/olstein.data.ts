@@ -153,42 +153,71 @@ export const olstein: CharacterTemplate = {
         effects: [],
         hitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1]],
       },
+      // Reduce enemy ATK by 35/45/54/54/62/70% for 2 turns (Magic ATK instead
+      // vs Magic-Type enemies — both stored; the engine applies whichever
+      // matches each boss skill's damage type). The wiki's Stat Reinforcement
+      // dispel is not modeled.
       upgrades: [
         {
           spCost: 2,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 35, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 35, duration: 2, target: "target_enemy" },
+          ],
         },
         {
           spCost: 2,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 45, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 45, duration: 2, target: "target_enemy" },
+          ],
         },
         {
           spCost: 2,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 54, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 54, duration: 2, target: "target_enemy" },
+          ],
         },
         {
           spCost: 1,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 54, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 54, duration: 2, target: "target_enemy" },
+          ],
         },
         {
           spCost: 1,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 62, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 62, duration: 2, target: "target_enemy" },
+          ],
         },
         {
           spCost: 1,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "olstein_sage_atk_down", type: "debuff_atk", value: 70, duration: 2, target: "target_enemy" },
+            { id: "olstein_sage_matk_down", type: "debuff_matk", value: 70, duration: 2, target: "target_enemy" },
+          ],
         },
       ],
       potentials: [
         {
           id: "000604_pot1",
-          type: "damage",
+          type: "duration_increase",
+          value: 2,
           name: "Debuff duration +2 turns",
         },
         {

@@ -26,6 +26,8 @@ const EFFECT_META: Record<
   buff_taunt:        { label: "Taunt",       icon: "💢",  color: "text-orange-300",  bg: "bg-orange-950/40",  border: "border-orange-500/40", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",  isBuff: true },
   debuff_def:        { label: "DEF",         icon: "🔻",  color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_mres:       { label: "MRES",        icon: "🔻",  color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_atk:        { label: "ATK",         icon: "🔻",  color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_matk:       { label: "MATK",        icon: "🔻",  color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_vulnerability: { label: "Vuln",     icon: "⚡",  color: "text-amber-300",   bg: "bg-amber-950/40",   border: "border-amber-500/40",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: false },
   dot:               { label: "DoT",         icon: "☠️",  color: "text-lime-300",    bg: "bg-lime-950/40",    border: "border-lime-500/40",   glow: "shadow-[0_0_8px_rgba(132,204,22,0.15)]",  isBuff: false },
 };

@@ -26,6 +26,8 @@ export interface SkillEffect {
     | 'buff_taunt'
     | 'debuff_def'
     | 'debuff_mres'
+    | 'debuff_atk'   // reduces the boss's physical damage to the team
+    | 'debuff_matk'  // reduces the boss's magic damage to the team
     | 'debuff_vulnerability'
     | 'gain_sp'
     | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
@@ -137,6 +139,7 @@ export interface Character {
   rarity?: number;  // Star rarity, e.g. 5
   baseAtk: number;
   baseMatk: number;
+  baseHp: number;       // final in-game HP as typed by the user; 0 = not entered (survival untracked)
   baseCritRate: number; // e.g. 10 for 10%
   baseCritDmg: number;  // e.g. 50 for +50% (total = 150% damage)
   baseDef: number;      // e.g. 10 for 10% physical reduction
@@ -148,7 +151,7 @@ export interface Character {
   image?: string;         // Optional path to character profile image
 }
 
-export type CharacterTemplate = Omit<Character, 'id' | 'costumes' | 'baseAtk' | 'baseMatk' | 'baseCritRate' | 'baseCritDmg' | 'baseDef' | 'baseMres' | 'basePropDmg'> & { costumes: Costume[] };
+export type CharacterTemplate = Omit<Character, 'id' | 'costumes' | 'baseAtk' | 'baseMatk' | 'baseHp' | 'baseCritRate' | 'baseCritDmg' | 'baseDef' | 'baseMres' | 'basePropDmg'> & { costumes: Costume[] };
 
 // LEGACY rotation entry — older stored bosses (localStorage) may still carry
 // this flat shape. New bosses define `skillDefs` + `rotation` instead; both
@@ -166,6 +169,39 @@ export interface BossSkillDebuff {
   durationTurns: number;   // how many turns the debuff lasts
 }
 
+// How a boss move picks its victims on the ally grid:
+//   fixed    — hits `hitTiles` no matter who stands there; empty tiles whiff.
+//   targeted — seeks a character starting from `targetTile`; taunt/aggro
+//              overrides the seek entirely. Empty column → shift one column
+//              deeper (leftward from the player's view). The victim's tile
+//              anchors `hitboxPattern`, so neighbors get splashed.
+//   buff     — no damage; applies `selfBuffs` to the boss.
+export type BossMoveKind = 'fixed' | 'targeted' | 'buff';
+
+// A stat buff a boss 'buff' move applies to itself. atk raises its outgoing
+// damage; def/mres lower the team's damage against it.
+export interface BossSelfBuff {
+  stat: 'atk' | 'def' | 'mres';
+  valuePct: number;
+  durationTurns: number;
+}
+
+// The in-game RANGE panel for a boss move, authored exactly as the skill
+// preview draws it. The panel is in the boss's own frame; because Octovius-
+// style bosses face the player (to the left), the engine rotates the stamp
+// (default 90° counter-clockwise) to project it onto the ally board.
+//   cells / tick — panel coordinates, row 0 = top, col 0 = left.
+//   anchorTile   — the flat ally-grid index the tick lands on (where the
+//                  boss's attacking part reaches). depth = idx/3, flank = idx%3.
+// Cells that rotate off the 3×4 board are clipped. Prefer this over `hitTiles`
+// for fixed moves; the engine derives the hit tiles from it.
+export interface BossRangeStamp {
+  cells: [number, number][];
+  tick: [number, number];
+  anchorTile: number;
+  rotation?: 0 | 90 | 180 | 270; // CCW degrees; default 90 (boss faces left)
+}
+
 // Full definition of one boss skill, mirroring the in-game skill preview
 // panel. `id` is a stable slug so this maps 1:1 onto a `boss_skills` table
 // when the catalog moves to a database.
@@ -179,6 +215,17 @@ export interface BossSkillDef {
   damageType?: DamageType;
   debuffs?: BossSkillDebuff[];     // debuffs applied to hit allies
   targetDescription?: string;      // free-text targeting info shown below the description
+
+  // --- Incoming-damage model (survival sim). A skill without `kind` deals no
+  // damage to the team — display-only until its targeting data is filled in.
+  kind?: BossMoveKind;
+  range?: BossRangeStamp;             // fixed: the RANGE panel, projected → hit tiles
+  hitTiles?: number[];                // fixed: explicit ally-grid indices (used if no `range`)
+  targetTile?: number;                // targeted: the aimed ally tile (the "tick")
+  hitboxPattern?: [number, number][]; // targeted: splash shape centered on the victim
+  instantDeath?: boolean;             // kills hit allies outright regardless of HP
+  removesBuffs?: boolean;             // strips hit allies' buffs before the hit resolves
+  selfBuffs?: BossSelfBuff[];         // buff moves: stat buffs on the boss itself
 }
 
 // One step of the boss's scripted rotation, in cast order (cycles when
@@ -356,6 +403,22 @@ export interface TurnEffectSnapshot {
   bossDebuffs: EffectSnapshot[];
 }
 
+// End-of-turn survival snapshot: team HP after the boss's counterattack.
+// hp === null means the character's HP was never entered (baseHp 0) — they
+// still die to instant-death moves but normal damage can't be tracked.
+export interface TurnSurvivalSnapshot {
+  turn: number;                    // 1-indexed ally turn
+  bossSkillName: string | null;    // what the boss cast after this ally turn
+  incomingDamage: number;          // total expected damage the team took
+  hp: { characterId: string; hp: number | null; shield: number; alive: boolean }[];
+}
+
+export interface SurvivalReport {
+  perTurn: TurnSurvivalSnapshot[];
+  deaths: { characterId: string; characterName: string; turn: number }[];
+  wipeTurn: number | null;         // first turn the whole team is dead, if ever
+}
+
 export interface SimulationResult {
   totalDamageMin: number;
   totalDamageExpected: number;
@@ -364,4 +427,5 @@ export interface SimulationResult {
   damagePerCharacter: { characterId: string; characterName: string; min: number; expected: number; max: number }[];
   formulaPerTurn: TurnFormulaBreakdown[];
   effectSnapshots: TurnEffectSnapshot[];
+  survival: SurvivalReport;
 }

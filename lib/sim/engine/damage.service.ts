@@ -3,7 +3,7 @@ import { getTilesHit } from "../targeting.util";
 import { ResolvedAction, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent } from "../breakdown.service";
 import { getElementMultiplier } from "./element-advantage.util";
-import { ActionDamageResult, ActiveEffect, ComputedStats } from "./engine.type";
+import { ActionDamageResult, ActiveEffect, BossStatEffect, ComputedStats } from "./engine.type";
 
 // Damage calculation — one resolved action against the boss:
 //   Damage = ATK × Skill% × Defense × Property × Chain × Vulnerability × Weak
@@ -18,6 +18,7 @@ export function calculateActionDamage(
   bossDebuffs: ActiveEffect[],
   chainCount: number,
   nameOf: (id: string) => string,
+  bossBuffs: BossStatEffect[] = [],
 ): ActionDamageResult {
   const { hitCount, scaling, damageType } = resolved;
   const tilesTargeted = getTilesHit(
@@ -28,9 +29,12 @@ export function calculateActionDamage(
 
   const primaryStat = damageType === 'physical' ? stats.finalAtk : stats.finalMatk;
 
-  // Defense multiplier (1 - DEF%); pure damage ignores defenses
-  const bossDef = Math.max(0, boss.def * (1 - stats.defDebuff / 100));
-  const bossMres = Math.max(0, boss.mres * (1 - stats.mresDebuff / 100));
+  // Defense multiplier (1 - DEF%): the boss's DEF/MRES raised by its own
+  // stat-up moves, shredded by ally-cast debuffs; pure damage ignores both.
+  const sumBossBuff = (stat: BossStatEffect['stat']) =>
+    bossBuffs.filter((b) => b.stat === stat).reduce((acc, b) => acc + b.valuePct, 0);
+  const bossDef = Math.max(0, boss.def * (1 + sumBossBuff('def') / 100) * (1 - stats.defDebuff / 100));
+  const bossMres = Math.max(0, boss.mres * (1 + sumBossBuff('mres') / 100) * (1 - stats.mresDebuff / 100));
   const defMultiplier =
     damageType === 'pure' ? 1.0 : damageType === 'physical' ? 1 - bossDef / 100 : 1 - bossMres / 100;
 
