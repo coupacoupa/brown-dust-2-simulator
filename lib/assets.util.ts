@@ -14,6 +14,12 @@ export const invenIllust = (stem: string) =>
 export const skillIllust = (stem: string) =>
   `${ILLUST_ROOT}/illust_skill_char/illust_skill_${stem}.png`;
 
+// Both illustrations for a costume share the same file stem.
+export const costumeArt = (stem: string) => ({
+  invenImage: invenIllust(stem),
+  image: skillIllust(stem),
+});
+
 // In-game element icons (ui/icon/element)
 export const ELEMENT_ICONS: Record<ElementType, string> = {
   water: '/brown-dust-2-asset/ui/icon/element/elementicon1_1.png',
