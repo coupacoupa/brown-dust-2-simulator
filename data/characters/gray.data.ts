@@ -20,40 +20,60 @@ export const gray: CharacterTemplate = {
         name: "Triple Shot",
         hitCount: 3,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Poison DoT: 4 turns, % of the enemy's ATK per tick (scales with level).
+        effects: [
+          { id: "gray_sharpshooter_poison", type: "dot", value: 125, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+        ],
+        hitboxPattern: [[0,-1],[0,0],[0,1]],
       },
       upgrades: [
         {
           spCost: 3,
           cooldown: 5,
           scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 125, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
           scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 215, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
           scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 295, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 2,
           cooldown: 5,
           scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 295, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 2,
           cooldown: 5,
           scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 365, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 2,
           cooldown: 5,
-          scaling: 125,
+          scaling: 65,
+          effects: [
+            { id: "gray_sharpshooter_poison", type: "dot", value: 425, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
       ],
       potentials: [
@@ -72,6 +92,7 @@ export const gray: CharacterTemplate = {
         {
           id: "000401_pot3",
           type: "range_increase",
+          newHitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1]],
           name: "Range increases",
         },
       ],
@@ -87,7 +108,6 @@ export const gray: CharacterTemplate = {
         name: "A kick to shake off obsessive fans",
         hitCount: 5,
         damageType: "physical",
-        targetShape: "single",
         effects: [
           {
             id: "debuff_def",
@@ -97,7 +117,7 @@ export const gray: CharacterTemplate = {
             target: "target_enemy",
           },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0,-1],[0,0],[0,1]],
       },
       upgrades: [
         {
@@ -173,7 +193,7 @@ export const gray: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 5,
-          scaling: 100,
+          scaling: 85,
           effects: [
           {
             id: "debuff_def",
@@ -217,40 +237,60 @@ export const gray: CharacterTemplate = {
         name: "The Flag of Honor",
         hitCount: 5,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Poison DoT: 4 turns, % of the enemy's Magic ATK per tick (scales with level).
+        effects: [
+          { id: "gray_vanguard_poison", type: "dot", value: 125, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+        ],
+        hitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]],
       },
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 125, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 215, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 5,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 295, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 295, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
           scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 365, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 65,
+          scaling: 25,
+          effects: [
+            { id: "gray_vanguard_poison", type: "dot", value: 425, duration: 4, target: "target_enemy", dotSource: "enemy_atk", dotLabel: "Poison" },
+          ],
         },
       ],
       potentials: [
@@ -285,40 +325,54 @@ export const gray: CharacterTemplate = {
         name: "Waterbomb Launching!",
         hitCount: 3,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        effects: [
+          {
+            id: "gray_poolparty_crit_rate",
+            type: "buff_crit_rate",
+            value: 50,
+            duration: 4,
+            target: "self",
+          },
+          {
+            id: "gray_poolparty_crit_dmg",
+            type: "buff_crit_dmg",
+            value: 50,
+            duration: 4,
+            target: "self",
+          },
+        ],
+        hitboxPattern: [[0,0],[-1,0],[1,0],[0,-1],[0,1]],
       },
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
-          scaling: 50,
+          scaling: 100,
         },
         {
           spCost: 5,
           cooldown: 5,
-          scaling: 50,
+          scaling: 114,
         },
         {
           spCost: 5,
           cooldown: 5,
-          scaling: 50,
+          scaling: 127,
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 50,
+          scaling: 127,
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 50,
+          scaling: 139,
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 50,
+          scaling: 150,
         },
       ],
       potentials: [

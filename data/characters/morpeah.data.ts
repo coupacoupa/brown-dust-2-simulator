@@ -70,8 +70,15 @@ export const morpeah: CharacterTemplate = {
         },
         {
           id: "003401_pot3",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Apply a 30% Barrier to yourself for 4 turns.",
+          newEffect: {
+            id: "003401_pot3_barrier",
+            type: "buff_barrier",
+            value: 30,
+            duration: 4,
+            target: "self",
+          },
         },
       ],
       },

@@ -2,7 +2,7 @@ import { Boss, Character, EffectSnapshot, TurnSetup } from "@/domain.type";
 import { getTilesHit } from "../targeting.util";
 import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
-import { applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
+import { applyDotEffects, applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
 import { calculateActionDamage } from "./damage.service";
 import { BattleState, DamageBand, TurnResult } from "./engine.type";
@@ -86,6 +86,11 @@ export function simulateTurn(
 
     // Compute buffed stats and calculate damage
     const stats = computeFinalStats(char, activeBuffs, next.bossDebuffs);
+
+    // DoTs (poison/bleed/burn) snapshot their per-tick damage from the buffed
+    // stats now, then tick over the following turns.
+    applyDotEffects(resolved.effects, char, stats, boss, next);
+
     const result = calculateActionDamage(
       char, boss, resolved, stats, activeBuffs, next.bossDebuffs, chainCount, nameOf,
     );
@@ -106,6 +111,49 @@ export function simulateTurn(
     if (result.event) {
       events.push(result.event);
     }
+  });
+
+  // DoT tick phase — every active poison/bleed/burn on the boss deals its
+  // snapshotted per-tick damage this turn (including the turn it was applied).
+  // Flat damage: no crit, no chain, not reduced by defense.
+  next.bossDebuffs.forEach((dot) => {
+    if (dot.type !== 'dot') return;
+    const dmg = dot.dotPerTick ?? 0;
+    if (dmg <= 0) return;
+
+    turnMin += dmg;
+    turnExpected += dmg;
+    turnMax += dmg;
+
+    const charDmg = perCharacter.get(dot.sourceCharacterId) ?? { min: 0, expected: 0, max: 0 };
+    charDmg.min += dmg;
+    charDmg.expected += dmg;
+    charDmg.max += dmg;
+    perCharacter.set(dot.sourceCharacterId, charDmg);
+
+    // Minimal event so DoT damage is attributed in the formula-breakdown panel.
+    const sourceStat = dot.value > 0 ? (dmg * 100) / dot.value : 0;
+    events.push({
+      charName: nameOf(dot.sourceCharacterId),
+      actionName: dot.dotLabel ?? 'DoT',
+      scaling: dot.value,
+      baseStat: sourceStat,
+      atkBuffPct: 0,
+      critExpectedMult: 1,
+      vulnMultiplier: 1,
+      propertyMultiplier: 1,
+      defMultiplier: 1,
+      elAdvantagePct: 0,
+      basePropDmgPct: 0,
+      bossBaseDefPct: null,
+      atkBuffs: [],
+      propBuffs: [],
+      vulnDebuffs: [],
+      defShreds: [],
+      chainsAdded: 0,
+      expected: dmg,
+      hits: [{ expected: dmg, chainMultiplier: 1, weakMultiplier: 1, isWeakPoint: false }],
+    });
   });
 
   turnMin = Math.round(turnMin);

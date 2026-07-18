@@ -58,8 +58,15 @@ export const emma: CharacterTemplate = {
       potentials: [
         {
           id: "101301_pot1",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Your Crit Rate is increased by 30% for 6 turns.",
+          newEffect: {
+            id: "101301_pot1_crit_rate",
+            type: "buff_crit_rate",
+            value: 30,
+            duration: 6,
+            target: "self",
+          },
         },
       ],
       },

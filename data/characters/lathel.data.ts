@@ -16,7 +16,7 @@ export const lathel: CharacterTemplate = {
       approach: "very_front",
       skill: {
         id: "s000101",
-        name: "Strike of Promise",
+        name: "The Sword of Fresh Blood",
         hitCount: 2,
         damageType: "physical",
         effects: [
@@ -31,12 +31,12 @@ export const lathel: CharacterTemplate = {
         hitboxPattern: [[0, 0], [-1, -1]],
       },
       upgrades: [
-        { spCost: 3, cooldown: 5, scaling: 180 }, // +0
-        { spCost: 3, cooldown: 5, scaling: 230 }, // +1
-        { spCost: 3, cooldown: 5, scaling: 275 }, // +2
-        { spCost: 2, cooldown: 5, scaling: 275 }, // +3
-        { spCost: 2, cooldown: 5, scaling: 315 }, // +4
-        { spCost: 2, cooldown: 5, scaling: 350 }, // +5
+        { spCost: 3, cooldown: 5, scaling: 150 }, // +0
+        { spCost: 3, cooldown: 5, scaling: 200 }, // +1
+        { spCost: 3, cooldown: 5, scaling: 245 }, // +2
+        { spCost: 2, cooldown: 5, scaling: 245 }, // +3
+        { spCost: 2, cooldown: 5, scaling: 285 }, // +4
+        { spCost: 2, cooldown: 5, scaling: 320 }, // +5
       ],
       potentials: [
         {
@@ -67,7 +67,7 @@ export const lathel: CharacterTemplate = {
       ],
       skill: {
         id: "s000102",
-        name: "Bloodcraze",
+        name: "Ludbion Drive",
         hitCount: 3,
         damageType: "physical",
         effects: [
@@ -111,10 +111,11 @@ export const lathel: CharacterTemplate = {
       id: "000103",
       name: "Homunculus",
       ...costumeArt("char000103_59"),
+      hasBurst: true,
       displayEffects: ["ATK +80% (6t) All", "ATK +50% (2t) All"],
       skill: {
         id: "s000103",
-        name: "Overdrive",
+        name: "The Sacrifice of Fresh Blood",
         hitCount: 0,
         damageType: "physical",
         targetShape: "all",
@@ -288,6 +289,44 @@ export const lathel: CharacterTemplate = {
           name: "Long ATK buff +10%",
         },
       ],
+      burstUpgrades: [
+        {
+          // Tier 1: Long ATK buff +20%
+          effects: [
+            {
+              id: "homunculus_lathel_burst_long_1",
+              type: "buff_atk",
+              value: 20,
+              duration: 4,
+              target: "all_allies",
+            },
+          ],
+        },
+        {
+          // Tier 2: Long ATK buff +20%
+          effects: [
+            {
+              id: "homunculus_lathel_burst_long_2",
+              type: "buff_atk",
+              value: 20,
+              duration: 4,
+              target: "all_allies",
+            },
+          ],
+        },
+        {
+          // Tier 3: Short ATK buff +80%
+          effects: [
+            {
+              id: "homunculus_lathel_burst_short",
+              type: "buff_atk",
+              value: 80,
+              duration: 2,
+              target: "all_allies",
+            },
+          ],
+        },
+      ],
     },
 
     {
@@ -298,7 +337,7 @@ export const lathel: CharacterTemplate = {
       displayEffects: ["Energy Guard +320% (6t) Self", "Barrier +50% (6t) Self"],
       skill: {
         id: "s000104",
-        name: "Overwhelming Power",
+        name: "Bloody Howl",
         hitCount: 0,
         damageType: "physical",
         effects: [
@@ -484,7 +523,7 @@ export const lathel: CharacterTemplate = {
       ],
       skill: {
         id: "s000105",
-        name: "Vengeful Slash",
+        name: "Flame of Revenge",
         hitCount: 1,
         damageType: "physical",
         effects: [
@@ -535,7 +574,7 @@ export const lathel: CharacterTemplate = {
       displayEffects: ["HP -5% Self", "Crit Rate +100% (2t) Self"],
       skill: {
         id: "s000106",
-        name: "Water Splash",
+        name: "Shark Tornado",
         hitCount: 3,
         damageType: "physical",
         effects: [

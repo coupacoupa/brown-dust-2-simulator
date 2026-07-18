@@ -10,6 +10,10 @@ export interface ActiveEffect {
   value: number;
   remainingTurns: number;
   sourceCharacterId: string;
+  // DoT-only: per-tick flat damage snapshotted at application, plus a label
+  // for the breakdown/UI. Undefined for non-'dot' effects.
+  dotPerTick?: number;
+  dotLabel?: string;
 }
 
 // The full between-turn state of the fight as a value. simulateTurn() takes

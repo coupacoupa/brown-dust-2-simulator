@@ -23,13 +23,19 @@ export interface SkillEffect {
     | 'buff_barrier'
     | 'buff_evasion'
     | 'buff_chain_reinforcement'
-    | 'debuff_def' 
-    | 'debuff_mres' 
+    | 'buff_taunt'
+    | 'debuff_def'
+    | 'debuff_mres'
     | 'debuff_vulnerability'
-    | 'gain_sp';
-  value: number; // e.g., 50 for +50% or count of times
-  duration: number; // in turns
+    | 'gain_sp'
+    | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
+  value: number; // e.g., 50 for +50% or count of times; for 'dot', the per-tick % of the source stat
+  duration: number; // in turns (for 'dot', the number of ticks)
   target: 'self' | 'all_allies' | 'area_allies' | 'target_enemy' | 'all_enemies';
+  // DoT-only: which stat the per-tick damage scales off (snapshotted at cast),
+  // and a display label. Ignored for non-'dot' effects.
+  dotSource?: 'caster_atk' | 'caster_matk' | 'enemy_atk' | 'enemy_maxhp';
+  dotLabel?: string; // e.g. "Poison", "Bleed", "Burn"
 }
 
 // Condition gating a costume upgrade's `conditionalScaling`: damage instances
@@ -70,7 +76,7 @@ export interface CostumeUpgrade {
 
 export interface SkillPotential {
   id: string;
-  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'add_effect' | 'other';
+  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
   value?: number; // e.g. 15 for +15% damage
   newTargetShape?: TargetShape;
   newHitboxPattern?: [number, number][];
@@ -78,7 +84,7 @@ export interface SkillPotential {
   newEffect?: SkillEffect; // For 'add_effect': the brand-new effect this potential grants
   name?: string; // Optional user-facing custom potential label
   additionalEffects?: {
-    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'conditional_damage' | 'add_effect' | 'other';
+    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
     value?: number;
     targetEffectId?: string;
     newEffect?: SkillEffect;

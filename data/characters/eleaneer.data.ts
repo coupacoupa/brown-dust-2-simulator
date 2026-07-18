@@ -137,8 +137,15 @@ export const eleaneer: CharacterTemplate = {
         },
         {
           id: "061102_pot3",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Reduce enemy DEF by 20% for 2 turns",
+          newEffect: {
+            id: "061102_pot3_debuff_def",
+            type: "debuff_def",
+            value: 20,
+            duration: 2,
+            target: "target_enemy",
+          },
         },
       ],
       },

@@ -84,24 +84,16 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
               }
               return eff;
             });
+          } else if (item.type === "duration_increase" && item.value) {
+            baseEffects = baseEffects.map((eff: SkillEffect) => {
+              if (item.targetEffectId ? eff.id === item.targetEffectId : true) {
+                return { ...eff, duration: eff.duration + item.value! };
+              }
+              return eff;
+            });
           } else if (item.type === "add_effect" && item.newEffect) {
             // Potential grants a brand-new skill effect (e.g. a DEF/MRES shred).
             baseEffects = [...baseEffects, item.newEffect];
-          } else if (item.type === "other" && item.name && /Restore \d+ SP/i.test(item.name)) {
-            const match = item.name.match(/Restore (\d+) SP/i);
-            const spVal = match ? parseInt(match[1], 10) : 0;
-            if (spVal > 0) {
-              baseEffects = [
-                ...baseEffects,
-                {
-                  id: pot.id + "_sp_gain",
-                  type: "gain_sp",
-                  value: spVal,
-                  duration: 1,
-                  target: "all_allies",
-                },
-              ];
-            }
           }
         }
       }

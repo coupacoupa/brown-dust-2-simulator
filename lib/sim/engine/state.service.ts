@@ -1,5 +1,5 @@
-import { Character, SkillEffect } from "@/domain.type";
-import { ActiveEffect, BattleState } from "./engine.type";
+import { Boss, Character, SkillEffect } from "@/domain.type";
+import { ActiveEffect, BattleState, ComputedStats } from "./engine.type";
 
 // BattleState lifecycle: creation, cloning, effect application and decay.
 // simulateTurn (./turn.ts) clones the incoming state once at entry and only
@@ -33,6 +33,7 @@ export function applyEffects(
 ): void {
   effects.forEach((eff) => {
     if (eff.type === 'gain_sp') return; // Instantaneous SP restoration doesn't linger as a buff
+    if (eff.type === 'dot') return;     // DoTs need stat context — applied via applyDotEffects
 
     const makeEffect = (): ActiveEffect => ({
       type: eff.type,
@@ -54,6 +55,46 @@ export function applyEffects(
     } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
       store.bossDebuffs.push(makeEffect());
     }
+  });
+}
+
+// Resolve the stat a DoT's per-tick damage scales off, at application time.
+function resolveDotSourceStat(
+  source: SkillEffect["dotSource"],
+  stats: ComputedStats,
+  boss: Boss,
+): number {
+  switch (source) {
+    case 'caster_matk': return stats.finalMatk;
+    case 'enemy_atk': return boss.atk ?? 0;
+    case 'enemy_maxhp': return boss.maxHp ?? 0;
+    case 'caster_atk':
+    default: return stats.finalAtk; // default to the caster's ATK
+  }
+}
+
+// Apply DoT (poison/bleed/burn) effects to the enemy. The per-tick damage is
+// snapshotted from the source stat NOW (buffs already applied), then ticked
+// each turn by the turn loop. Kept separate from applyEffects because it needs
+// the caster's computed stats and the boss stat sheet.
+export function applyDotEffects(
+  effects: SkillEffect[],
+  sourceChar: Character,
+  stats: ComputedStats,
+  boss: Boss,
+  store: BattleState,
+): void {
+  effects.forEach((eff) => {
+    if (eff.type !== 'dot') return;
+    const sourceStat = resolveDotSourceStat(eff.dotSource, stats, boss);
+    store.bossDebuffs.push({
+      type: 'dot',
+      value: eff.value,
+      remainingTurns: eff.duration,
+      sourceCharacterId: sourceChar.id,
+      dotPerTick: sourceStat * (eff.value / 100),
+      dotLabel: eff.dotLabel ?? 'DoT',
+    });
   });
 }
 

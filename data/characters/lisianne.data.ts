@@ -57,8 +57,15 @@ export const lisianne: CharacterTemplate = {
       potentials: [
         {
           id: "100301_pot1",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Apply an Energy Guard to allies for 4 turns, equal to 150% of your Magic ATK",
+          newEffect: {
+            id: "100301_pot1_energy_guard",
+            type: "buff_energy_guard",
+            value: 150,
+            duration: 4,
+            target: "all_allies",
+          },
         },
       ],
       }],

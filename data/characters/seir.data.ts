@@ -70,8 +70,15 @@ export const seir: CharacterTemplate = {
         },
         {
           id: "101101_pot3",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Apply Taunt to yourself for 4 turns",
+          newEffect: {
+            id: "101101_pot3_taunt",
+            type: "buff_taunt",
+            value: 1,
+            duration: 4,
+            target: "self",
+          },
         },
       ],
       },
@@ -197,8 +204,15 @@ export const seir: CharacterTemplate = {
         },
         {
           id: "101102_pot3",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Apply an Energy Guard to yourself for 2 turns, equal to 100% of your Max HP",
+          newEffect: {
+            id: "101102_pot3_energy_guard",
+            type: "buff_energy_guard",
+            value: 100,
+            duration: 2,
+            target: "self",
+          },
         },
       ],
       },

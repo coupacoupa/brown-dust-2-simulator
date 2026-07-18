@@ -59,30 +59,30 @@ export const justia: CharacterTemplate = {
       skill: {
         id: "s000202",
         name: "Quarter Moon Jab",
-        hitCount: 3,
+        hitCount: 1,
         damageType: "pure",
         effects: [],
-        hitboxPattern: [[-1, 0], [0, 0], [1, 0], [2, 0]],
+        hitboxPattern: [[-1, 0], [0, 0]],
       },
       upgrades: [
-        { spCost: 3, cooldown: 5, scaling: 91.67 },
-        { spCost: 3, cooldown: 5, scaling: 116.67 },
-        { spCost: 3, cooldown: 5, scaling: 140 },
-        { spCost: 2, cooldown: 5, scaling: 140 }, // SP cost down
-        { spCost: 2, cooldown: 5, scaling: 163.33 },
-        { spCost: 2, cooldown: 5, scaling: 185 },
+        { spCost: 3, cooldown: 5, scaling: 275 },
+        { spCost: 3, cooldown: 5, scaling: 350 },
+        { spCost: 3, cooldown: 5, scaling: 420 },
+        { spCost: 2, cooldown: 5, scaling: 420 }, // SP cost down
+        { spCost: 2, cooldown: 5, scaling: 490 },
+        { spCost: 2, cooldown: 5, scaling: 555 },
       ],
       potentials: [
         {
           id: "justia_whitereaper_pot1",
           type: "damage",
-          value: 11.67,
+          value: 35,
           name: "Skill damage +35%",
         },
         {
           id: "justia_whitereaper_pot2",
           type: "damage",
-          value: 11.67,
+          value: 35,
           name: "Skill damage +35%",
         },
         {
@@ -101,7 +101,7 @@ export const justia: CharacterTemplate = {
       hasBurst: true,
       skill: {
         id: "s000203",
-        name: "Fang of Gluttony",
+        name: "The Fang of Gluttony",
         hitCount: 1,
         damageType: "pure",
         effects: [
@@ -289,6 +289,13 @@ export const justia: CharacterTemplate = {
             duration: 8,
             target: "self",
           },
+          {
+            id: "justia_poolparty_evasion",
+            type: "buff_evasion",
+            value: 2, // Evade until 2 successful evades (base, pre-burst)
+            duration: 4,
+            target: "self",
+          },
         ],
         hitboxPattern: [[0, 0]],
       },
@@ -305,6 +312,13 @@ export const justia: CharacterTemplate = {
               duration: 8,
               target: "self",
             },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 2,
+              duration: 4,
+              target: "self",
+            },
           ],
         },
         {
@@ -319,6 +333,13 @@ export const justia: CharacterTemplate = {
               duration: 8,
               target: "self",
             },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 2,
+              duration: 4,
+              target: "self",
+            },
           ],
         },
         {
@@ -333,6 +354,13 @@ export const justia: CharacterTemplate = {
               duration: 8,
               target: "self",
             },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 3,
+              duration: 4,
+              target: "self",
+            },
           ],
         },
         {
@@ -345,6 +373,13 @@ export const justia: CharacterTemplate = {
               type: "buff_atk",
               value: 210,
               duration: 8,
+              target: "self",
+            },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 3,
+              duration: 4,
               target: "self",
             },
           ],
@@ -361,6 +396,13 @@ export const justia: CharacterTemplate = {
               duration: 8,
               target: "self",
             },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 3,
+              duration: 4,
+              target: "self",
+            },
           ],
         },
         {
@@ -373,6 +415,13 @@ export const justia: CharacterTemplate = {
               type: "buff_atk",
               value: 270,
               duration: 8,
+              target: "self",
+            },
+            {
+              id: "justia_poolparty_evasion",
+              type: "buff_evasion",
+              value: 4,
+              duration: 4,
               target: "self",
             },
           ],
@@ -388,13 +437,22 @@ export const justia: CharacterTemplate = {
         },
         {
           id: "justia_poolparty_pot2",
-          type: "other",
+          type: "duration_increase",
+          targetEffectId: "justia_poolparty_atk_buff",
+          value: 4,
           name: "ATK buff duration +4 turns",
         },
         {
           id: "justia_poolparty_pot3",
-          type: "other",
+          type: "add_effect",
           name: "[New Effect] Restore 6 SP to allies",
+          newEffect: {
+            id: "justia_poolparty_pot3_sp",
+            type: "gain_sp",
+            value: 6,
+            duration: 1,
+            target: "all_allies",
+          },
         },
       ],
       burstUpgrades: [
