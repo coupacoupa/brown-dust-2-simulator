@@ -1,49 +1,18 @@
 // Single source of truth for every character in the simulator (game-id order).
 //
-// · Hand-tuned characters have full costume/skill literals — combat numbers
-//   are simulator approximations, tweak freely.
-// · Scaffolded characters use basicCostume(...) placeholders (generic 200%
-//   single-target skill) — replace with a full costume object as you tune.
+// · Every character is hand-tuned with full costume/skill literals — combat
+//   numbers are simulator approximations, tweak freely.
 // · element: hand-mapped per character.
 //
-// Art is referenced by file stem (helpers in ./assets.ts), e.g. "char000101_1" →
+// Art is referenced by file stem (helpers in @/lib/assets.util), e.g. "char000101_1" →
 //   illust_inven_char000101_1.png  (inventory portrait: roster tile, basic-attack card)
 //   illust_skill_char000101_1.png  (costume illustration: skill cards)
 //
 // charId / costume ids / costume names mirror CharInfo(Dropped).json so they
-// line up with the asset repo. scripts/generate-roster.mjs can scaffold entries
-// for fresh game data, but THIS file is the hand-edited truth.
+// line up with the asset repo. THIS file is the hand-edited truth.
 
-import { CharacterTemplate, Costume } from "@/domain.type";
+import { CharacterTemplate } from "@/domain.type";
 import { invenIllust, skillIllust } from "@/lib/assets.util";
-
-// Placeholder costume: real id/name/art, generic single-target 200% skill.
-const basicCostume = (
-  id: string,
-  name: string,
-  stem: string | null,
-): Costume => ({
-  id,
-  name,
-  invenImage: stem ? invenIllust(stem) : undefined,
-  image: stem ? skillIllust(stem) : undefined,
-  skill: {
-    id: `s${id}`,
-    name,
-    hitCount: 1,
-    damageType: "physical",
-    effects: [],
-    hitboxPattern: [[0, 0]],
-  },
-  upgrades: [
-    { spCost: 2, cooldown: 2, scaling: 200 },
-    { spCost: 2, cooldown: 2, scaling: 220 },
-    { spCost: 2, cooldown: 2, scaling: 240 },
-    { spCost: 2, cooldown: 2, scaling: 260 },
-    { spCost: 2, cooldown: 2, scaling: 280 },
-    { spCost: 2, cooldown: 2, scaling: 300 },
-  ]
-});
 
 // Both illustrations for a costume share the same file stem.
 const costumeArt = (stem: string) => ({

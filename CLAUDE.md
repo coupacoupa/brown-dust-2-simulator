@@ -47,8 +47,7 @@ lib/          Logic. bosses (seed parsing, applyBossLevel, rotation
               resolution), storage, assets, format, elements.
   sim/        The simulation core — see below.
 data/         Hand-edited catalogs, data only: characters (the roster
-              source of truth; scripts/generate-roster.mjs scaffolds new
-              entries but never overwrites this), bosses (seed configs).
+              source of truth), bosses (seed configs).
 domain.type.ts  All shared domain types.
 ```
 
