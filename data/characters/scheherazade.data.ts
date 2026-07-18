@@ -52,9 +52,9 @@ export const scheherazade: CharacterTemplate = {
         },
       ],
       burstUpgrades: [
-        { scalingBonus: 60 }, // Tier 1: +60% per hit (total +60%)
-        { scalingBonus: 60 }, // Tier 2: +60% per hit (total +120%)
-        { scalingBonus: 60 }, // Tier 3: +60% per hit (total +180%)
+        { scalingBonus: 60, spCost: 1 }, // Tier 1: +60% per hit (total +60%), +1 SP
+        { scalingBonus: 60, spCost: 1 }, // Tier 2: +60% per hit (total +120%), +1 SP
+        { scalingBonus: 60, spCost: 1 }, // Tier 3: +60% per hit (total +180%), +1 SP
       ],
     },
     {
@@ -274,9 +274,10 @@ export const scheherazade: CharacterTemplate = {
         },
       ],
       burstUpgrades: [
-        { conditionalScalingBonus: 80 },  // Tier 1: +80% (total +80%)
-        { conditionalScalingBonus: 160 }, // Tier 2: +160% (total +240%)
+        { conditionalScalingBonus: 80, spCost: 1 },  // Tier 1: +80% (total +80%), +1 SP
+        { conditionalScalingBonus: 160, spCost: 2 }, // Tier 2: +160% (total +240%), +2 SP
         {
+          spCost: 3,
           effects: [
             {
               id: "sche_poolparty_burst_chain",
@@ -286,7 +287,7 @@ export const scheherazade: CharacterTemplate = {
               target: "self",
             },
           ],
-        }, // Tier 3: Chain Reinforcement
+        }, // Tier 3: Chain Reinforcement, +3 SP
       ],
     },
   ],

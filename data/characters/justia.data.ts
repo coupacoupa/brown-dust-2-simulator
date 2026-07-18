@@ -222,9 +222,9 @@ export const justia: CharacterTemplate = {
         },
       ],
       burstUpgrades: [
-        { scalingBonus: 45 }, // Tier 1: +45% (total +45%)
-        { scalingBonus: 45 }, // Tier 2: +45% (total +90%)
-        { scalingBonus: 45 }, // Tier 3: +45% (total +135%)
+        { scalingBonus: 45, spCost: 1 }, // Tier 1: +45% (total +45%), +1 SP
+        { scalingBonus: 45, spCost: 1 }, // Tier 2: +45% (total +90%), +1 SP
+        { scalingBonus: 45, spCost: 1 }, // Tier 3: +45% (total +135%), +1 SP
       ],
     },
     {
@@ -457,6 +457,7 @@ export const justia: CharacterTemplate = {
       ],
       burstUpgrades: [
         {
+          spCost: 1,
           effects: [
             {
               id: "justia_poolparty_burst_evasion",
@@ -466,8 +467,9 @@ export const justia: CharacterTemplate = {
               target: "self",
             },
           ],
-        }, // Tier 1: Evasion count +3
+        }, // Tier 1: Evasion count +3, +1 SP
         {
+          spCost: 1,
           effects: [
             {
               id: "justia_poolparty_burst_sp",
@@ -477,8 +479,9 @@ export const justia: CharacterTemplate = {
               target: "all_allies",
             },
           ],
-        }, // Tier 2: Restore 4 SP
+        }, // Tier 2: Restore 4 SP, +1 SP
         {
+          spCost: 1,
           effects: [
             {
               id: "justia_poolparty_atk_buff",
@@ -488,7 +491,7 @@ export const justia: CharacterTemplate = {
               target: "self",
             },
           ],
-        },
+        }, // Tier 3: +1 SP
       ],
     },
   ],

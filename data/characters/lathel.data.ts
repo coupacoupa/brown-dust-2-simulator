@@ -291,7 +291,8 @@ export const lathel: CharacterTemplate = {
       ],
       burstUpgrades: [
         {
-          // Tier 1: Long ATK buff +20%
+          // Tier 1: Long ATK buff +20%, +1 SP
+          spCost: 1,
           effects: [
             {
               id: "homunculus_lathel_burst_long_1",
@@ -303,7 +304,8 @@ export const lathel: CharacterTemplate = {
           ],
         },
         {
-          // Tier 2: Long ATK buff +20%
+          // Tier 2: Long ATK buff +20%, +1 SP
+          spCost: 1,
           effects: [
             {
               id: "homunculus_lathel_burst_long_2",
@@ -315,7 +317,8 @@ export const lathel: CharacterTemplate = {
           ],
         },
         {
-          // Tier 3: Short ATK buff +80%
+          // Tier 3: Short ATK buff +80%, +2 SP
+          spCost: 2,
           effects: [
             {
               id: "homunculus_lathel_burst_short",

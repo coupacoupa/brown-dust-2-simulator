@@ -96,6 +96,11 @@ export interface BurstUpgrade {
   scalingBonus?: number;
   conditionalScalingBonus?: number;
   effects?: SkillEffect[];
+  cooldownReduction?: number; // turns shaved off the skill's cooldown at this burst tier
+  // Additional SP this tier costs, on top of the base skill cost and lower
+  // tiers. Burst cost is NOT a flat +1/tier — each tier has its own price.
+  // Omit to fall back to +1 for that tier.
+  spCost?: number;
 }
 
 export interface Costume {

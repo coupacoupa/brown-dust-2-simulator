@@ -24,6 +24,7 @@ export interface ResolvedAction {
   name: string;
   isSkip: boolean;
   spCost: number; // base skill cost + burst SP
+  burstSpCost: number; // portion of spCost coming from burst tiers
   hitCount: number;
   scaling: number; // % — includes burst bonus
   damageType: DamageType;
@@ -119,6 +120,7 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
     name: "Skip",
     isSkip: action.actionType === "skip",
     spCost: 0,
+    burstSpCost: 0,
     hitCount: 1,
     scaling: 100,
     damageType: "physical",
@@ -150,12 +152,12 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
       const burst = action.burstLevel || 0;
       resolved.skillId = skill.id;
       resolved.name = `${costume.name} Skill${burst > 0 ? ` (BURST +${burst})` : ""}`;
-      resolved.spCost = Math.max(0, skill.spCost + burst);
       resolved.hitCount = skill.hitCount;
 
       let finalScaling = skill.scaling;
       let finalConditionalScaling = skill.conditionalScaling;
       let finalEffects = [...skill.effects];
+      let burstSp = 0;
 
       if (costume.burstUpgrades && burst > 0) {
         const maxLevel = Math.min(burst, costume.burstUpgrades.length);
@@ -170,15 +172,20 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
           if (upgrade.effects) {
             finalEffects = [...finalEffects, ...upgrade.effects];
           }
+          // Each tier adds its own SP cost; fall back to +1 when unspecified.
+          burstSp += upgrade.spCost ?? 1;
         }
       } else {
-        // Fallback to standard +40% scaling per level
+        // Fallback: standard +40% scaling and +1 SP per level.
         finalScaling += BURST_SCALING_PER_LEVEL * burst;
         if (finalConditionalScaling !== undefined) {
           finalConditionalScaling += BURST_SCALING_PER_LEVEL * burst;
         }
+        burstSp = burst;
       }
 
+      resolved.burstSpCost = burstSp;
+      resolved.spCost = Math.max(0, skill.spCost + burstSp);
       resolved.scaling = finalScaling;
       if (finalConditionalScaling !== undefined) {
         resolved.conditionalScaling = finalConditionalScaling;
@@ -285,7 +292,7 @@ export function computeSpTimeline(
       const char = characters.find((c) => c.id === action.characterId);
       if (char) {
         const resolved = resolveAction(char, action);
-        const burstCost = action.burstLevel || 0;
+        const burstCost = resolved.burstSpCost;
         const baseCost = Math.max(0, resolved.spCost - burstCost);
         spentBase += baseCost;
         spentBurst += burstCost;
@@ -313,6 +320,18 @@ export function computeSpTimeline(
 // Cooldowns — a skill cast on turn t is unavailable again through turn
 // t + cooldown (inclusive).
 // ---------------------------------------------------------------------------
+
+// Total cooldown reduction granted by burst tiers 1..burstLevel (mirrors how
+// scaling/effect burst bonuses stack in resolveAction).
+export function getBurstCooldownReduction(costume: ActiveCostume, burstLevel: number): number {
+  if (!costume.burstUpgrades || burstLevel <= 0) return 0;
+  const maxLevel = Math.min(burstLevel, costume.burstUpgrades.length);
+  let reduction = 0;
+  for (let i = 0; i < maxLevel; i++) {
+    reduction += costume.burstUpgrades[i].cooldownReduction ?? 0;
+  }
+  return reduction;
+}
 
 export function getSkillCooldownState(
   characters: Character[],
@@ -342,7 +361,9 @@ export function getSkillCooldownState(
     if (prevCostume?.skill.id !== skillId) continue;
 
     const prevSkill = resolveSkillStats(char, prevCostume);
-    const cooldownEndsAtTurnIdx = prevTurnIdx + prevSkill.cooldown;
+    const burstCdReduction = getBurstCooldownReduction(prevCostume, prevAction.burstLevel || 0);
+    const effectiveCooldown = Math.max(0, prevSkill.cooldown - burstCdReduction);
+    const cooldownEndsAtTurnIdx = prevTurnIdx + effectiveCooldown;
     if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
       return { onCd: true, remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1 };
     }
