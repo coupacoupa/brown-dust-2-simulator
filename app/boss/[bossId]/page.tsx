@@ -11,11 +11,11 @@ import {
   deleteTeam,
   loadRoster,
   upsertBoss,
-} from "@/lib/storage";
-import { applyBossLevel } from "@/lib/bosses";
-import { useClientState } from "@/hooks/use-client-state";
-import BossInfoPanel from "@/components/boss-info-panel";
-import { formatNumber } from "@/lib/format";
+} from "@/lib/storage.service";
+import { applyBossLevel } from "@/lib/bosses.service";
+import { useClientState } from "@/hooks/use-client-state.hook";
+import BossInfoPanel from "@/components/boss-info-panel.component";
+import { formatNumber } from "@/lib/format.util";
 
 export default function BossDetailPage() {
   const { bossId } = useParams<{ bossId: string }>();

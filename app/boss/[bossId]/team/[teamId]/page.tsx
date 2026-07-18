@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useTeamWorkspace } from "@/hooks/use-team-workspace";
-import CharacterEditor from "@/components/character-editor";
-import TurnSequencer from "@/components/sequencer/turn-sequencer";
-import TurnStrip from "@/components/turn-strip";
-import FormulaBreakdown from "@/components/formula-breakdown";
-import DamageCharts from "@/components/damage-charts";
+import { useTeamWorkspace } from "@/hooks/use-team-workspace.hook";
+import CharacterEditor from "@/components/character-editor.component";
+import TurnSequencer from "@/components/sequencer/turn-sequencer.component";
+import TurnStrip from "@/components/turn-strip.component";
+import FormulaBreakdown from "@/components/formula-breakdown.component";
+import ActiveEffectsPanel from "@/components/sequencer/active-effects-panel.component";
+import DamageCharts from "@/components/damage-charts.component";
 
 // The simulation workspace for one saved team: three lineups fighting the boss
 // as one continuous flow (Team 1's turns, then Team 2's, then Team 3's), with
@@ -210,6 +211,11 @@ export default function TeamWorkspacePage() {
               <FormulaBreakdown
                 breakdown={ws.simulationResult?.formulaPerTurn.find((b) => b.turn === ws.activeTurnIndex + 1)}
                 turnNumber={ws.globalTurnNumber}
+              />
+              <ActiveEffectsPanel
+                snapshot={ws.simulationResult?.effectSnapshots.find((s) => s.turn === ws.activeTurnIndex + 1)}
+                turnNumber={ws.globalTurnNumber}
+                characterNames={Object.fromEntries(ws.activeCharacters.map((c) => [c.id, c.name]))}
               />
               <TurnSequencer
                 characters={ws.activeCharacters}

@@ -1,0 +1,136 @@
+import { Boss, Character, EffectSnapshot, TurnSetup } from "@/domain.type";
+import { getTilesHit } from "../targeting.util";
+import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../actions.service";
+import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
+import { applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
+import { computeFinalStats } from "./stats.service";
+import { calculateActionDamage } from "./damage.service";
+import { BattleState, DamageBand, TurnResult } from "./engine.type";
+
+// Turn step function — one scripted turn as a pure state transition.
+
+// Applies one scripted turn to a battle state. The incoming state is never
+// mutated; `next` carries buffs/debuffs (durations already ticked) into the
+// following turn, so callers can cache states at turn boundaries and resume
+// or fork from any of them.
+export function simulateTurn(
+  state: BattleState,
+  turnSetup: TurnSetup,
+  characters: Character[],
+  boss: Boss,
+  displayTurn: number,
+): { result: TurnResult; next: BattleState } {
+  const charMap = new Map(characters.map((c) => [c.id, c]));
+  const nameOf = (id: string) => charMap.get(id)?.name ?? 'Unknown';
+  const next = cloneBattleState(state);
+
+  // Execute preemptive actions at the start of Turn 1
+  if (displayTurn === 1) {
+    resolvePreemptiveCasts(characters, turnSetup.preemptiveCostumeIds).forEach(({ char, skill }) => {
+      const targetOriginTile = char.position ?? 0;
+      const tilesTargeted = getTilesHit(targetOriginTile, skill.hitboxPattern, skill.targetShape);
+      applyEffects(skill.effects, char, tilesTargeted, characters, next);
+    });
+  }
+
+  // Damage events this turn — the formula-breakdown panel is derived from
+  // these after the turn resolves (see lib/sim/breakdown.ts).
+  const events: ActionDamageEvent[] = [];
+
+  // Chain count resets at the start of each turn
+  let chainCount = 0;
+
+  let turnMin = 0;
+  let turnExpected = 0;
+  let turnMax = 0;
+  const perCharacter = new Map<string, DamageBand>();
+
+  // Per-character buff snapshots: capture what each character had active at
+  // the moment THEY acted (after their own effects applied, before the next
+  // character). This means character 1's row only shows their own buffs,
+  // character 2 shows char-1's buffs + their own, etc.
+  const perCharBuffSnapshots: Record<string, EffectSnapshot[]> = {};
+
+  // Execute character actions in order
+  turnSetup.actions.forEach((action) => {
+    const char = charMap.get(action.characterId);
+    if (!char) return;
+
+    const resolved = resolveAction(char, action);
+    if (resolved.isSkip) {
+      // Even skipped characters get a snapshot of their current buffs
+      const activeBuffs = next.characterBuffs.get(char.id)!;
+      perCharBuffSnapshots[char.id] = activeBuffs.map((b) => ({
+        type: b.type,
+        value: b.value,
+        remainingTurns: b.remainingTurns,
+        sourceCharacterName: nameOf(b.sourceCharacterId),
+      }));
+      return;
+    }
+
+    const targetOriginTile = resolveTargetOrigin(char, resolved, boss.hitbox);
+    const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern, resolved.targetShape);
+
+    // Apply buffs/debuffs *before* damage calculation if this action applies them
+    applyEffects(resolved.effects, char, tilesTargeted, characters, next);
+
+    // Snapshot this character's buffs at the moment they act
+    const activeBuffs = next.characterBuffs.get(char.id)!;
+    perCharBuffSnapshots[char.id] = activeBuffs.map((b) => ({
+      type: b.type,
+      value: b.value,
+      remainingTurns: b.remainingTurns,
+      sourceCharacterName: nameOf(b.sourceCharacterId),
+    }));
+
+    // Compute buffed stats and calculate damage
+    const stats = computeFinalStats(char, activeBuffs, next.bossDebuffs);
+    const result = calculateActionDamage(
+      char, boss, resolved, stats, activeBuffs, next.bossDebuffs, chainCount, nameOf,
+    );
+
+    // Accumulate damage
+    const charDmg = perCharacter.get(char.id) ?? { min: 0, expected: 0, max: 0 };
+    charDmg.min += result.damage.min;
+    charDmg.expected += result.damage.expected;
+    charDmg.max += result.damage.max;
+    perCharacter.set(char.id, charDmg);
+
+    turnMin += result.damage.min;
+    turnExpected += result.damage.expected;
+    turnMax += result.damage.max;
+
+    chainCount += result.chainsAdded;
+
+    if (result.event) {
+      events.push(result.event);
+    }
+  });
+
+  turnMin = Math.round(turnMin);
+  turnExpected = Math.round(turnExpected);
+  turnMax = Math.round(turnMax);
+
+  // Build the turn snapshot with per-character buff state (captured at the
+  // moment each character acted) and the end-of-turn boss debuffs.
+  const bossDebuffs: EffectSnapshot[] = next.bossDebuffs.map((d) => ({
+    type: d.type,
+    value: d.value,
+    remainingTurns: d.remainingTurns,
+    sourceCharacterName: nameOf(d.sourceCharacterId),
+  }));
+
+  const result: TurnResult = {
+    turn: displayTurn,
+    damage: { min: turnMin, expected: turnExpected, max: turnMax },
+    perCharacter,
+    formula: buildTurnFormulaBreakdown(displayTurn, turnExpected, events),
+    effectSnapshot: { turn: displayTurn, characterBuffs: perCharBuffSnapshots, bossDebuffs },
+  };
+
+  // End of turn: decrement effect durations and drop expired ones
+  tickEffectDurations(next);
+
+  return { result, next };
+}

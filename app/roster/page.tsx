@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ElementType, RosterEntry } from "@/types";
-import { CHARACTER_TEMPLATES } from "@/data/characters";
-import { loadRoster, saveRoster, defaultRoster, charKeyOf } from "@/lib/storage";
-import { useClientState } from "@/hooks/use-client-state";
-import { ElementIcon } from "@/components/ui/element-icon";
-import { PortraitCard } from "@/components/ui/portrait-card";
+import { ElementType, RosterEntry } from "@/domain.type";
+import { CHARACTER_TEMPLATES } from "@/data/characters.data";
+import { loadRoster, saveRoster, defaultRoster, charKeyOf } from "@/lib/storage.service";
+import { useClientState } from "@/hooks/use-client-state.hook";
+import { ElementIcon } from "@/components/ui/element-icon.component";
+import { PortraitCard } from "@/components/ui/portrait-card.component";
 
 // "Account sync" page: the user's real collection. Teams pull level/upgrade
 // from here, and anything a team runs beyond these values is flagged as

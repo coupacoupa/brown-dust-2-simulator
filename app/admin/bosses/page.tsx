@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { BossRecord } from "@/types";
-import { loadBosses, upsertBoss, deleteBoss, isSeedBoss, uid } from "@/lib/storage";
-import { useClientState } from "@/hooks/use-client-state";
-import BossEditor from "@/components/boss-editor";
-import { ElementIcon } from "@/components/ui/element-icon";
+import { BossRecord } from "@/domain.type";
+import { loadBosses, upsertBoss, deleteBoss, isSeedBoss, uid } from "@/lib/storage.service";
+import { useClientState } from "@/hooks/use-client-state.hook";
+import BossEditor from "@/components/boss-editor.component";
+import { ElementIcon } from "@/components/ui/element-icon.component";
 
 // Admin console for the boss catalog. Seeds can be edited (a stored copy
 // overrides the built-in) but only custom bosses can be deleted outright.

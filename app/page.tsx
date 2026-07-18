@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { loadBosses, loadTeams } from "@/lib/storage";
-import { ELEMENT_CARD_GRADIENTS } from "@/lib/elements";
-import { useClientState } from "@/hooks/use-client-state";
-import { ElementIcon } from "@/components/ui/element-icon";
+import { loadBosses, loadTeams } from "@/lib/storage.service";
+import { ELEMENT_CARD_GRADIENTS } from "@/lib/elements.constant";
+import { useClientState } from "@/hooks/use-client-state.hook";
+import { ElementIcon } from "@/components/ui/element-icon.component";
 
 // Compact read-only 3x4 hitbox preview for boss cards
 function MiniHitbox({ hitbox, weakPoints }: { hitbox: number[]; weakPoints: number[] }) {
