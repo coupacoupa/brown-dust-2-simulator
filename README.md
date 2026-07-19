@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Brown Dust 2 Simulator
 
-## Getting Started
+A team builder and turn-by-turn damage simulator for Brown Dust 2 boss content
+(Fiend Hunt / Guild Raid). Build a team, script each turn, and see the resolved
+damage bands (min / expected / max) with a per-multiplier formula breakdown.
 
-First, run the development server:
+Client-side only — all persistence is `localStorage`, so there's no backend to
+run.
+
+## Tech stack
+
+- **Next.js** (App Router) + **React 19**
+- **Tailwind CSS 4**
+- **TypeScript** (strict)
+- **pnpm**
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `pnpm dev` — start the dev server
+- `pnpm build` — production build
+- `pnpm lint` — lint
+- `npx tsc --noEmit` — typecheck
 
-## Learn More
+There is no test suite (deliberate — solo project).
 
-To learn more about Next.js, take a look at the following resources:
+## Project layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/          Routes only — thin pages composing hooks + components.
+components/   Feature components + sequencer/ (the battle workspace) + ui/.
+hooks/        Team-page state + autosave, localStorage hydration.
+lib/          Logic: bosses, storage, assets, format, elements.
+  sim/        The simulation core — targeting, action rules, engine, analytics.
+data/         Hand-edited catalogs: characters (roster) + bosses (seed configs).
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [CLAUDE.md](CLAUDE.md) for the full architecture notes, file-naming
+conventions, and simulation-core walkthrough, and
+[docs/character-update-checklist.md](docs/character-update-checklist.md) for how
+character skill data is sourced and encoded.
