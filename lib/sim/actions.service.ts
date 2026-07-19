@@ -3,6 +3,7 @@ import {
   ApproachType,
   Character,
   Condition,
+  Costume,
   DamageType,
   SkillEffect,
   SummonSpec,
@@ -435,6 +436,32 @@ export function computeSpTimeline(
 // Cooldowns — a skill cast on turn t is unavailable again through turn
 // t + cooldown (inclusive).
 // ---------------------------------------------------------------------------
+
+export function getMaxBurstSp(costume: ActiveCostume | Costume): number {
+  if (!costume.hasBurst && (!costume.burstUpgrades || costume.burstUpgrades.length === 0)) {
+    return 0;
+  }
+  if (costume.burstUpgrades && costume.burstUpgrades.length > 0) {
+    return costume.burstUpgrades.reduce((sum: number, u) => sum + (u.spCost ?? 1), 0);
+  }
+  return costume.hasBurst ? 3 : 0;
+}
+
+export function getBurstSpForLevel(costume: ActiveCostume | Costume, burstLevel: number): number {
+  if (burstLevel <= 0) return 0;
+  if (!costume.hasBurst && (!costume.burstUpgrades || costume.burstUpgrades.length === 0)) {
+    return 0;
+  }
+  if (costume.burstUpgrades && costume.burstUpgrades.length > 0) {
+    const maxLevel = Math.min(burstLevel, costume.burstUpgrades.length);
+    let sp = 0;
+    for (let i = 0; i < maxLevel; i++) {
+      sp += costume.burstUpgrades[i].spCost ?? 1;
+    }
+    return sp;
+  }
+  return costume.hasBurst ? Math.min(burstLevel, 3) : 0;
+}
 
 // Total cooldown reduction granted by burst tiers 1..burstLevel (mirrors how
 // scaling/effect burst bonuses stack in resolveAction).

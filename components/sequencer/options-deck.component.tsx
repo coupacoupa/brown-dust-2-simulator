@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Character, TurnAction, TurnSetup } from "@/domain.type";
-import { getSkillCooldownState, MAX_BURST_LEVEL, resolveSkillStats } from "@/lib/sim/actions.service";
+import { getBurstSpForLevel, getMaxBurstSp, getSkillCooldownState, MAX_BURST_LEVEL, resolveSkillStats } from "@/lib/sim/actions.service";
 import { CardSkillBackground } from "../ui/card-skill-background.component";
 import { HitboxThumbnail } from "../ui/hitbox-thumbnail.component";
 
@@ -19,24 +19,24 @@ interface OptionsDeckProps {
 }
 
 // Option select list SP cost diamonds
-//   0..baseCost-1                   → yellow (base SP cost)
-//   baseCost..baseCost+burstLevel-1 → red (burst cost)
-//   rest                            → hollow
+//   0..baseCost-1                            → yellow (base SP cost)
+//   baseCost..baseCost+activeBurstSp-1       → red (active burst SP cost)
+//   baseCost+activeBurstSp..baseCost+maxBurstSp-1 → gray (remaining burst SP capacity)
 function OptionDiamonds({
   baseCost,
-  burstLevel = 0,
-  maxBurst = MAX_BURST_LEVEL,
+  activeBurstSp = 0,
+  maxBurstSp = 0,
 }: {
   baseCost: number;
-  burstLevel?: number;
-  maxBurst?: number;
+  activeBurstSp?: number;
+  maxBurstSp?: number;
 }) {
-  const total = baseCost + maxBurst;
+  const total = baseCost + maxBurstSp;
   return (
     <div className="flex gap-0.5 items-center mt-1 select-none flex-wrap">
       {Array.from({ length: total }).map((_, i) => {
         const isBase = i < baseCost;
-        const isBurst = i >= baseCost && i < baseCost + burstLevel;
+        const isBurst = i >= baseCost && i < baseCost + activeBurstSp;
         return (
           <span
             key={i}
@@ -141,6 +141,12 @@ export default function OptionsDeck({
             const previewScaling = resolvedSkill.mainTargetScaling ?? resolvedSkill.scaling;
             const dmgPreview = Math.round(primaryStat * (previewScaling / 100));
 
+            const hasBurstCapability = cost.hasBurst === true || (cost.burstUpgrades && cost.burstUpgrades.length > 0);
+            const activeBurstLevel = isSkillSelected ? selectedAction.burstLevel || 0 : 0;
+            const activeBurstSp = getBurstSpForLevel(cost, activeBurstLevel);
+            const maxBurstSp = getMaxBurstSp(cost);
+            const maxBurstLevel = cost.burstUpgrades?.length || (hasBurstCapability ? MAX_BURST_LEVEL : 0);
+
             return (
               <div
                 key={cost.id}
@@ -232,13 +238,14 @@ export default function OptionsDeck({
                     )}
                     <OptionDiamonds
                       baseCost={resolvedSkill.spCost}
-                      burstLevel={isSkillSelected ? selectedAction.burstLevel || 0 : 0}
+                      activeBurstSp={activeBurstSp}
+                      maxBurstSp={maxBurstSp}
                     />
                   </div>
                 </div>
 
                 {/* Burst controllers overlay */}
-                {isSkillSelected && !skillState.onCd && cost.hasBurst && (
+                {isSkillSelected && !skillState.onCd && hasBurstCapability && (
                   <div
                     className="absolute bottom-1 right-14 flex items-center bg-zinc-950/95 border border-zinc-850 rounded px-1.5 py-0.5 gap-1 z-20 scale-[0.85] origin-bottom-right"
                     onClick={(e) => e.stopPropagation()}
@@ -265,13 +272,13 @@ export default function OptionsDeck({
                       type="button"
                       onClick={() => {
                         const currentBurst = selectedAction.burstLevel || 0;
-                        if (currentBurst < MAX_BURST_LEVEL) {
+                        if (currentBurst < maxBurstLevel) {
                           onActionChange(selectedActionIdx, {
                             burstLevel: currentBurst + 1,
                           });
                         }
                       }}
-                      disabled={(selectedAction.burstLevel || 0) === MAX_BURST_LEVEL}
+                      disabled={(selectedAction.burstLevel || 0) === maxBurstLevel}
                       className="text-[9px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
                     >
                       ▶
