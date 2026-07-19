@@ -13,6 +13,10 @@ export interface BossCastResult {
   totalDamage: number;
   perCharacter: Map<string, number>; // expected damage taken this cast
   newDeaths: string[];               // character ids killed by this cast
+  // Counter retaliations triggered this cast: one entry per holder of a
+  // buff_counter that absorbed at least one hit. `triggers` = hits absorbed
+  // (dodged hits don't count); `counterPct` = summed counter value (% Max HP).
+  counters: { characterId: string; triggers: number; counterPct: number }[];
 }
 
 const ALLY_GRID_COLS = 3; // flank = position % 3, depth = floor(position / 3)
@@ -81,6 +85,7 @@ export function resolveBossCast(
     totalDamage: 0,
     perCharacter: new Map(),
     newDeaths: [],
+    counters: [],
   };
 
   const aliveChars = characters.filter((c) => !state.deadCharacters.has(c.id));
@@ -171,6 +176,7 @@ export function resolveBossCast(
     const perHit = bossAtk * scaling * mitigation * critMult * (1 - barrier / 100);
 
     let taken = 0;
+    let connectingHits = 0; // hits the victim actually receives (fuel for Counter)
     for (let hit = 0; hit < hitCount; hit++) {
       // Evasion: each charge dodges one full hit.
       const evasion = activeBuffs.find((b) => b.type === "buff_evasion" && b.value > 0);
@@ -178,6 +184,7 @@ export function resolveBossCast(
         evasion.value -= 1;
         continue;
       }
+      connectingHits++;
       let remaining = perHit;
       // Energy guard pools soak before HP, oldest first.
       for (const guard of activeBuffs) {
@@ -203,6 +210,13 @@ export function resolveBossCast(
           result.newDeaths.push(victim.id);
         }
       }
+    }
+
+    // Counter: each hit the victim actually received fires one retaliation
+    // (its damage is computed on the offensive side in turn.service).
+    const counterPct = sumBuffs(activeBuffs, "buff_counter");
+    if (counterPct > 0 && connectingHits > 0) {
+      result.counters.push({ characterId: victim.id, triggers: connectingHits, counterPct });
     }
 
     // Boss skill debuffs land on every hit victim (dodged hits included —

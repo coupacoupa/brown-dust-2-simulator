@@ -3,7 +3,7 @@ import { getTilesHit } from "../targeting.util";
 import { ResolvedAction, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent } from "../breakdown.service";
 import { getElementMultiplier } from "./element-advantage.util";
-import { ActionDamageResult, ActiveEffect, BossStatEffect, ComputedStats } from "./engine.type";
+import { ActionDamageResult, ActiveEffect, BossStatEffect, ComputedStats, DamageBand } from "./engine.type";
 
 // Damage calculation — one resolved action against the boss:
 //   Damage = ATK × Skill% × Defense × Property × Chain × Vulnerability × Weak
@@ -189,4 +189,70 @@ export function calculateActionDamage(
     chainsAdded,
     event,
   };
+}
+
+// Counter retaliation (buff_counter): a Physical hit dealt back to the boss
+// each time the holder receives an attack, scaling off the holder's Max HP
+// (not ATK). It fires during the boss phase, so it carries no chain and hits
+// no specific tile (no weak-point multiplier) — but the boss's DEF, the
+// holder's element/property, any active vulnerability, and crit all still
+// apply, mirroring the outgoing damage pipeline above.
+//   counterPct — % of Max HP per counter (summed buff_counter values)
+//   triggers   — how many boss hits this counter answered this cast
+export function computeCounterDamage(
+  char: Character,
+  boss: Boss,
+  counterPct: number,
+  triggers: number,
+  stats: ComputedStats,
+  bossBuffs: BossStatEffect[] = [],
+): { damage: DamageBand; event: ActionDamageEvent | null } {
+  if (counterPct <= 0 || triggers <= 0 || char.baseHp <= 0) {
+    return { damage: { min: 0, expected: 0, max: 0 }, event: null };
+  }
+
+  // Boss physical DEF, raised by its own stat-ups, shredded by ally debuffs.
+  const sumBossBuff = (stat: BossStatEffect['stat']) =>
+    bossBuffs.filter((b) => b.stat === stat).reduce((acc, b) => acc + b.valuePct, 0);
+  const bossDef = Math.max(0, boss.def * (1 + sumBossBuff('def') / 100) * (1 - stats.defDebuff / 100));
+  const defMultiplier = 1 - bossDef / 100;
+
+  const elAdvantage = getElementMultiplier(char.element, boss.element);
+  const propertyMultiplier = 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100;
+  const vulnerabilityMultiplier = 1 + stats.vulnDebuff / 100;
+
+  const critMultValue = 1 + stats.finalCritDmg / 100;
+  const critExpectedMult = 1 + (stats.finalCritRate / 100) * (critMultValue - 1);
+
+  // Base per counter = Max HP × counter%. All counters share the same value.
+  const basePerCounter = char.baseHp * (counterPct / 100);
+  const nonCrit = basePerCounter * defMultiplier * propertyMultiplier * vulnerabilityMultiplier;
+
+  const min = nonCrit * triggers;
+  const max = nonCrit * critMultValue * triggers;
+  const expected = nonCrit * critExpectedMult * triggers;
+
+  const event: ActionDamageEvent = {
+    charName: char.name,
+    actionName: triggers > 1 ? `Counter ×${triggers}` : 'Counter',
+    scaling: counterPct,
+    baseStat: char.baseHp,
+    atkBuffPct: 0,
+    critExpectedMult,
+    vulnMultiplier: vulnerabilityMultiplier,
+    propertyMultiplier,
+    defMultiplier,
+    elAdvantagePct: elAdvantage * 100,
+    basePropDmgPct: char.basePropDmg,
+    bossBaseDefPct: boss.def,
+    atkBuffs: [],
+    propBuffs: [],
+    vulnDebuffs: [],
+    defShreds: [],
+    chainsAdded: 0,
+    expected,
+    hits: [{ expected, chainMultiplier: 1, weakMultiplier: 1, isWeakPoint: false }],
+  };
+
+  return { damage: { min, expected, max }, event };
 }

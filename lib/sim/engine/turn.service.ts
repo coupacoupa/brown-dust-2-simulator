@@ -4,7 +4,7 @@ import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../a
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
 import { applyDotEffects, applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
-import { calculateActionDamage } from "./damage.service";
+import { calculateActionDamage, computeCounterDamage } from "./damage.service";
 import { resolveBossCast } from "./incoming.service";
 import { BattleState, DamageBand, TurnResult } from "./engine.type";
 
@@ -197,16 +197,37 @@ export function simulateTurn(
     });
   });
 
-  turnMin = Math.round(turnMin);
-  turnExpected = Math.round(turnExpected);
-  turnMax = Math.round(turnMax);
-
   // --- Boss phase (global turn 2i+2): the boss answers with its scripted
   // rotation cast. Damage flows through the team's defensive tools and HP;
-  // deaths recorded here gate the following turns.
+  // deaths recorded here gate the following turns. Resolved before rounding so
+  // Counter retaliation can fold into this turn's offensive total.
   const cast = bossCast && aliveCharacters.length > 0
     ? resolveBossCast(bossCast, boss, characters, next)
     : null;
+
+  // Counter (buff_counter): every boss hit a holder absorbs this cast fires a
+  // Physical retaliation scaling off the holder's Max HP. It's offensive
+  // damage, so it lands on this turn's totals, per-character tally, and events.
+  cast?.counters.forEach(({ characterId, triggers, counterPct }) => {
+    const char = charMap.get(characterId);
+    if (!char) return;
+    const buffs = next.characterBuffs.get(characterId) ?? [];
+    const cstats = computeFinalStats(char, buffs, next.bossDebuffs, next.characterDebuffs.get(characterId) ?? []);
+    const cres = computeCounterDamage(char, boss, counterPct, triggers, cstats, next.bossBuffs);
+    turnMin += cres.damage.min;
+    turnExpected += cres.damage.expected;
+    turnMax += cres.damage.max;
+    const cd = perCharacter.get(characterId) ?? { min: 0, expected: 0, max: 0 };
+    cd.min += cres.damage.min;
+    cd.expected += cres.damage.expected;
+    cd.max += cres.damage.max;
+    perCharacter.set(characterId, cd);
+    if (cres.event) events.push(cres.event);
+  });
+
+  turnMin = Math.round(turnMin);
+  turnExpected = Math.round(turnExpected);
+  turnMax = Math.round(turnMax);
 
   const survival: TurnSurvivalSnapshot = {
     turn: displayTurn,
