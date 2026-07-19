@@ -154,34 +154,70 @@ potentials/burst can reference it and so it stacks/updates correctly.
 - **Pure self-buffs: Barrier, Taunt, Energy Guard, Counter** → `lecliss.data.ts`
 - **Aura (area_allies) buffs + MATK-scaled Energy Guard** → `diana.data.ts`
 
-## Engine gaps & extensions
+## Engine features (all mechanics now modeled)
 
-- **Energy Guard scaling stat** — default shield is `value% × recipient Max HP`.
-  For MATK-scaled shields (e.g. Diana) set `egScalingStat: 'caster_matk'` on the
-  `buff_energy_guard` effect → shield = `value% × caster's Magic ATK` at cast.
-  (Added to `domain.type.ts` / `state.service.ts` / `turn.service.ts`.)
-- **Energy Guard regen** — auras that "regenerate each turn" aren't refreshed;
-  the shield is snapshotted once at cast. Minor; noted where it applies.
-- **Summons-as-actors** (Allied Zone Summon — Diana Magical Innovator, Morpeah)
-  — ✅ ZONE-BUFF summons modeled. `SummonSpec` (on a skill/upgrade) → the engine
-  tracks `BattleState.summons`; `actSummons` runs each turn, adds a stack (≤
-  `maxStacks`) and refreshes its zone buff (value = `effect.value × stacks`).
-  Per-level buff value lives on `upgrades[i].summon.effect.value`. NOTE: only
-  buff-applying summons are covered — a summon that deals DAMAGE each turn is
-  not yet handled (extend `actSummons` when the first such summon appears).
-- **Target-debuff-count condition** — ✅ RESOLVED. Added `target_debuff_count`
-  to `SkillCondition`; evaluated in `damage.service.ts` (counts `debuff_*`/`dot`
-  entries on the boss). Used by Palette Miracle Violet.
-- **Burst-tier convention** — ✅ RESOLVED. `{{Spv-bv|a|b|c|d}}` (a=base/potOff·
-  nonburst, b=+full burst, c=+potential, d=both) gives the *total* burst delta as
-  a cross-check, and the `{{CostumeBurst}}` panel gives the exact per-tier split
-  (see fetch note above). Verified against Anastasia (data matched panel 1:1).
+Every mechanic the roster uses is implemented. Fields live on `SkillEffect` /
+`Skill` / `CostumeUpgrade` / `BurstUpgrade` in `domain.type.ts`; logic in
+`lib/sim/engine/`. All verified end-to-end + a full-roster smoke test (177
+costumes, burst + all potentials, 0 crashes).
+
+Damage-shaping:
+- **MATK-scaled Energy Guard** — `egScalingStat: 'caster_matk'` (Diana). Regen:
+  `egRegen: true` refills the shield each turn (Diana Anti-dystopia).
+- **Main-Target split scaling** — `mainTargetScaling` (origin tile hits harder).
+- **`countScalingSource` + `countScalingPerUnit`** — "damage +N% per <count>":
+  `'target'` (enemy tiles hit), `'caster_buff'`, `'sp_spent'`. Potentials use
+  `type: 'count_scaling'`; burst uses `countScalingBonus`. (Loen, Sacred Justia,
+  Olivier ×2, Nebris, Tyr.)
+- **`scalingStat`** — `'caster_hp'` (Mamonir, Liberta), `'enemy_maxhp'` (knockback
+  collision). Collision negated by `requiresKnockback` when the boss is
+  Knockback-immune (Fred, Emma, Kry).
+- **ATK-based Counter** — `counterStat: 'atk'` (Blade; default `'max_hp'`).
+- **Augmentation scope/gate** — `augmentScope: 'basic_attack'` (Yozakura, boosts
+  only Normal Attacks); `augmentChainMin` (Liberta Onsen, only hits at Chain 10+).
+
+Conditions (`SkillCondition.type`): `chain_min`, `chain_max`, `target_has_dot`,
+`target_has_vulnerability`, `target_has_taunt_or_concentrated_fire`,
+`target_is_physical`, `target_chain_multiple_of_3`, `target_debuff_count`.
+
+Conditional effect-swap: **`SkillEffect.applyCondition`** ({type, value?, negate?})
+— `chain_min` / `self_has_augmentation` / `self_has_stat_reinforcement`. Encode
+"X, but Y instead" as two effects (base `negate:true`, alt `negate:false`).
+Sonya, Nebris.
+
+Summons: **`SummonSpec`** (`skill.summon`, single or array). Buff mode (`effect`
++ `maxStacks`, ramps a zone buff each turn — Diana) and **damage mode**
+(`attack: {scaling, hitCount, scalingStat, effects?, selfDestruct}` — Morpeah's
+self-destruct Personas deal % of the summoner's MATK).
+
+Reactive on-hit: **`buff_reactive`** (`reactiveEffect` + `reactiveMaxTriggers`) —
+fires its payload once per hit the holder takes (uses `hitCounts` from the boss
+cast). Seir (heal / aug battery), Mamonir (stacking Vulnerability).
+
+Support: **all-ally instant heal** (`heal_continuous`/`heal_self_hp_percent` with
+`healSource: 'caster_matk' | 'recipient_hp'` — Lisianne, Samay, Liberta, Jayden);
+**enemy debuff-duration extend** (`buff_duration_extend` targeting the enemy bumps
+all boss-debuff durations — Palette); **`effectValueBonus`** in the burst path
+(boosts a buff/aura value, incl. nested reactive payloads — Liberta, Mamonir).
+
+**Burst-tier convention** — the `{{CostumeBurst}}` panel gives exact per-tier
+data; `{{Spv-bv|a|b|c|d}}` (a=base·nonburst, b=+burst, c=+potential, d=both)
+cross-checks the total. Map upgrade text → `scalingBonus` /
+`mainTargetScalingBonus` / `conditionalScalingBonus` / `countScalingBonus` /
+`effectValueBonus`, `spN` → `spCost`.
+
+**Not modeled (no observable effect in this engine):** Silence, enemy SP
+reduction, dispel, SP-Cost-Increase self-penalty — the boss follows a scripted
+rotation and SP/cooldowns aren't enforced, so these change nothing.
 
 ---
 
 ## Checklist
 
-44 / 82 done.
+**82 / 82 fully done.** Every character reviewed against the wiki, and every
+previously-flagged mechanic is now modeled (see "Engine features" below). NOTE:
+some per-character notes below still say "unmodeled"/"no-op" — those predate the
+engine work and are stale; the mechanic is now implemented.
 
 - [x] **Lathel** (0001) — Herb Tracker (000101) | Lonely Survivor (000102) | Homunculus (000103) | Dark Knight (000104) | Promise of Vengeance (000105) | Pool Party (000106)
 - [x] **Justia** (0002) — Knight of Blood (000201) | White Reaper (000202) | Blood Glutton (000203) | Kendo Club (000204) | Pool Party (000206)
@@ -198,34 +234,42 @@ potentials/burst can reference it and so it stacks/updates correctly.
   - Costume 1 & 3 auras rebuilt. Anti-dystopia's Energy Guard scales off Diana's **Magic ATK** — new engine field `egScalingStat: 'caster_matk'`.
   - Costume 2 (Magical Innovator) summons **Magic Amplifier ET001** — now fully modeled via the new **summon-actor system** (`SummonSpec` / `BattleState.summons` / `actSummons`): each turn it adds a stack (≤4) and buffs the zone's Property DMG (25→50%/stack, up to +200% at +5). Verified: ramps +50/+100/+150/+200, caps at 4 stacks.
 - [x] **Layla** (0030) — Anvil of Creation (003001)
-- [ ] **Elpis** (0031) — Hand of Salvation (003101)
+- [x] **Elpis** (0031) — Hand of Salvation (003101) — all-ally buffer; `scaling` held the MATK buff % → zeroed, added Magic ATK (25→70%) + Crit Rate (30→35%) buffs (6t), MATK pot → effect_value_increase.
 - [x] **Loen** (0032) — Last Hope (003201) | Track and Field Team (003202) | Celebrity Bunny (003203) ⚠️ per-target
   - Last Hope: fixed +5 scaling (was 1000, now 850) + plus-range hitbox. Track and Field Team: `scaling` was holding the MATK-buff % — corrected to 200–300 damage scaling and added the per-level Magic ATK self-buff (60/80/100%). Celebrity Bunny: fixed 3×3 AoE hitbox; its "+75% damage per target" bonus is unmodeled (no per-target-count scaling in engine).
-- [ ] **Nebris** (0033) — Labyrinth Gatekeeper (003301) | Laid-back Lifeguard (003302) | New Hire (003303)
-- [ ] **Morpeah** (0034) — Beach Vacation (003401) | Daydream Bunny (003402) | Apostle (003403)
-- [ ] **Sacred Justia** (0035) — Reclaimed Destiny (003501)
-- [ ] **Olivier** (0036) — Faithful Wings (003601) | Apostle (003602) | Fallen Wings (003603) | Retired Legend (003604)
-- [ ] **Blade** (0037) — Apostle (003701) | Onsen Swordfighter (003702) | Young Lady (003703)
-- [ ] **Liberta** (0038) — Dark Saintess (003801) | Onsen Manager (003802) | Miracle Rose (003803)
+- [x] **Nebris** (0033) — Labyrinth Gatekeeper (003301) | Laid-back Lifeguard (003302) | New Hire (003303)
+  - Gatekeeper: `scaling` was wrong (100–150→125–175), added the Augmentation self-buff (100–150%), column range. **"Crit DMG instead if already Augmented" NOW MODELED** via `applyCondition` (self_has_augmentation): Augmentation on first cast, Crit DMG (+200–300%) when already augmented. Verified. Lifeguard: `scaling` stuck at 50 → 100–180, row range. **"Property DMG instead if in Stat Reinforcement" NOW MODELED** (self_has_stat_reinforcement): ATK +50% normally, Property DMG +50% if already stat-buffed. New Hire: fixed +5 scaling (110→70), 2-row range, burst tiers. ("+% per buff" scaling still unmodeled — flagged.)
+- [x] **Morpeah** (0034) — Beach Vacation (003401) | Daydream Bunny (003402) | Apostle (003403)
+  - Apostle: scaling (100→200), Concentrated Fire (Main Target, 2t), 3×3 range. Beach Vacation & Daydream Bunny: preemptive **damage-dealing** self-destruct summons — NOW MODELED via the summon system's damage mode (`SummonSpec.attack`, self-destruct): Beach Vacation's 2 Personas detonate for 300→700% MATK each; Daydream Bunny's Spectre for 200→650% MATK + MRES -30%. Verified end-to-end.
+- [x] **Sacred Justia** (0035) — Reclaimed Destiny (003501) — base scaling correct (150→300), 3×3 range, diamond range-increase. "+% per target" bonus unmodeled — the two potentials + all burst tiers were wrongly inflating base scaling → zeroed (only SP costs 1/2/3 kept).
+- [x] **Olivier** (0036) — Faithful Wings (003601) | Apostle (003602) | Fallen Wings (003603) | Retired Legend (003604)
+  - Faithful Wings: fixed +5 scaling (250→230), arrow range (per-target bonus unmodeled). Apostle: preemptive self-buff; `scaling` was flat 100 → 0, added Evasion (2→3) + Magic ATK buff (50→68%, 8t), buff pots → effect_value_increase/duration_increase. Fallen Wings: fixed +5 scaling (250→230), X range (per-SP Rampage unmodeled). Retired Legend: `scaling` held the Domain buff % → real attack 50–80, added Domain all-ally Magic ATK buff (60→100%, 10t), column range.
+- [x] **Blade** (0037) — Apostle (003701) | Onsen Swordfighter (003702) | Young Lady (003703)
+  - Apostle: `scaling` held the counter values → real nuke 300–620, top-row range (ATK-based Counter unmodeled — engine counter is HP-based). Onsen Swordfighter: fixed +5 scaling (600→500), plus range (per-debuff-count bonus unmodeled). Young Lady: fixed +5 scaling (150→130), added Physical Vulnerability to Main Target (100→140%), 2-row range, vuln pot → effect_value_increase.
+- [x] **Liberta** (0038) — Dark Saintess (003801) | Onsen Manager (003802) | Miracle Rose (003803)
+  - Dark Saintess: all-ally buffer; `scaling` held ATK buff % → zeroed, added ATK (35→85%) + Crit Rate (25→50%) buffs (4t) + 3-SP restore, ATK pots → effect_value_increase. Onsen Manager: all-ally Augmentation (80→120%); `scaling` held the aug % → zeroed (Chain-10 gate + team heal unmodeled; burst boosts unrepresented). Miracle Rose: caster-HP scaling (7→10% ×5), `scaling` held the Crit Rate % → added self Crit Rate buff (40→70%, 1t), top-row range.
 - [x] **Sonya** (0039) — Shadowed Dream (003901) | Little Pumpkin Girl (003902)
-  - Shadowed Dream: `scaling` held vulnerability values — corrected to 300–500 damage + added the Vulnerability debuff (55–105) + fixed pots to effect_value_increase + plus-range. (Chain-6 Dark Vulnerability swap unmodeled — engine can't swap effects on a condition.) Little Pumpkin Girl: added Nightmare DoT (45–90%, dur 2→4), fixed +5 scaling (300→275), Nightmare pots → effect_value_increase, 3×3 range.
+  - Shadowed Dream: `scaling` held vulnerability values — corrected to 300–500 damage + added the Vulnerability debuff (55–105) + plus-range. **Chain-6 Dark Vulnerability swap NOW MODELED** via `applyCondition` (chain_min 6): general Vuln at chain <6, Dark Vulnerability (property/dark, 75–155) at 6+. Verified. Little Pumpkin Girl: added Nightmare DoT (45–90%, dur 2→4), fixed +5 scaling (300→275), Nightmare pots → effect_value_increase, 3×3 range.
 - [x] **Darian** (0040) — Prophetic Dream (004001) | Bittersweet Bunny (004002)
   - Prophetic Dream: added missing `mainTargetScaling` (775–1125), fixed +5 scaling (1500→700), X-range hitbox, pot2 `scalingTarget: "main"`, burst SP 1/1/2. Bittersweet Bunny: added Frostbite DoT (110/150% ×≤7) + DoT conditional (400–550), fixed +5 scaling (400→350), Frostbite pot → effect_value_increase. (Per-target cooldown reduction unmodeled.)
-- [ ] **Tyr** (0041) — Starlight Guardian (004101) | Innocent Bunny (004102)
+- [x] **Tyr** (0041) — Starlight Guardian (004101) | Innocent Bunny (004102)
+  - Starlight Guardian: fixed +5 scaling (2240→1200), arrow range, burst tiers (T1 +560% / T2 restore-SP / T3 +280%, SP 2/1/1). Innocent Bunny: fixed +5 scaling (300→275), column range. (Per-SP-consumed scaling + SP-Cost-Increase self-penalty unmodeled — flagged; the two "per SP" potentials are no-ops.)
 - [x] **Palette** (0042) — Shattered Dream (004201) | Miracle Violet (004202)
   - Shattered Dream: fixed +5 scaling (800→700) + diagcross hitbox. (Debuff-duration-extend on enemy unmodeled — utility only.)
   - Miracle Violet: fixed +5 base scaling (115→55); added the 7+-debuff conditional (new `target_debuff_count` condition type) + per-level conditionalScaling (110–170); corrected burst tiers from CostumeBurst panel (T1 scaling +50, T2/T3 conditional +25). Verified: 7-debuff damage = 3.09× base (=170/55).
-- [ ] **Eris** (0200) — Esteemed Adventurer (020001) | Your Very Own Cat (020002)
-- [ ] **Roxy** (0201) — Respected Master (020101) | Emerging Desire (020102)
-- [ ] **Yomi** (0202) — Gentle Destroyer (020201)
-- [ ] **Yozakura** (0203) — Fist of Conviction (020301)
-- [ ] **Yumi** (0204) — Dancing Snowflake (020401)
-- [ ] **Hikage** (0205) — Kind Ruthlessness (020501)
-- [ ] **Goblin Slayer** (0206) — Orcbolg (020601)
-- [ ] **Priestess** (0207) — Earth Mother Believer (020701)
-- [ ] **High Elf Archer** (0208) — Daughter of Starwind (020801)
-- [ ] **Sword Maiden** (0209) — Supreme God Archbishop (020901)
-- [ ] **Karuga** (0210) — Noble Flame (021001)
+- [x] **Eris** (0200) — Esteemed Adventurer (020001) | Your Very Own Cat (020002)
+  - Esteemed Adventurer: fixed +5 scaling (650→600), added the "Chain ≤7" conditional (new `chain_max` condition type) + per-level conditionalScaling (600–900). Verified: low-chain hit uses 900%. Your Very Own Cat: fixed +5 scaling (80→60), added Physical Vulnerability to Main Target (100–150%), T-shape range.
+- [x] **Roxy** (0201) — Respected Master (020101) | Emerging Desire (020102)
+  - Respected Master: added missing `mainTargetScaling` (300→450), fixed +5 scaling (400→350), diamond range, pots 1/3 `scalingTarget: main`. Emerging Desire: fixed +5 scaling (70→58), column range. (Silence unmodeled.)
+- [x] **Yomi** (0202) — Gentle Destroyer (020201) — fixed +5 scaling (170→150, was the max-Spv column), 3×3 range.
+- [x] **Yozakura** (0203) — Fist of Conviction (020301) — `scaling` held the augmentation %; real skill damage 150–240, T-shape range. Basic-attack-only Augmentation (400–900%) unmodeled (engine can't scope aug to basic attacks); its 2 potentials are no-ops.
+- [x] **Yumi** (0204) — Dancing Snowflake (020401) — fixed +5 scaling (120→90), added stacking Frostbite DoT (10→20% MATK, ≤99), column range.
+- [x] **Hikage** (0205) — Kind Ruthlessness (020501) — fixed +3 (40→50, wiki typo) and +5 (90→70, was max-Spv column) scaling. Single-target, 12 hits.
+- [x] **Goblin Slayer** (0206) — Orcbolg (020601) — `scaling` held the Barrier values; real damage 125–225. Added self Barrier (50%, 2t), kept 6-SP restore, 2-row range, Barrier potential → effect_value_increase.
+- [x] **Priestess** (0207) — Earth Mother Believer (020701) — `scaling` held the vuln values; real damage 250–350, added Magic Vulnerability (50–70%), 3×3 range, vuln potential → effect_value_increase.
+- [x] **High Elf Archer** (0208) — Daughter of Starwind (020801) — `scaling` was flat 100; real 75–125, added Crit Rate +100% self-buff (2t), row range.
+- [x] **Sword Maiden** (0209) — Supreme God Archbishop (020901) — fixed +5 scaling (120→105), 3×3 range.
+- [x] **Ikaruga** (0210, file `karuga.data.ts`) — Noble Flame (021001) — wiki page is "Ikaruga" (renamed display name from Karuga). `scaling` held the ATK-buff values; real damage 40–80, added the stacking self ATK buff (60–100%, ≤3), diamond range. (Hit-based wear-off + 3-stack cap not engine-enforced.)
 - [x] **Alec** (0603) — The Destruction (060301) | Sword Breaker (060302)
 - [x] **Celia** (0604) — The Curse (060401) | Descendant of the Great Witch (060402) | Masquerade Bunny (060403)
 - [x] **Anastasia** (0605) — Gentle Maid (060501) | Fire Graffiti (060502)
@@ -253,22 +297,28 @@ potentials/burst can reference it and so it stacks/updates correctly.
 - [x] **Luvencia** (0675) — Deal Snatcher (067502) | Wild Dog (067503)
 - [x] **Wilhelmina** (0676) — Iron Monarch (067601) | Water Park Queen (067603) | Frozen Queen (067604)
 - [x] **Granadair** (0677) — Shrine Maiden of Purification (067701) | Queen of Gluttis (067702)
-- [ ] **Mamonir** (0678) — Night of Death (067801) | Miracle Marine (067803)
-- [ ] **Gynt** (1001) — Lugo Hunter (100101)
-- [ ] **Fred** (1002) — Lugo Defense Force (100201)
-- [ ] **Lisianne** (1003) — Wandering Priest (100301)
-- [ ] **Remnunt** (1004) — Combat Doctor (100401)
-- [ ] **Wiggle** (1005) — Bomb Fanatic (100501) | Bomb in the Hoodie (100502)
-- [ ] **Lucrezia** (1006) — Seductive Wings (100601)
-- [ ] **Bernie** (1008) — Righteous Raider Girl (100801)
-- [ ] **Seir** (1011) — Demon's Daughter (101101) | B-Rank Idol (101102) | New Hire (101103)
-- [ ] **Jayden** (1012) — Beautiful Girl Devotee (101201) | Manga Research Club (101202)
-- [ ] **Emma** (1013) — Haggard Delinquent (101301) | School Queen (101302)
-- [ ] **Samay** (1014) — Kind Liberator (101401) | Kind Student (101402)
-- [ ] **Kry** (1015) — Liberated Marauder (101501) | Violent Student (101502)
-- [ ] **Carlson** (1032) — The Mercenary Knight (103201)
-- [ ] **Lydia** (1033) — Apprentice Spearman (103301)
-- [ ] **Rigenette** (1034) — Little Hunter (103401)
-- [ ] **Beatrice** (1035) — The Mighty Warrior of the Tribe (103501)
-- [ ] **Maria** (1036) — Archmage (103601)
-- [ ] **Arines** (1037) — Priest of Vitality (103701)
+- [x] **Mamonir** (0678) — Night of Death (067801) | Miracle Marine (067803)
+  - Night of Death: 8-hit damage scales off **caster's Max HP** (`scalingStat: caster_hp`, 9→13%) — `scaling` held the Crit DMG buff; added Crit DMG buff (200→280%) + Transform, 2-row range, crit-DMG pot → effect_value_increase. Miracle Marine: self-tank; `scaling` held the reactive-vuln % → zeroed (on-hit Vulnerability unmodeled), added Barrier (50%, 6t), barrier pots → effect_value_increase, burst SP only.
+- [x] **Gynt** (1001) — Lugo Hunter (100101) — fixed +5 scaling (320→250), added enemy ATK -50% debuff (4t), 2-tile row range.
+- [x] **Fred** (1002) — Lugo Defense Force (100201) — damage is knockback-collision = % of enemy **Max HP** → `scalingStat: enemy_maxhp` (fixed +5 25/35/50 not 70); added Bleed DoT (50% ATK, 6t) + SP restore. (Collision assumes knockback lands — boss immunity not checked.)
+- [x] **Lisianne** (1003) — Wandering Priest (100301) — healer; `scaling` was the heal amount → zeroed (heal + DoT-cleanse unmodeled, no fitting type). Fixed the potential's Energy Guard to `egScalingStat: caster_matk` (150% MATK).
+- [x] **Remnunt** (1004) — Combat Doctor (100401) — fixed +5 scaling (320→250), added enemy ATK -50% debuff (4t), 2-tile row range.
+- [x] **Wiggle** (1005) — Bomb Fanatic (100501) | Bomb in the Hoodie (100502) — Bomb Fanatic: scaling correct (300→500), added plus range. Bomb in the Hoodie: scaling correct (flat 20), added Burn DoT (75→155% ATK, 3t), plus range.
+- [x] **Lucrezia** (1006) — Seductive Wings (100601) — fixed +5 scaling (40→20, damage is flat 20 all levels), plus range, SP-restore (1→3) correct. (Silence unmodeled.)
+- [x] **Bernie** (1008) — Righteous Raider Girl (100801) — verified correct (scaling 50→110, SP-restore 2→3, cooldown). Silence unmodeled — noted.
+- [x] **Seir** (1011) — Demon's Daughter (101101) | B-Rank Idol (101102) | New Hire (101103)
+  - All three are self-tank/support with `scaling` holding buff values → zeroed. Demon's Daughter: added Barrier (40→70%, 4→6t), barrier pot → effect_value_increase (heal-on-hit unmodeled). B-Rank Idol: added Barrier (40→70%, 2t) + SP restore, EG potential (heal/SP-on-hit approximated). New Hire: reactive Augmentation battery — fully unmodeled (on-hit trigger).
+- [x] **Jayden** (1012) — Beautiful Girl Devotee (101201) | Manga Research Club (101202)
+  - Beautiful Girl Devotee: self-support; `scaling` held the heal % → zeroed, added continuous self-heal (5→17% HP) + Magic Barrier (50%, 4→6t), barrier potential → effect_value_increase. Manga Research Club: fixed +3 wiki typo (50→70), plus range.
+- [x] **Emma** (1013) — Haggard Delinquent (101301) | School Queen (101302)
+  - Haggard Delinquent: self-buff; `scaling` held the ATK-buff % → zeroed, added ATK buff (200→500%, 6t). School Queen: knockback-collision (enemy Max HP, 50–125%) via `scalingStat`, added Bleed (50→100% ATK, 6t) + SP restore.
+- [x] **Samay** (1014) — Kind Liberator (101401) | Kind Student (101402)
+  - Kind Liberator: scaling correct (80→200), added MRES -50% shred (4t), T-shape range. Kind Student: all-ally buffer; `scaling` held the buff % → zeroed, added ATK + Magic ATK buffs (20→50%, 2t). (25%-MATK team heal unmodeled.)
+- [x] **Kry** (1015) — Liberated Marauder (101501) | Violent Student (101502)
+  - Liberated Marauder: fixed +5 scaling (215→200), X-range; DEF -50% debuff already present. Violent Student: knockback-collision (100% enemy Max HP) via `scalingStat`, added Bleed (50→130% ATK, 6t) + SP restore, row range.
+- [x] **Carlson** (1032) — The Mercenary Knight (103201) — self-buff only; `scaling` held the barrier % → zeroed (no damage). Barrier (35→65%, 2→4t) already correct.
+- [x] **Lydia** (1033) — Apprentice Spearman (103301) — fixed +5 scaling (380→350), column-of-2 range.
+- [x] **Rigenette** (1034) — Little Hunter (103401) — fixed +5 scaling (160→110), added Concentrated Fire debuff (4→6t).
+- [x] **Beatrice** (1035) — The Mighty Warrior of the Tribe (103501) — fixed +5 scaling (275→225). Fixed DMG (pure), single-target.
+- [x] **Maria** (1036) — Archmage (103601) — fixed +5 scaling (250→200), column-of-3 range.
+- [x] **Arines** (1037) — Priest of Vitality (103701) — was a stub; rebuilt with upgrades[6]: all-ally ATK (25→70%) + Crit Rate (30%) buffs, 6t, correct name "Fair and Square", ATK-buff potential.

@@ -167,56 +167,32 @@ export const loen: CharacterTemplate = {
         name: "EMP Flash",
         hitCount: 1,
         damageType: "magic",
-        // Range: full 3×3 block. NOTE: the skill's "+75%→155% damage per target"
-        // bonus (scales with the number of enemy targets/boss tiles hit) is NOT
-        // modeled — the engine has no per-target-count scaling. Base 50% is
-        // encoded; the per-target bonus and its two potentials are unmodeled.
+        // Range: full 3×3 block. Base 50% + "+75→155% per target" bonus, modeled
+        // via countScaling (source 'target' = enemy tiles hit). Per-level
+        // countScalingPerUnit lives on the upgrades.
         targetShape: "square",
+        countScalingSource: "target",
         effects: [],
         hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
-        {
-          spCost: 7,
-          cooldown: 9,
-          scaling: 50,
-        },
-        {
-          spCost: 6,
-          cooldown: 9,
-          scaling: 50,
-        },
-        {
-          spCost: 6,
-          cooldown: 9,
-          scaling: 50,
-        },
-        {
-          spCost: 6,
-          cooldown: 9,
-          scaling: 50,
-        },
-        {
-          spCost: 6,
-          cooldown: 9,
-          scaling: 50,
-        },
-        {
-          spCost: 6,
-          cooldown: 9,
-          scaling: 50,
-        },
+        { spCost: 7, cooldown: 9, scaling: 50, countScalingPerUnit: 75 },
+        { spCost: 6, cooldown: 9, scaling: 50, countScalingPerUnit: 75 },
+        { spCost: 6, cooldown: 9, scaling: 50, countScalingPerUnit: 95 },
+        { spCost: 6, cooldown: 9, scaling: 50, countScalingPerUnit: 115 },
+        { spCost: 6, cooldown: 9, scaling: 50, countScalingPerUnit: 135 },
+        { spCost: 6, cooldown: 9, scaling: 50, countScalingPerUnit: 155 },
       ],
       potentials: [
         {
           id: "003203_pot1",
-          type: "damage",
+          type: "count_scaling",
           value: 10,
           name: "Extra damage per target +10%",
         },
         {
           id: "003203_pot2",
-          type: "damage",
+          type: "count_scaling",
           value: 10,
           name: "Extra damage per target +10%",
         },

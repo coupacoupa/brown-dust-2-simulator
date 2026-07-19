@@ -1,6 +1,6 @@
 import { Boss, BossSkillDef, Character, EffectSnapshot, TurnSetup, TurnSurvivalSnapshot } from "@/domain.type";
 import { getTilesHit } from "../targeting.util";
-import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../actions.service";
+import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin, ResolvedAction } from "../actions.service";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
 import { actSummons, applyDotEffects, applyEffects, cloneBattleState, registerSummon, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
@@ -37,10 +37,11 @@ export function simulateTurn(
       const targetOriginTile = char.position ?? 0;
       const tilesTargeted = getTilesHit(targetOriginTile, skill.hitboxPattern, skill.targetShape);
       const preStats = computeFinalStats(char, next.characterBuffs.get(char.id) ?? [], next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
-      applyEffects(skill.effects, char, tilesTargeted, aliveCharacters, next, preStats);
+      applyEffects(skill.effects, char, tilesTargeted, aliveCharacters, next, preStats, 0);
       if (skill.summon) {
-        const zone = getTilesHit(char.position ?? 0, skill.summon.hitboxPattern, undefined);
-        registerSummon(skill.summon, char, zone, next);
+        (Array.isArray(skill.summon) ? skill.summon : [skill.summon]).forEach((spec) => {
+          registerSummon(spec, char, getTilesHit(char.position ?? 0, spec.hitboxPattern, undefined), next);
+        });
       }
     });
   }
@@ -68,6 +69,40 @@ export function simulateTurn(
   // character 2 shows char-1's buffs + their own, etc.
   const perCharBuffSnapshots: Record<string, EffectSnapshot[]> = {};
 
+  // Damage summons (Morpeah's self-destruct Personas) detonate at turn start:
+  // each attacks the boss for a % of its SUMMONER's ATK/MATK, applies any
+  // on-detonation debuffs, then (if selfDestruct) is removed. Their damage joins
+  // this turn's totals, attributed to the summoner, and builds chain for allies.
+  next.summons.filter((s) => s.attack).forEach((summon) => {
+    const summoner = charMap.get(summon.sourceCharacterId);
+    if (!summoner) return;
+    const sBuffs = next.characterBuffs.get(summoner.id) ?? [];
+    const sStats = computeFinalStats(summoner, sBuffs, next.bossDebuffs, next.characterDebuffs.get(summoner.id) ?? []);
+    const atk = summon.attack!;
+    const resolved: ResolvedAction = {
+      name: summon.id, isSkip: false, spCost: 0, burstSpCost: 0,
+      hitCount: atk.hitCount, scaling: atk.scaling, damageType: atk.damageType,
+      scalingStat: atk.scalingStat === 'matk' ? 'matk' : atk.scalingStat === 'atk' ? 'atk' : undefined,
+      effects: [], hitboxPattern: summon.hitboxPattern ?? [[0, 0]],
+      targetGrid: 'enemy', approach: 'vault', skillId: summon.id,
+    };
+    const res = calculateActionDamage(summoner, boss, resolved, sStats, sBuffs, next.bossDebuffs, chainCount, nameOf, next.bossBuffs);
+    turnMin += res.damage.min; turnExpected += res.damage.expected; turnMax += res.damage.max;
+    const cd = perCharacter.get(summoner.id) ?? { min: 0, expected: 0, max: 0 };
+    cd.min += res.damage.min; cd.expected += res.damage.expected; cd.max += res.damage.max;
+    perCharacter.set(summoner.id, cd);
+    chainCount += res.chainsAdded;
+    if (res.event) events.push(res.event);
+    // Apply on-detonation debuffs (e.g. MRES shred) AFTER the hit, so they buff
+    // the team's follow-up rather than the detonation itself.
+    if (atk.effects?.length) {
+      const tiles = getTilesHit(summon.originTile ?? 0, resolved.hitboxPattern, undefined);
+      applyEffects(atk.effects, summoner, tiles, aliveCharacters, next, sStats, chainCount);
+      applyDotEffects(atk.effects, summoner, sStats, boss, next);
+    }
+  });
+  next.summons = next.summons.filter((s) => !(s.attack && s.attack.selfDestruct));
+
   // Execute character actions in order — the dead take no turns
   turnSetup.actions.forEach((action) => {
     const char = charMap.get(action.characterId);
@@ -94,12 +129,15 @@ export function simulateTurn(
     // them. Caster stats (pre-this-cast buffs) let MATK-scaled energy-guard
     // shields snapshot the caster's Magic ATK; HP-scaled shields ignore it.
     const casterStats = computeFinalStats(char, next.characterBuffs.get(char.id) ?? [], next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
-    applyEffects(resolved.effects, char, tilesTargeted, aliveCharacters, next, casterStats);
+    // chainCount here is the chain BEFORE this action — the proxy for chain-
+    // gated "instead" effects (e.g. Sonya's Dark Vulnerability at chain 6+).
+    applyEffects(resolved.effects, char, tilesTargeted, aliveCharacters, next, casterStats, chainCount);
     // A summon created by a normal cast starts acting next turn (this turn's
     // summon phase already ran).
     if (resolved.summon) {
-      const zone = getTilesHit(char.position ?? 0, resolved.summon.hitboxPattern, undefined);
-      registerSummon(resolved.summon, char, zone, next);
+      (Array.isArray(resolved.summon) ? resolved.summon : [resolved.summon]).forEach((spec) => {
+        registerSummon(spec, char, getTilesHit(char.position ?? 0, spec.hitboxPattern, undefined), next);
+      });
     }
 
     // Snapshot this character's buffs at the moment they act
@@ -228,12 +266,12 @@ export function simulateTurn(
   // Counter (buff_counter): every boss hit a holder absorbs this cast fires a
   // Physical retaliation scaling off the holder's Max HP. It's offensive
   // damage, so it lands on this turn's totals, per-character tally, and events.
-  cast?.counters.forEach(({ characterId, triggers, counterPct }) => {
+  cast?.counters.forEach(({ characterId, triggers, counterPct, counterStat }) => {
     const char = charMap.get(characterId);
     if (!char) return;
     const buffs = next.characterBuffs.get(characterId) ?? [];
     const cstats = computeFinalStats(char, buffs, next.bossDebuffs, next.characterDebuffs.get(characterId) ?? []);
-    const cres = computeCounterDamage(char, boss, counterPct, triggers, cstats, next.bossBuffs);
+    const cres = computeCounterDamage(char, boss, counterPct, triggers, cstats, next.bossBuffs, counterStat);
     turnMin += cres.damage.min;
     turnExpected += cres.damage.expected;
     turnMax += cres.damage.max;
@@ -244,6 +282,41 @@ export function simulateTurn(
     perCharacter.set(characterId, cd);
     if (cres.event) events.push(cres.event);
   });
+
+  // Reactive on-hit buffs (Seir, Mamonir): each hit a holder took this cast
+  // fires its payload once (capped by remaining procs). Buff/debuff payloads
+  // stack (value × procs) onto allies/the enemy; heal payloads restore HP. These
+  // land during the boss phase, so they benefit the NEXT ally turn.
+  if (cast) {
+    characters.forEach((char) => {
+      const hits = cast.hitCounts[char.id] ?? 0;
+      if (hits <= 0) return;
+      const buffs = next.characterBuffs.get(char.id) ?? [];
+      const rStats = computeFinalStats(char, buffs, next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
+      buffs.forEach((b) => {
+        if (b.type !== 'buff_reactive' || !b.reactiveEffect) return;
+        const procs = Math.min(hits, b.reactiveRemaining ?? Infinity);
+        if (procs <= 0) return;
+        b.reactiveRemaining = (b.reactiveRemaining ?? Infinity) - procs;
+        const payload = b.reactiveEffect;
+        if (payload.type === 'heal_continuous' || payload.type === 'heal_self_hp_percent') {
+          const cur = next.characterHp.get(char.id);
+          if (cur != null && char.baseHp > 0) {
+            next.characterHp.set(char.id, Math.min(char.baseHp, cur + char.baseHp * (payload.value / 100) * procs));
+          }
+        } else if (payload.type === 'gain_sp') {
+          // Reactive SP restore isn't reflected here — the SP timeline is a
+          // separate pass (computeSpTimeline); left as a survival-only proc.
+        } else {
+          // Buff/debuff payload: stack value × procs onto its declared target.
+          const scaled = { ...payload, value: payload.value * procs };
+          const tiles = char.position !== undefined ? [char.position] : [];
+          applyEffects([scaled], char, tiles, aliveCharacters, next, rStats, chainCount);
+        }
+      });
+      next.characterBuffs.set(char.id, buffs.filter((b) => b.type !== 'buff_reactive' || (b.reactiveRemaining ?? 1) > 0));
+    });
+  }
 
   turnMin = Math.round(turnMin);
   turnExpected = Math.round(turnExpected);

@@ -20,9 +20,9 @@ export const swordMaiden: CharacterTemplate = {
         name: "Holy Smite",
         hitCount: 5,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "square", // Range: full 3×3 block
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
         {
@@ -53,7 +53,7 @@ export const swordMaiden: CharacterTemplate = {
         {
           spCost: 5,
           cooldown: 3,
-          scaling: 120,
+          scaling: 105,
         },
       ],
       potentials: [

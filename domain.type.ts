@@ -44,6 +44,7 @@ export interface SkillEffect {
     | 'consume_hp_percent'
     | 'target_avoidance'
     | 'buff_revive'
+    | 'buff_reactive'  // fires `reactiveEffect` each time the holder is hit (Seir, Mamonir)
     | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
   value: number; // e.g., 50 for +50% or count of times; for 'dot', the per-tick % of the source stat
   duration: number; // in turns (for 'dot', the number of ticks)
@@ -58,20 +59,48 @@ export interface SkillEffect {
   // (default) → value% × the recipient's Max HP; 'caster_matk' → value% × the
   // CASTER's Magic ATK at cast time (e.g. Diana's aura shields).
   egScalingStat?: 'recipient_hp' | 'caster_matk';
+  egRegen?: boolean; // buff_energy_guard: refill the shield to full each turn
+  // buff_counter: which stat the retaliation scales off. 'max_hp' (default) →
+  // value% × the holder's Max HP; 'atk' → value% × the holder's ATK (Blade).
+  counterStat?: 'max_hp' | 'atk';
+  // buff_augmentation: which actions it boosts. 'all' (default) → every damage
+  // instance; 'basic_attack' → only Normal Attacks (Yozakura's follow-up).
+  augmentScope?: 'all' | 'basic_attack';
+  // buff_augmentation: only boosts hits at/above this chain (Liberta Onsen's
+  // "damage to enemies with 10+ Chains"). Evaluated per hit.
+  augmentChainMin?: number;
+  // buff_reactive: the payload applied once per hit the holder receives (its
+  // `target` decides who it lands on). `reactiveMaxTriggers` caps total procs
+  // over the buff's lifetime (e.g. Mamonir's "disappears after 8 hits").
+  reactiveEffect?: SkillEffect;
+  reactiveMaxTriggers?: number;
+  // heal_continuous / heal_self_hp_percent: what `value`% scales off.
+  // 'recipient_hp' (default) → recipient's Max HP; 'caster_matk' → caster's MATK.
+  healSource?: 'recipient_hp' | 'caster_matk';
   chainLimit?: number; // optional chain count limit for the effect to apply (e.g., 5 for Teresse)
   stacks?: number; // number of stacks this effect counts as (defaults to 1)
   maxStacks?: number; // maximum stack count allowed on target for this dotLabel
   resonateCondition?: 'stat_weakening' | 'dot' | 'buff' | 'target_debuff_count'; // Resonate effect condition
   resonateMultiplier?: number; // Stacks per resonate target (defaults to 1)
   isIrremovable?: boolean; // Cannot be removed by dispel/removal effects
+  // Gates whether this effect applies at cast, for "apply X, but Y instead if
+  // <condition>" skills. Evaluated against the caster's pre-cast state (buffs
+  // snapshotted before this skill's own effects) and the chain count at cast.
+  // Encode the pair as two effects: the base one with `negate: true` and the
+  // alternative with `negate: false` on the same condition.
+  applyCondition?: {
+    type: 'chain_min' | 'self_has_augmentation' | 'self_has_stat_reinforcement';
+    value?: number;   // threshold for 'chain_min'
+    negate?: boolean; // apply only when the condition is FALSE
+  };
 }
 
 // Condition gating a costume upgrade's `conditionalScaling`: damage instances
 // where the condition holds use the conditional scaling instead of the base
 // one. Evaluated per hit (the chain counter advances mid-action).
 export interface SkillCondition {
-  type: 'chain_min' | 'target_has_dot' | 'target_is_physical' | 'target_has_taunt_or_concentrated_fire' | 'target_has_vulnerability' | 'target_chain_multiple_of_3' | 'target_debuff_count'; // active while condition holds
-  value: number; // for 'target_debuff_count': minimum number of debuffs on the enemy
+  type: 'chain_min' | 'chain_max' | 'target_has_dot' | 'target_is_physical' | 'target_has_taunt_or_concentrated_fire' | 'target_has_vulnerability' | 'target_chain_multiple_of_3' | 'target_debuff_count'; // active while condition holds
+  value: number; // 'chain_min'/'chain_max': chain threshold; 'target_debuff_count': min debuffs on the enemy
 }
 
 // A persistent "Allied Zone" summon created by a skill (e.g. Diana's Magic
@@ -80,17 +109,29 @@ export interface SkillCondition {
 // buff's value is `effect.value × currentStacks`.
 export interface SummonSpec {
   id: string;                        // stable id (also tags the applied buff)
-  effect: SkillEffect;               // per-STACK buff applied to the zone each turn
-  hitboxPattern: [number, number][]; // zone shape on the ally grid, relative to the summoner
+  hitboxPattern: [number, number][]; // zone/attack shape, relative to the summoner
   duration: number;                  // summon lifetime in turns
-  maxStacks: number;                 // cap on accumulated stacks
+  // --- Buff summon (Diana's Magic Amplifier): each turn re-applies `effect` to
+  //     allies in its zone, ramping one stack (≤ maxStacks) per turn.
+  effect?: SkillEffect;              // per-STACK buff applied to the zone each turn
+  maxStacks?: number;                // cap on accumulated stacks
+  // --- Damage summon (Morpeah's Personas): on its turn it attacks the boss for
+  //     `scaling`% of the summoner's ATK/MATK, then (if selfDestruct) vanishes.
+  attack?: {
+    scaling: number;
+    hitCount: number;
+    damageType: DamageType;
+    scalingStat?: 'atk' | 'matk';
+    effects?: SkillEffect[];         // debuffs/DoTs applied on detonation (e.g. MRES shred)
+    selfDestruct?: boolean;          // removed after attacking once
+  };
 }
 
 export interface Skill {
   id: string;
   name: string;
   hitCount: number; // number of hits (for chain building)
-  summon?: SummonSpec; // creates a persistent Allied Zone summon on cast
+  summon?: SummonSpec | SummonSpec[]; // creates Allied Zone summon(s) on cast
   damageType: DamageType;
   scalingStat?: 'atk' | 'matk' | 'enemy_maxhp' | 'caster_hp';
   energyGuardScaling?: number; // secondary scaling based on current Energy Guard
@@ -100,6 +141,12 @@ export interface Skill {
   // of an AoE, i.e. the tile the tick lands on. The other covered ("arm")
   // tiles use the ordinary `scaling`. Per-level values live on CostumeUpgrade.
   mainTargetScaling?: number;
+  // "Damage increases by N% per <count>" skills. `countScalingPerUnit` (per
+  // level, also on CostumeUpgrade) is added to the base scaling once per unit of
+  // the count: 'target' = enemy tiles hit, 'caster_buff' = caster's active
+  // buffs, 'sp_spent' = SP consumed on this cast.
+  countScalingSource?: 'target' | 'caster_buff' | 'sp_spent';
+  countScalingPerUnit?: number;
   effects: SkillEffect[];
   icon?: string; // Optional path to skill icon asset
   // Custom hitbox pattern: array of [rowOffset, colOffset] relative to the
@@ -110,11 +157,16 @@ export interface Skill {
   // Which grid the shape is projected onto. Defaults to 'enemy'.
   targetGrid?: 'enemy' | 'ally';
   isPreemptive?: boolean; // Toggled to run automatically at start of Turn 1
+  // Knockback-collision skills (Fred, Emma, Kry, Rou): their % of enemy Max HP
+  // only lands if the boss can be knocked back. Zeroed when the boss lists
+  // "Knockback" in its immunities.
+  requiresKnockback?: boolean;
 }
 
 export interface CostumeUpgrade {
   scaling: number;
-  summon?: SummonSpec; // per-level summon override (buff value scales with level)
+  summon?: SummonSpec | SummonSpec[]; // per-level summon override(s)
+  countScalingPerUnit?: number; // per-level "damage +N% per <count>" value
   mainTargetScaling?: number; // per-level Main Target (origin tile) scaling
   energyGuardScaling?: number; // per-level Energy Guard scaling
   spCost: number;
@@ -126,7 +178,7 @@ export interface CostumeUpgrade {
 
 export interface SkillPotential {
   id: string;
-  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
+  type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect' | 'count_scaling';
   value?: number; // e.g. 15 for +15% damage
   // For 'damage' potentials on a Main Target (split-scaling) skill: which
   // scaling the bonus applies to. 'skill' (default) → arm/base scaling only;
@@ -138,7 +190,7 @@ export interface SkillPotential {
   newEffect?: SkillEffect; // For 'add_effect': the brand-new effect this potential grants
   name?: string; // Optional user-facing custom potential label
   additionalEffects?: {
-    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
+    type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect' | 'count_scaling';
     value?: number;
     scalingTarget?: 'skill' | 'main' | 'both';
     targetEffectId?: string;
@@ -150,6 +202,7 @@ export interface SkillPotential {
 export interface BurstUpgrade {
   scalingBonus?: number;
   mainTargetScalingBonus?: number; // adds to Main Target scaling only
+  countScalingBonus?: number; // adds to countScalingPerUnit ("+N per <count>")
   conditionalScalingBonus?: number;
   effects?: SkillEffect[];
   newEffect?: SkillEffect;

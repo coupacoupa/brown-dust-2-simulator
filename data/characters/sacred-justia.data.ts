@@ -19,52 +19,32 @@ export const sacredJustia: CharacterTemplate = {
         name: "Sword of Fidelity",
         hitCount: 1,
         damageType: "physical",
-        targetShape: "single",
+        // Range: full 3×3. Base scaling (150→300) + "+80→130% per target" bonus
+        // via countScaling (source 'target'). Its two potentials and all three
+        // burst tiers boost the per-unit value.
+        targetShape: "square",
+        countScalingSource: "target",
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 150,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 150,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 300,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 300,
-        },
-        {
-          spCost: 5,
-          cooldown: 1,
-          scaling: 300,
-        },
-        {
-          spCost: 5,
-          cooldown: 1,
-          scaling: 300,
-        },
+        { spCost: 6, cooldown: 3, scaling: 150, countScalingPerUnit: 80 },
+        { spCost: 5, cooldown: 3, scaling: 150, countScalingPerUnit: 80 },
+        { spCost: 5, cooldown: 3, scaling: 300, countScalingPerUnit: 80 },
+        { spCost: 5, cooldown: 3, scaling: 300, countScalingPerUnit: 105 },
+        { spCost: 5, cooldown: 1, scaling: 300, countScalingPerUnit: 105 },
+        { spCost: 5, cooldown: 1, scaling: 300, countScalingPerUnit: 130 },
       ],
       potentials: [
         {
           id: "003501_pot1",
-          type: "damage",
+          type: "count_scaling",
           value: 10,
           name: "Extra damage per target +10%",
         },
         {
           id: "003501_pot2",
-          type: "damage",
+          type: "count_scaling",
           value: 10,
           name: "Extra damage per target +10%",
         },
@@ -72,18 +52,15 @@ export const sacredJustia: CharacterTemplate = {
           id: "003501_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: 5×5 diamond.
+          newHitboxPattern: [[0, 0], [-2, 0], [-1, -1], [-1, 0], [-1, 1], [0, -2], [0, -1], [0, 1], [0, 2], [1, -1], [1, 0], [1, 1], [2, 0]],
         },
       ],
+      // CostumeBurst: Extra damage per target +20% / +40% / +60% (SP 1/2/3).
       burstUpgrades: [
-        {
-          scalingBonus: 20,
-        },
-        {
-          scalingBonus: 40,
-        },
-        {
-          scalingBonus: 60,
-        },
+        { spCost: 1, countScalingBonus: 20 },
+        { spCost: 2, countScalingBonus: 40 },
+        { spCost: 3, countScalingBonus: 60 },
       ],
       }],
 };

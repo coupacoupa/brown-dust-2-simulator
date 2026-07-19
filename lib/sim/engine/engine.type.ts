@@ -18,10 +18,17 @@ export interface ActiveEffect {
   // Energy-guard-only: remaining shield pool (value% × recipient's baseHp,
   // snapshotted at application). Incoming damage depletes this before HP.
   shieldRemaining?: number;
+  shieldMax?: number; // full shield pool (for egRegen refill)
+  egRegen?: boolean;  // refill shieldRemaining to shieldMax each turn
   chainLimit?: number;
   stacks?: number;
   maxStacks?: number;
   isIrremovable?: boolean;
+  counterStat?: 'max_hp' | 'atk'; // buff_counter scaling stat (default max_hp)
+  augmentScope?: 'all' | 'basic_attack'; // buff_augmentation scope (default all)
+  augmentChainMin?: number; // buff_augmentation: only boosts hits at/above this chain
+  reactiveEffect?: SkillEffect; // buff_reactive: payload fired per hit received
+  reactiveRemaining?: number;   // buff_reactive: remaining procs
   // Tags a buff applied by an active summon, so the summon can refresh/replace
   // its own contribution each turn without stacking duplicates.
   summonId?: string;
@@ -33,11 +40,16 @@ export interface ActiveEffect {
 export interface ActiveSummon {
   id: string;
   sourceCharacterId: string;
-  effect: SkillEffect;   // per-stack buff template
-  tiles: number[];       // ally-grid tiles the zone covers
-  maxStacks: number;
-  stacks: number;        // accumulated so far
+  tiles: number[];       // ally-grid tiles the zone covers (buff summons)
   remainingTurns: number;
+  // Buff summon
+  effect?: SkillEffect;  // per-stack buff template
+  maxStacks?: number;
+  stacks: number;        // accumulated so far
+  // Damage summon (self-destruct) — carries the spec's attack + summoner origin.
+  attack?: SummonSpec['attack'];
+  originTile?: number;   // summoner's position, for the attack's hitbox origin
+  hitboxPattern?: [number, number][];
 }
 
 // A boss-applied stat debuff sitting on one ally (from BossSkillDebuff), or a

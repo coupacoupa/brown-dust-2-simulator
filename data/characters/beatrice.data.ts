@@ -52,7 +52,7 @@ export const beatrice: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 275,
+          scaling: 225,
         },
       ],
       potentials: [

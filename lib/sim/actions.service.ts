@@ -30,6 +30,8 @@ export interface ResolvedAction {
   hitCount: number;
   scaling: number; // % — includes burst bonus
   mainTargetScaling?: number; // % applied to the Main Target (origin) tile only
+  countScalingSource?: 'target' | 'caster_buff' | 'sp_spent';
+  countScalingPerUnit?: number;
   damageType: DamageType;
   targetShape?: TargetShape;
   conditionalScaling?: number;
@@ -41,7 +43,8 @@ export interface ResolvedAction {
   energyGuardScaling?: number;
   approach: ApproachType;
   skillId: string | null;
-  summon?: SummonSpec; // Allied Zone summon created on cast
+  requiresKnockback?: boolean; // enemy-Max-HP collision that a Knockback-immune boss negates
+  summon?: SummonSpec | SummonSpec[]; // Allied Zone summon(s) created on cast
 }
 
 // Dynamically computes the skill stats based on the character's upgrade level and active potentials.
@@ -60,6 +63,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
   let baseHitCount = upgrade?.hitCount ?? skill.hitCount;
   let baseCooldown = upgrade?.cooldown ?? 0;
   let baseEffects = upgrade?.effects ?? skill.effects;
+  let baseCountScalingPerUnit = upgrade?.countScalingPerUnit ?? skill.countScalingPerUnit;
   const baseSummon = upgrade?.summon ?? skill.summon;
   let baseTargetShape = skill.targetShape;
   let baseHitboxPattern = skill.hitboxPattern;
@@ -114,6 +118,8 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
           } else if (item.type === "add_effect" && item.newEffect) {
             // Potential grants a brand-new skill effect (e.g. a DEF/MRES shred).
             baseEffects = [...baseEffects, item.newEffect];
+          } else if (item.type === "count_scaling" && item.value) {
+            if (baseCountScalingPerUnit !== undefined) baseCountScalingPerUnit += item.value;
           }
         }
       }
@@ -131,6 +137,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
     cooldown: baseCooldown,
     effects: baseEffects,
     summon: baseSummon,
+    countScalingPerUnit: baseCountScalingPerUnit,
     targetShape: baseTargetShape,
     hitboxPattern: baseHitboxPattern,
   };
@@ -171,13 +178,16 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
     const costume = (char.costumes || []).find((c) => c.id === action.costumeId);
     if (costume) {
       const skill = resolveSkillStats(char, costume);
-      const burst = action.burstLevel || 0;
+      // Only burst-capable costumes may consume burst tiers; a stale
+      // burstLevel on a non-burst costume is ignored.
+      const burst = costume.hasBurst ? action.burstLevel || 0 : 0;
       resolved.skillId = skill.id;
       resolved.name = `${costume.name} Skill${burst > 0 ? ` (BURST +${burst})` : ""}`;
       resolved.hitCount = skill.hitCount;
 
       let finalScaling = skill.scaling;
       let finalMainTargetScaling = skill.mainTargetScaling;
+      let finalCountScalingPerUnit = skill.countScalingPerUnit;
       let finalConditionalScaling = skill.conditionalScaling;
       let finalEffects = [...skill.effects];
       let burstSp = 0;
@@ -194,6 +204,20 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
           }
           if (upgrade.conditionalScalingBonus !== undefined && finalConditionalScaling !== undefined) {
             finalConditionalScaling += upgrade.conditionalScalingBonus;
+          }
+          if (upgrade.countScalingBonus !== undefined && finalCountScalingPerUnit !== undefined) {
+            finalCountScalingPerUnit += upgrade.countScalingBonus;
+          }
+          if (upgrade.effectValueBonus !== undefined) {
+            const bonus = upgrade.effectValueBonus;
+            finalEffects = finalEffects.map((eff) => {
+              if (upgrade.targetEffectId ? eff.id !== upgrade.targetEffectId : false) return eff;
+              // For reactive buffs, boost the nested payload (e.g. Mamonir's vuln).
+              if (eff.type === 'buff_reactive' && eff.reactiveEffect) {
+                return { ...eff, reactiveEffect: { ...eff.reactiveEffect, value: eff.reactiveEffect.value + bonus } };
+              }
+              return { ...eff, value: eff.value + bonus };
+            });
           }
           if (upgrade.effects) {
             finalEffects = [...finalEffects, ...upgrade.effects];
@@ -238,6 +262,9 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
       resolved.targetShape = skill.targetShape ?? "single";
       resolved.effects = finalEffects;
       resolved.summon = skill.summon;
+      resolved.requiresKnockback = skill.requiresKnockback;
+      resolved.countScalingSource = skill.countScalingSource;
+      resolved.countScalingPerUnit = finalCountScalingPerUnit;
       resolved.hitboxPattern = skill.hitboxPattern;
       resolved.targetGrid = skill.targetGrid ?? "enemy";
       resolved.approach = costume.approach ?? "very_front";

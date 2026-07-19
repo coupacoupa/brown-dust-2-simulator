@@ -238,7 +238,7 @@ export default function OptionsDeck({
                 </div>
 
                 {/* Burst controllers overlay */}
-                {isSkillSelected && !skillState.onCd && (
+                {isSkillSelected && !skillState.onCd && cost.hasBurst && (
                   <div
                     className="absolute bottom-1 right-14 flex items-center bg-zinc-950/95 border border-zinc-850 rounded px-1.5 py-0.5 gap-1 z-20 scale-[0.85] origin-bottom-right"
                     onClick={(e) => e.stopPropagation()}

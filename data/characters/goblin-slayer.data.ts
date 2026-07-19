@@ -18,103 +18,39 @@ export const goblinSlayer: CharacterTemplate = {
         name: "Goblin Annihilation",
         hitCount: 2,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "row", // Range: top two rows (6 cells)
+        // Self Barrier (50%, 2t) + restore 6 SP to allies, then 2 hits.
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 5,
-          cooldown: 1,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 75,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 6,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 5, cooldown: 1, scaling: 125, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 125, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 150, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 175, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 200, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 225, effects: [
+          { id: "gs_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "gs_sp", type: "gain_sp", value: 6, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {
@@ -131,7 +67,8 @@ export const goblinSlayer: CharacterTemplate = {
         },
         {
           id: "020601_pot3",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "gs_barrier",
           value: 25,
           name: "Barrier +25%",
         },

@@ -18,9 +18,9 @@ export const lydia: CharacterTemplate = {
         name: "Spear Throw",
         hitCount: 1,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "col", // Range: vertical column of 2 (center + tile in front)
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, 0]],
       },
       upgrades: [
         {
@@ -51,7 +51,7 @@ export const lydia: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 380,
+          scaling: 350,
         },
       ],
       potentials: [

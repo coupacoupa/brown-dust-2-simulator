@@ -20,40 +20,31 @@ export const rigenette: CharacterTemplate = {
         hitCount: 2,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Applies Concentrated Fire to the enemy (4→6 turns).
+        effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 7,
-          scaling: 35,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 35,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 60,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 60,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 110,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 160,
-        },
+        { spCost: 2, cooldown: 7, scaling: 35, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 35, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 60, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 60, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 110, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 110, effects: [
+          { id: "rigenette_cf", type: "debuff_concentrated_fire", value: 1, duration: 6, target: "target_enemy" },
+        ] },
       ],
       potentials: [
         {

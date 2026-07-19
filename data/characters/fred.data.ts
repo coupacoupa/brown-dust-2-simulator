@@ -19,102 +19,41 @@ export const fred: CharacterTemplate = {
         hitCount: 1,
         damageType: "physical",
         targetShape: "single",
+        // Knockback-collision damage = % of the ENEMY's Max HP (scalingStat).
+        // Zeroed if the boss is Knockback-immune (requiresKnockback). Also
+        // restores SP to allies and applies Bleed (50% ATK/tick, 6t).
+        scalingStat: "enemy_maxhp", requiresKnockback: true,
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 7,
-          scaling: 25,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 25,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 35,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 35,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 70,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 4,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 2, cooldown: 7, scaling: 25, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 25, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 35, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 35, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 50, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 50, effects: [
+          { id: "fred_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "fred_sp", type: "gain_sp", value: 4, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {

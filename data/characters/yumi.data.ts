@@ -18,41 +18,32 @@ export const yumi: CharacterTemplate = {
         name: "Ice Pillar Fan",
         hitCount: 5,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "col", // Range: vertical column of 3 (forward from the tick)
+        // Frostbite: stacking DoT off caster's MATK (per-level value on upgrades).
+        effects: [
+          { id: "yumi_frostbite", type: "dot", value: 10, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ],
+        hitboxPattern: [[0, 0], [-1, 0], [-2, 0]],
       },
       upgrades: [
-        {
-          spCost: 5,
-          cooldown: 1,
-          scaling: 30,
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 30,
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 60,
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 60,
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 90,
-        },
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 120,
-        },
+        { spCost: 5, cooldown: 1, scaling: 30, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 10, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 30, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 10, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 60, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 10, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 60, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 15, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 90, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 15, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
+        { spCost: 4, cooldown: 1, scaling: 90, effects: [
+          { id: "yumi_frostbite", type: "dot", value: 20, duration: 3, target: "target_enemy", dotSource: "caster_matk", dotLabel: "Frostbite", stacks: 1, maxStacks: 99 },
+        ] },
       ],
       potentials: [
         {
@@ -71,6 +62,8 @@ export const yumi: CharacterTemplate = {
           id: "020401_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: vertical column of 4.
+          newHitboxPattern: [[0, 0], [-1, 0], [-2, 0], [-3, 0]],
         },
       ],
       }],

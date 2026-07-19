@@ -19,41 +19,32 @@ export const remnunt: CharacterTemplate = {
         name: "Steady Hands",
         hitCount: 2,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "row", // Range: center + tile to the right
+        // Reduce enemy ATK by 50% for 4 turns (lowers boss damage to the team).
+        effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ],
+        hitboxPattern: [[0, 0], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 4,
-          cooldown: 7,
-          scaling: 100,
-        },
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 100,
-        },
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 125,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 125,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 175,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 320,
-        },
+        { spCost: 4, cooldown: 7, scaling: 100, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 4, cooldown: 3, scaling: 100, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 4, cooldown: 3, scaling: 125, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 3, cooldown: 3, scaling: 125, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 3, cooldown: 3, scaling: 175, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 3, cooldown: 3, scaling: 250, effects: [
+          { id: "remnunt_atkdown", type: "debuff_atk", value: 50, duration: 4, target: "target_enemy" },
+        ] },
       ],
       potentials: [
         {

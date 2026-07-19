@@ -19,41 +19,32 @@ export const samay: CharacterTemplate = {
         name: "Blade of Hesitation",
         hitCount: 2,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "plus", // Range: T-shape (up, left, center, right)
+        // Reduce enemy Magic Resistance by 50% for 4 turns (MRES shred).
+        effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ],
+        hitboxPattern: [[0, 0], [-1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 5,
-          cooldown: 7,
-          scaling: 80,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 80,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 100,
-        },
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 100,
-        },
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 140,
-        },
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 200,
-        },
+        { spCost: 5, cooldown: 7, scaling: 80, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 80, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 100, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 4, cooldown: 3, scaling: 100, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 4, cooldown: 3, scaling: 140, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 4, cooldown: 3, scaling: 200, effects: [
+          { id: "samay_mres", type: "debuff_mres", value: 50, duration: 4, target: "target_enemy" },
+        ] },
       ],
       potentials: [
         {
@@ -72,43 +63,51 @@ export const samay: CharacterTemplate = {
       skill: {
         id: "s101402",
         name: "I'm Trusting You!",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // All-ally support: ATK + Magic ATK +20→50% (2t) + a 25%-MATK team heal
+        // (healSource: caster_matk). `scaling` previously held the buff %; no
+        // enemy damage, so scaling is 0.
+        effects: [
+          { id: "samay_atk", type: "buff_atk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ],
+        hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 20,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 20,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 25,
-        },
-        {
-          spCost: 1,
-          cooldown: 1,
-          scaling: 25,
-        },
-        {
-          spCost: 1,
-          cooldown: 1,
-          scaling: 35,
-        },
-        {
-          spCost: 1,
-          cooldown: 1,
-          scaling: 50,
-        },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 20, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 25, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 25, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
+        { spCost: 1, cooldown: 1, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 25, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 25, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
+        { spCost: 1, cooldown: 1, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 35, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 35, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
+        { spCost: 1, cooldown: 1, scaling: 0, effects: [
+          { id: "samay_atk", type: "buff_atk", value: 50, duration: 2, target: "all_allies" },
+          { id: "samay_matk", type: "buff_matk", value: 50, duration: 2, target: "all_allies" },
+          { id: "samay_heal", type: "heal_continuous", value: 25, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ] },
       ],
       potentials: [
         {

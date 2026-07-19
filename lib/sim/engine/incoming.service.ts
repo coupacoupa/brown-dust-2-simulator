@@ -13,10 +13,11 @@ export interface BossCastResult {
   totalDamage: number;
   perCharacter: Map<string, number>; // expected damage taken this cast
   newDeaths: string[];               // character ids killed by this cast
+  hitCounts: Record<string, number>; // connecting hits per victim (fuel for reactive on-hit buffs)
   // Counter retaliations triggered this cast: one entry per holder of a
   // buff_counter that absorbed at least one hit. `triggers` = hits absorbed
   // (dodged hits don't count); `counterPct` = summed counter value (% Max HP).
-  counters: { characterId: string; triggers: number; counterPct: number }[];
+  counters: { characterId: string; triggers: number; counterPct: number; counterStat?: 'max_hp' | 'atk' }[];
 }
 
 const ALLY_GRID_COLS = 3; // flank = position % 3, depth = floor(position / 3)
@@ -86,6 +87,7 @@ export function resolveBossCast(
     perCharacter: new Map(),
     newDeaths: [],
     counters: [],
+    hitCounts: {},
   };
 
   const aliveChars = characters.filter((c) => !state.deadCharacters.has(c.id));
@@ -214,9 +216,13 @@ export function resolveBossCast(
 
     // Counter: each hit the victim actually received fires one retaliation
     // (its damage is computed on the offensive side in turn.service).
+    if (connectingHits > 0) {
+      result.hitCounts[victim.id] = (result.hitCounts[victim.id] ?? 0) + connectingHits;
+    }
     const counterPct = sumBuffs(activeBuffs, "buff_counter");
     if (counterPct > 0 && connectingHits > 0) {
-      result.counters.push({ characterId: victim.id, triggers: connectingHits, counterPct });
+      const counterStat = activeBuffs.find((b) => b.type === "buff_counter")?.counterStat ?? "max_hp";
+      result.counters.push({ characterId: victim.id, triggers: connectingHits, counterPct, counterStat });
     }
 
     // Boss skill debuffs land on every hit victim (dodged hits included —

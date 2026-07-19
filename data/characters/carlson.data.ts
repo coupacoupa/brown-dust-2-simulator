@@ -34,7 +34,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 7,
-          scaling: 35,
+          scaling: 0, // self-buff only, no enemy damage
           effects: [
           {
             id: "buff_barrier",
@@ -48,7 +48,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 35,
+          scaling: 0, // self-buff only, no enemy damage
           effects: [
           {
             id: "buff_barrier",
@@ -62,7 +62,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 45,
+          scaling: 0,
           effects: [
           {
             id: "buff_barrier",
@@ -76,7 +76,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 3,
-          scaling: 45,
+          scaling: 0,
           effects: [
           {
             id: "buff_barrier",
@@ -90,7 +90,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 3,
-          scaling: 65,
+          scaling: 0,
           effects: [
           {
             id: "buff_barrier",
@@ -104,7 +104,7 @@ export const carlson: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 3,
-          scaling: 65,
+          scaling: 0,
           effects: [
           {
             id: "buff_barrier",

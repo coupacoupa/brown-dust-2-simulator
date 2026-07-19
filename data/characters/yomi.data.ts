@@ -18,9 +18,9 @@ export const yomi: CharacterTemplate = {
         name: "Sigmund",
         hitCount: 4,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "square", // Range: full 3×3 block
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
         {
@@ -51,7 +51,7 @@ export const yomi: CharacterTemplate = {
         {
           spCost: 7,
           cooldown: 3,
-          scaling: 170,
+          scaling: 150,
         },
       ],
       potentials: [

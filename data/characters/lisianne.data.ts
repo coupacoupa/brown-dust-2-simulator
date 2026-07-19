@@ -16,43 +16,26 @@ export const lisianne: CharacterTemplate = {
       skill: {
         id: "s100301",
         name: "Prayer for Healing",
-        hitCount: 1,
-        damageType: "physical",
+        hitCount: 0,
+        damageType: "magic",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Pure healer/support: heals all allies for 50→150% of Magic ATK
+        // (healSource: caster_matk). scaling 0 (no enemy damage). The "remove DoT
+        // from allies" cleanse is a no-op here (allies don't carry DoTs vs a
+        // boss). Potential grants a MATK-scaled Energy Guard.
+        effects: [
+          { id: "lisianne_heal", type: "heal_continuous", value: 50, duration: 0, target: "all_allies", healSource: "caster_matk" },
+        ],
+        hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 50,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 50,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 70,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 70,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 100,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 150,
-        },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 50, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
+        { spCost: 3, cooldown: 3, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 50, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
+        { spCost: 3, cooldown: 3, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 70, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 70, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 100, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [{ id: "lisianne_heal", type: "heal_continuous", value: 150, duration: 0, target: "all_allies", healSource: "caster_matk" }] },
       ],
       potentials: [
         {
@@ -65,6 +48,7 @@ export const lisianne: CharacterTemplate = {
             value: 150,
             duration: 4,
             target: "all_allies",
+            egScalingStat: "caster_matk",
           },
         },
       ],

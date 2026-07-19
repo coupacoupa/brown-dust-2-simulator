@@ -17,116 +17,63 @@ export const liberta: CharacterTemplate = {
       skill: {
         id: "s003801",
         name: "Prayer of Duality",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
+        // All-ally support: restore 3 SP + ATK (35→85%) + Crit Rate (25→50%),
+        // 4t. `scaling` previously held the ATK buff %; no enemy damage → 0.
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
+          { id: "liberta_ds_atk", type: "buff_atk", value: 35, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 25, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 35,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 35,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 65,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 115,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 3, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 35, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 25, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 35, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 25, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 50, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 25, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 50, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 50, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 65, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 50, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "liberta_ds_atk", type: "buff_atk", value: 85, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_crit", type: "buff_crit_rate", value: 50, duration: 4, target: "all_allies" },
+          { id: "liberta_ds_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {
           id: "003801_pot1",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "liberta_ds_atk",
           value: 15,
           name: "ATK buff +15%",
         },
         {
           id: "003801_pot2",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "liberta_ds_atk",
           value: 15,
           name: "ATK buff +15%",
         },
@@ -147,73 +94,73 @@ export const liberta: CharacterTemplate = {
       skill: {
         id: "s003802",
         name: "It's the Protection of the Oni!",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // All-ally Augmentation (+80→120% damage) that only boosts hits at Chain
+        // 10+ (`augmentChainMin: 10`), plus a 15%-Max-HP team heal. `scaling`
+        // previously held the aug %; no enemy damage → 0.
+        effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 80, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ],
+        hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 80,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 80,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 90,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 100,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 110,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 175,
-        },
+        { spCost: 3, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 80, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 80, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 90, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 100, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 110, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "liberta_om_aug", type: "buff_augmentation", value: 120, duration: 4, target: "all_allies", augmentChainMin: 10 },
+          { id: "liberta_om_heal", type: "heal_continuous", value: 15, duration: 0, target: "all_allies", healSource: "recipient_hp" },
+        ] },
       ],
       potentials: [
         {
           id: "003802_pot1",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "liberta_om_aug",
           value: 10,
           name: "Damage buff +10%",
         },
         {
           id: "003802_pot2",
           type: "damage",
-          value: 10,
+          value: 0, // boosts the unmodeled heal — no-op here
           name: "Heal amount +10%",
         },
         {
           id: "003802_pot3",
-          type: "damage",
+          type: "duration_increase",
+          targetEffectId: "liberta_om_aug",
+          value: 2,
           name: "Augmentation duration +2 turns",
         },
       ],
+      // CostumeBurst: +15% Damage buff per tier — boosts the augmentation value
+      // via effectValueBonus (SP 1/1/1).
       burstUpgrades: [
-        {
-          scalingBonus: 15,
-        },
-        {
-          scalingBonus: 15,
-        },
-        {
-          scalingBonus: 15,
-        },
+        { spCost: 1, effectValueBonus: 15, targetEffectId: "liberta_om_aug" },
+        { spCost: 1, effectValueBonus: 15, targetEffectId: "liberta_om_aug" },
+        { spCost: 1, effectValueBonus: 15, targetEffectId: "liberta_om_aug" },
       ],
       },
     {
@@ -226,41 +173,35 @@ export const liberta: CharacterTemplate = {
         name: "Rose☆Soul Empower",
         hitCount: 5,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "row", // Range: top row of 3 + center
+        // Each of the 5 hits deals % of Liberta's OWN Max HP (scalingStat:
+        // caster_hp — 7→10%). Also self Crit Rate buff (40→70%, 1t). `scaling`
+        // previously held the Crit Rate %.
+        scalingStat: "caster_hp",
+        effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 40, duration: 1, target: "self" },
+        ],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 40,
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 40,
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 40,
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 70,
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 70,
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 100,
-        },
+        { spCost: 2, cooldown: 5, scaling: 7, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 40, duration: 1, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 7, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 40, duration: 1, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 8, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 40, duration: 1, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 8, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 70, duration: 1, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 9, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 70, duration: 1, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 10, effects: [
+          { id: "liberta_mr_crit", type: "buff_crit_rate", value: 70, duration: 1, target: "self" },
+        ] },
       ],
       potentials: [
         {
@@ -277,7 +218,8 @@ export const liberta: CharacterTemplate = {
         },
         {
           id: "003803_pot3",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "liberta_mr_crit",
           value: 30,
           name: "Crit Rate +30%",
         },

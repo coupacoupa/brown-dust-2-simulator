@@ -17,43 +17,42 @@ export const seir: CharacterTemplate = {
       skill: {
         id: "s101101",
         name: "Protective Instinct",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Self-tank: Barrier (40→70%, 4→6t) + a reactive heal — each time Seir is
+        // attacked she heals 15→30% of her Max HP (buff_reactive). scaling 0.
+        effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 40, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 15,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 15,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 15,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 15,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 15,
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 30,
-        },
+        { spCost: 3, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 40, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ] },
+        { spCost: 3, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 50, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ] },
+        { spCost: 3, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 60, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 60, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 70, duration: 4, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_dd_barrier", type: "buff_barrier", value: 70, duration: 6, target: "self" },
+          { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 6, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 30, duration: 0, target: "self" } },
+        ] },
       ],
       potentials: [
         {
@@ -64,7 +63,8 @@ export const seir: CharacterTemplate = {
         },
         {
           id: "101101_pot2",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "seir_dd_barrier",
           value: 15,
           name: "Barrier +15%",
         },
@@ -90,116 +90,57 @@ export const seir: CharacterTemplate = {
       skill: {
         id: "s101102",
         name: "He is Bullying Me!",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
+        // Self-tank: Barrier (40→70%, 2t). `scaling` previously held the barrier
+        // %; no enemy damage, so scaling is 0. The "allies restore 2→3 SP each
+        // time you're hit" is reactive (on-hit) — approximated as an instant SP
+        // restore to keep the SP economy roughly right.
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 2,
-            duration: 0,
-            target: "self",
-          },
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 40, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 2, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 40,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 2,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 2,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 5,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 60,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 5,
-          scaling: 85,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 40, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 2, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 2, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 50, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 60, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 5, scaling: 0, effects: [
+          { id: "seir_bri_barrier", type: "buff_barrier", value: 70, duration: 2, target: "self" },
+          { id: "seir_bri_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {
           id: "101102_pot1",
-          type: "damage",
+          type: "effect_value_increase",
+          targetEffectId: "seir_bri_barrier",
           value: 15,
           name: "Barrier +15%",
         },
         {
           id: "101102_pot2",
-          type: "damage",
+          type: "duration_increase",
+          value: 2,
           name: "SP restoring buff duration +2 turns",
         },
         {
@@ -224,43 +165,38 @@ export const seir: CharacterTemplate = {
       skill: {
         id: "s101103",
         name: "P, please Sign the Contract!",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Reactive Augmentation battery (buff_reactive): over a 4-turn window,
+        // whenever Seir is attacked she grants ALLIES a stacking Augmentation
+        // (10→22% per hit, ≤99 procs). scaling 0 (no direct damage). Per-level
+        // aug value on the upgrades.
+        effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 10, duration: 6, target: "all_allies" } },
+        ],
+        hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 10,
-        },
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 12,
-        },
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 15,
-        },
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 17,
-        },
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 20,
-        },
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 22,
-        },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 10, duration: 6, target: "all_allies" } },
+        ] },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 12, duration: 6, target: "all_allies" } },
+        ] },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 15, duration: 6, target: "all_allies" } },
+        ] },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 17, duration: 6, target: "all_allies" } },
+        ] },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 20, duration: 6, target: "all_allies" } },
+        ] },
+        { spCost: 3, cooldown: 7, scaling: 0, effects: [
+          { id: "seir_nh_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveMaxTriggers: 99, reactiveEffect: { id: "seir_nh_aug", type: "buff_augmentation", value: 22, duration: 6, target: "all_allies" } },
+        ] },
       ],
       potentials: [
         {
@@ -271,7 +207,9 @@ export const seir: CharacterTemplate = {
         },
         {
           id: "101103_pot2",
-          type: "damage",
+          type: "duration_increase",
+          targetEffectId: "seir_nh_react",
+          value: 2,
           name: "Augmentation buff duration +2 turns",
         },
         {

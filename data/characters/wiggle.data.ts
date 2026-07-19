@@ -19,9 +19,9 @@ export const wiggle: CharacterTemplate = {
         name: "Wiggle? Explosion!",
         hitCount: 1,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "plus", // Range: cross3x3 = plus
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
         {
@@ -74,41 +74,32 @@ export const wiggle: CharacterTemplate = {
         name: "Dancing with Bombs",
         hitCount: 3,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "plus", // Range: cross3x3 = plus
+        // Applies Burn (per-level 75→155% ATK/tick, 3t).
+        effects: [
+          { id: "wiggle_burn", type: "dot", value: 75, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ],
+        hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 6,
-          cooldown: 7,
-          scaling: 20,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 20,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 20,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 20,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 20,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 20,
-        },
+        { spCost: 6, cooldown: 7, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 75, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 75, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 90, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 90, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 115, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 20, effects: [
+          { id: "wiggle_burn", type: "dot", value: 155, duration: 3, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Burn" },
+        ] },
       ],
       potentials: [
         {

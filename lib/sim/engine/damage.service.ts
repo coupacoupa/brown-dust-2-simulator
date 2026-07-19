@@ -35,6 +35,10 @@ export function calculateActionDamage(
   } else if (resolved.scalingStat === 'enemy_maxhp') {
     primaryStat = boss.maxHp ?? 0;
   }
+  // Knockback-collision damage is negated if the boss is immune to Knockback.
+  if (resolved.requiresKnockback && boss.immunities?.some((i) => i.toLowerCase().includes('knockback'))) {
+    primaryStat = 0;
+  }
 
   // Defense multiplier (1 - DEF%): the boss's DEF/MRES raised by its own
   // stat-up moves, shredded by ally-cast debuffs; pure damage ignores both.
@@ -71,14 +75,31 @@ export function calculateActionDamage(
   let skillMax = 0;
   let localChain = chainCount;
 
+  // Basic-attack-scoped augmentations (Yozakura) only apply to Normal Attacks,
+  // which resolve with a null skillId.
+  const isBasicAttack = resolved.skillId === null;
+  const augmentApplies = (b: ActiveEffect) =>
+    b.type === 'buff_augmentation' && (b.augmentScope !== 'basic_attack' || isBasicAttack);
   const augmentationValue = activeBuffs
-    .filter((b) => b.type === 'buff_augmentation')
+    .filter(augmentApplies)
     .reduce((sum, b) => sum + b.value, 0);
+
+  // "Damage increases by N% per <count>": a flat scaling bonus added to every
+  // hit, sized by the count (enemy tiles hit / caster's active buffs / SP spent).
+  const countScalingBonus = (() => {
+    const perUnit = resolved.countScalingPerUnit;
+    if (!perUnit) return 0;
+    let count = 0;
+    if (resolved.countScalingSource === 'target') count = hitParts.length;
+    else if (resolved.countScalingSource === 'caster_buff') count = activeBuffs.filter((b) => b.type.startsWith('buff_')).length;
+    else if (resolved.countScalingSource === 'sp_spent') count = resolved.spCost;
+    return perUnit * count;
+  })();
 
   let totalWeightedVuln = 0;
 
   // If we don't hit any part of the boss, damage is 0
-  if (hitParts.length > 0 && (scaling > 0 || resolved.mainTargetScaling !== undefined)) {
+  if (hitParts.length > 0 && (scaling > 0 || resolved.mainTargetScaling !== undefined || countScalingBonus > 0)) {
     // Execute hit by hit, tile by tile — every part receives every hit,
     // and each damage instance advances the chain counter.
     for (let hit = 0; hit < hitCount; hit++) {
@@ -94,6 +115,8 @@ export function calculateActionDamage(
         if (resolved.conditional) {
           if (resolved.conditional.type === 'chain_min') {
             isConditionMet = localChain >= resolved.conditional.value;
+          } else if (resolved.conditional.type === 'chain_max') {
+            isConditionMet = localChain <= resolved.conditional.value;
           } else if (resolved.conditional.type === 'target_has_dot') {
             isConditionMet = bossDebuffs.some((d) => d.type === 'dot');
           } else if (resolved.conditional.type === 'target_has_taunt_or_concentrated_fire') {
@@ -119,9 +142,9 @@ export function calculateActionDamage(
         // The Main Target (origin) tile of a split-scaling AoE hits harder;
         // arm tiles fall back to the ordinary scaling above.
         const activeScaling =
-          partIndex === targetOrigin && resolved.mainTargetScaling !== undefined
+          (partIndex === targetOrigin && resolved.mainTargetScaling !== undefined
             ? resolved.mainTargetScaling
-            : conditionalOrBase;
+            : conditionalOrBase) + countScalingBonus;
         const egShield = activeBuffs
           .filter((b) => b.type === "buff_energy_guard")
           .reduce((acc, b) => acc + (b.shieldRemaining ?? (char.baseHp * (b.value / 100))), 0);
@@ -133,7 +156,9 @@ export function calculateActionDamage(
 
         // Augmentation multiplier: active if localChain <= b.chainLimit (or b.chainLimit is undefined)
         const hitAugmentValue = activeBuffs
-          .filter((b) => b.type === 'buff_augmentation' && (b.chainLimit === undefined || localChain <= b.chainLimit))
+          .filter((b) => augmentApplies(b)
+            && (b.chainLimit === undefined || localChain <= b.chainLimit)
+            && (b.augmentChainMin === undefined || localChain >= b.augmentChainMin))
           .reduce((sum, b) => sum + b.value, 0);
         const augmentationMultiplier = 1 + hitAugmentValue / 100;
         const hitVulnMult = vulnerabilityMultiplier * augmentationMultiplier;
@@ -230,8 +255,11 @@ export function computeCounterDamage(
   triggers: number,
   stats: ComputedStats,
   bossBuffs: BossStatEffect[] = [],
+  counterStat: 'max_hp' | 'atk' = 'max_hp',
 ): { damage: DamageBand; event: ActionDamageEvent | null } {
-  if (counterPct <= 0 || triggers <= 0 || char.baseHp <= 0) {
+  // ATK-based counters (Blade) scale off ATK; HP-based ones need HP entered.
+  const counterBase = counterStat === 'atk' ? stats.finalAtk : char.baseHp;
+  if (counterPct <= 0 || triggers <= 0 || counterBase <= 0) {
     return { damage: { min: 0, expected: 0, max: 0 }, event: null };
   }
 
@@ -248,8 +276,8 @@ export function computeCounterDamage(
   const critMultValue = 1 + stats.finalCritDmg / 100;
   const critExpectedMult = 1 + (stats.finalCritRate / 100) * (critMultValue - 1);
 
-  // Base per counter = Max HP × counter%. All counters share the same value.
-  const basePerCounter = char.baseHp * (counterPct / 100);
+  // Base per counter = (Max HP or ATK) × counter%. All counters share the value.
+  const basePerCounter = counterBase * (counterPct / 100);
   const nonCrit = basePerCounter * defMultiplier * propertyMultiplier * vulnerabilityMultiplier;
 
   const min = nonCrit * triggers;
@@ -260,7 +288,7 @@ export function computeCounterDamage(
     charName: char.name,
     actionName: triggers > 1 ? `Counter ×${triggers}` : 'Counter',
     scaling: counterPct,
-    baseStat: char.baseHp,
+    baseStat: counterBase,
     atkBuffPct: 0,
     critExpectedMult,
     vulnMultiplier: vulnerabilityMultiplier,

@@ -20,6 +20,8 @@ export const bernie: CharacterTemplate = {
         hitCount: 2,
         damageType: "physical",
         targetShape: "single",
+        // Scaling (50→110), SP-restore (2→3), cooldown all verified correct.
+        // NOTE: also applies Silence (2t) — no Silence type in the engine, unmodeled.
         effects: [
           {
             id: "gain_sp",

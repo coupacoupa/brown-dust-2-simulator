@@ -17,43 +17,41 @@ export const morpeah: CharacterTemplate = {
       skill: {
         id: "s003401",
         name: "Villain Persona",
-        hitCount: 1,
-        damageType: "physical",
+        hitCount: 0,
+        damageType: "magic",
         targetShape: "single",
+        isPreemptive: true,
+        // Preemptive: summons 2 self-destruct Personas (Worship = row, Slander =
+        // column) that each detonate for 300→700% of Morpeah's MATK, plus a self
+        // Barrier (via potential). Modeled via the summon system's damage mode.
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 0,
-        },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 300, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 300, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 380, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 380, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 460, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 460, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 540, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 540, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 620, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 620, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
+        { spCost: 6, cooldown: 3, scaling: 0, summon: [
+          { id: "morpeah_worship", hitboxPattern: [[0, 0], [0, -1], [0, 1]], duration: 1, attack: { scaling: 700, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+          { id: "morpeah_slander", hitboxPattern: [[0, 0], [-1, 0], [-2, 0]], duration: 1, attack: { scaling: 700, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true } },
+        ] },
       ],
       potentials: [
         {
@@ -90,43 +88,47 @@ export const morpeah: CharacterTemplate = {
       skill: {
         id: "s003402",
         name: "Daydream's Call",
-        hitCount: 1,
-        damageType: "physical",
+        hitCount: 0,
+        damageType: "magic",
         targetShape: "single",
+        isPreemptive: true,
+        // Preemptive: summons 1 self-destruct Bunny Spectre (3×3 range) that
+        // detonates for 200→650% of Morpeah's MATK and shreds enemy MRES -30%
+        // (4t). Modeled via the summon system's damage mode.
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
-        {
-          spCost: 3,
-          cooldown: 5,
-          scaling: 0,
-        },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 200, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 290, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 380, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 470, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 560, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
+        { spCost: 3, cooldown: 5, scaling: 0, summon: {
+          id: "morpeah_bunny_spectre", duration: 1,
+          hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+          attack: { scaling: 650, hitCount: 1, damageType: "magic", scalingStat: "matk", selfDestruct: true, effects: [{ id: "morpeah_bunny_mres", type: "debuff_mres", value: 30, duration: 4, target: "target_enemy" }] },
+        } },
       ],
       potentials: [
         {
@@ -160,47 +162,41 @@ export const morpeah: CharacterTemplate = {
         name: "Black Order",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "square", // Range: full 3×3 block
+        // Applies Concentrated Fire to the Main Target (2t). NOTE: also applies
+        // "Summons Vulnerability" (100→180%) which only amplifies summon damage
+        // — since summon damage isn't modeled, this vuln is UNMODELED (its two
+        // potentials are no-ops).
+        effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 125,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 150,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 175,
-        },
-        {
-          spCost: 2,
-          cooldown: 1,
-          scaling: 200,
-        },
+        { spCost: 3, cooldown: 1, scaling: 100, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 100, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 125, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 150, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 175, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
+        { spCost: 2, cooldown: 1, scaling: 200, effects: [
+          { id: "morpeah_cf", type: "debuff_concentrated_fire", value: 1, duration: 2, target: "target_enemy" },
+        ] },
       ],
       potentials: [
         {
           id: "003403_pot1",
           type: "damage",
-          value: 10,
+          value: 0, // boosts the unmodeled Summons Vulnerability — no-op here
           name: "Summons Vulnerability +10%",
         },
         {
@@ -212,7 +208,7 @@ export const morpeah: CharacterTemplate = {
         {
           id: "003403_pot3",
           type: "damage",
-          value: 10,
+          value: 0, // boosts the unmodeled Summons Vulnerability — no-op here
           name: "Summons Vulnerability +10%",
         },
       ],

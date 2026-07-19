@@ -20,41 +20,32 @@ export const highElfArcher: CharacterTemplate = {
         name: "High Elf Archery",
         hitCount: 4,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "row", // Range: horizontal row of 3
+        // Crit Rate +100% self (2t) before the hits.
+        effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ],
+        hitboxPattern: [[0, 0], [0, -1], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 4,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
-        {
-          spCost: 3,
-          cooldown: 1,
-          scaling: 100,
-        },
+        { spCost: 4, cooldown: 1, scaling: 75, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 1, scaling: 75, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 1, scaling: 87, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 1, scaling: 100, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 1, scaling: 112, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 1, scaling: 125, effects: [
+          { id: "hea_crit", type: "buff_crit_rate", value: 100, duration: 2, target: "self" },
+        ] },
       ],
       potentials: [
         {
@@ -73,6 +64,8 @@ export const highElfArcher: CharacterTemplate = {
           id: "020801_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: horizontal row of 5.
+          newHitboxPattern: [[0, 0], [0, -1], [0, 1], [0, -2], [0, 2]],
         },
       ],
       },

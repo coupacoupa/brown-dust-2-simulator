@@ -19,7 +19,7 @@ export const kry: CharacterTemplate = {
         name: "Armor Attack",
         hitCount: 2,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "cross", // Range: diagcross (X) = center + 4 diagonals
         effects: [
           {
             id: "debuff_def",
@@ -29,7 +29,7 @@ export const kry: CharacterTemplate = {
             target: "target_enemy",
           },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
       },
       upgrades: [
         {
@@ -105,7 +105,7 @@ export const kry: CharacterTemplate = {
         {
           spCost: 4,
           cooldown: 3,
-          scaling: 215,
+          scaling: 200,
           effects: [
           {
             id: "debuff_def",
@@ -136,109 +136,49 @@ export const kry: CharacterTemplate = {
         name: "Leave It to Me!",
         hitCount: 1,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "row", // Range: center + tile to the right
+        // Knockback-collision damage = 100% of enemy Max HP (scalingStat). Also
+        // restores SP and applies Bleed (50→130% ATK/tick, 6t). Zeroed if the boss is Knockback-immune (requiresKnockback).
+        scalingStat: "enemy_maxhp", requiresKnockback: true,
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
+          { id: "kry_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 7,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 100,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 2, cooldown: 7, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 65, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 65, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 90, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 100, effects: [
+          { id: "kry_bleed", type: "dot", value: 130, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "kry_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {
           id: "101502_pot1",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: horizontal row of 3 (rightward).
+          newHitboxPattern: [[0, 0], [0, 1], [0, 2]],
         },
       ],
       },

@@ -18,7 +18,9 @@ export const lucrezia: CharacterTemplate = {
         name: "Seductive Gesture",
         hitCount: 2,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "plus", // Range: cross3x3 = plus
+        // NOTE: also applies Silence (2→6t) — no Silence effect type in the
+        // engine, unmodeled (crowd control, no damage impact vs a boss).
         effects: [
           {
             id: "gain_sp",
@@ -28,7 +30,7 @@ export const lucrezia: CharacterTemplate = {
             target: "self",
           },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
         {
@@ -104,7 +106,7 @@ export const lucrezia: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 3,
-          scaling: 40,
+          scaling: 20,
           effects: [
           {
             id: "gain_sp",

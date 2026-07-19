@@ -21,48 +21,53 @@ export const sonya: CharacterTemplate = {
         hitCount: 1,
         damageType: "magic",
         targetShape: "plus", // Range: plus (center + up/down/left/right)
-        // Applies general Vulnerability (per-level values on the upgrades).
-        // NOTE: "if the attack brings the enemy to Chain 6+, apply Dark
-        // Vulnerability (75→155%) INSTEAD" is not modeled — the engine can't
-        // swap which effect applies based on a chain condition. Only the
-        // unconditional general Vulnerability is represented.
+        // Applies a general Vulnerability, BUT if the attack leaves the enemy at
+        // Chain 6+ it applies Dark Vulnerability INSTEAD — modeled as a pair of
+        // applyCondition-gated effects (chain_min 6; general = negate). chainCount
+        // is the pre-cast chain (proxy for "results in"). Per-level on upgrades.
         effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 75, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ],
         hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
         { spCost: 4, cooldown: 3, scaling: 300, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 75, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 300, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 55, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 75, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 300, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 80, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 80, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 115, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 400, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 80, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 80, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 115, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 400, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 105, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 105, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 155, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 500, effects: [
-          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 105, duration: 4, target: "target_enemy" },
+          { id: "sonya_shadow_vuln", type: "debuff_vulnerability", value: 105, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6, negate: true } },
+          { id: "sonya_shadow_darkvuln", type: "debuff_property_vulnerability", element: "dark", value: 155, duration: 4, target: "target_enemy", applyCondition: { type: "chain_min", value: 6 } },
         ] },
       ],
       potentials: [
         {
+          // No targetEffectId → boosts whichever Vulnerability applies (both variants).
           id: "003901_pot1",
           type: "effect_value_increase",
-          targetEffectId: "sonya_shadow_vuln",
           value: 10,
           name: "Vulnerability +10%",
         },
         {
           id: "003901_pot2",
           type: "effect_value_increase",
-          targetEffectId: "sonya_shadow_vuln",
           value: 10,
           name: "Vulnerability +10%",
         },

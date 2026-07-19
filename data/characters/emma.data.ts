@@ -17,43 +17,35 @@ export const emma: CharacterTemplate = {
       skill: {
         id: "s101301",
         name: "I'm the Best!",
-        hitCount: 1,
+        hitCount: 0,
         damageType: "physical",
         targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        // Self ATK buff (+200→500%, 6t) — `scaling` previously held these buff
+        // values; it's a self-buff with no enemy damage, so scaling is 0.
+        effects: [
+          { id: "emma_atk", type: "buff_atk", value: 200, duration: 6, target: "self" },
+        ],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 2,
-          cooldown: 7,
-          scaling: 200,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 200,
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 250,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 250,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 350,
-        },
-        {
-          spCost: 1,
-          cooldown: 3,
-          scaling: 500,
-        },
+        { spCost: 2, cooldown: 7, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 200, duration: 6, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 200, duration: 6, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 250, duration: 6, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 250, duration: 6, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 350, duration: 6, target: "self" },
+        ] },
+        { spCost: 1, cooldown: 3, scaling: 0, effects: [
+          { id: "emma_atk", type: "buff_atk", value: 500, duration: 6, target: "self" },
+        ] },
       ],
       potentials: [
         {
@@ -81,102 +73,40 @@ export const emma: CharacterTemplate = {
         hitCount: 1,
         damageType: "physical",
         targetShape: "single",
+        // Knockback-collision damage = % of enemy Max HP (scalingStat). Also
+        // restores SP and applies Bleed (50→100% ATK/tick, 6t). Zeroed if the boss is Knockback-immune (requiresKnockback).
+        scalingStat: "enemy_maxhp", requiresKnockback: true,
         effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
-        {
-          spCost: 3,
-          cooldown: 7,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 50,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 75,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 75,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 125,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
-        {
-          spCost: 2,
-          cooldown: 3,
-          scaling: 125,
-          effects: [
-          {
-            id: "gain_sp",
-            type: "gain_sp",
-            value: 3,
-            duration: 0,
-            target: "self",
-          },
-        ],
-        },
+        { spCost: 3, cooldown: 7, scaling: 50, effects: [
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 3, scaling: 50, effects: [
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 3, cooldown: 3, scaling: 75, effects: [
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 75, effects: [
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 125, effects: [
+          { id: "emma_bleed", type: "dot", value: 50, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
+        { spCost: 2, cooldown: 3, scaling: 125, effects: [
+          { id: "emma_bleed", type: "dot", value: 100, duration: 6, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Bleed" },
+          { id: "emma_sp", type: "gain_sp", value: 3, duration: 0, target: "self" },
+        ] },
       ],
       potentials: [
         {

@@ -21,10 +21,11 @@ export const palette: CharacterTemplate = {
         hitCount: 1,
         damageType: "magic",
         targetShape: "cross", // Range: diagcross (X) = center + 4 diagonals
-        // Also "Extend all debuffs on the enemy by 2 turns" — enemy-debuff
-        // duration extension is not modeled (buff_duration_extend only extends
-        // ally buffs). Utility only; damage is unaffected.
-        effects: [],
+        // "Extend all debuffs on the enemy by 2 turns" — a buff_duration_extend
+        // targeted at the enemy bumps every active boss debuff's remaining turns.
+        effects: [
+          { id: "palette_extend", type: "buff_duration_extend", value: 2, duration: 0, target: "target_enemy" },
+        ],
         hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
       },
       upgrades: [

@@ -19,41 +19,20 @@ export const eris: CharacterTemplate = {
         name: "Crimson Flash",
         hitCount: 1,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "plus", // Range: center + left/right + bottom diagonals
+        // Conditional: if the attack leaves the enemy at Chain 7 or LESS, deal
+        // the higher conditionalScaling instead (rewards opening early).
+        conditional: { type: "chain_max", value: 7 },
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [0, -1], [0, 1], [1, -1], [1, 1]],
       },
       upgrades: [
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 300,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 300,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 375,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 450,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 525,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 650,
-        },
+        { spCost: 4, cooldown: 3, scaling: 300, conditionalScaling: 600 },
+        { spCost: 3, cooldown: 3, scaling: 300, conditionalScaling: 600 },
+        { spCost: 3, cooldown: 3, scaling: 375, conditionalScaling: 675 },
+        { spCost: 3, cooldown: 3, scaling: 450, conditionalScaling: 750 },
+        { spCost: 3, cooldown: 3, scaling: 525, conditionalScaling: 825 },
+        { spCost: 3, cooldown: 3, scaling: 600, conditionalScaling: 900 },
       ],
       potentials: [
         {
@@ -86,41 +65,34 @@ export const eris: CharacterTemplate = {
         name: "Doldia Tribe's Secret Technique",
         hitCount: 5,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "plus", // Range: T-shape (up, left, center, right)
+        // "Vulnerability (Physical)" on the Main Target. Engine has no
+        // physical-only vuln type, so modeled as generic debuff_vulnerability;
+        // single-boss content always ticks the boss as Main Target so it applies.
+        effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 100, duration: 4, target: "target_enemy" },
+        ],
+        hitboxPattern: [[0, 0], [-1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
-        {
-          spCost: 6,
-          cooldown: 3,
-          scaling: 30,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 30,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 30,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 45,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 45,
-        },
-        {
-          spCost: 5,
-          cooldown: 3,
-          scaling: 80,
-        },
+        { spCost: 6, cooldown: 3, scaling: 30, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 100, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 30, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 100, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 30, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 125, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 45, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 125, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 45, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 150, duration: 4, target: "target_enemy" },
+        ] },
+        { spCost: 5, cooldown: 3, scaling: 60, effects: [
+          { id: "eris_cat_vuln", type: "debuff_vulnerability", value: 150, duration: 4, target: "target_enemy" },
+        ] },
       ],
       potentials: [
         {
@@ -139,6 +111,8 @@ export const eris: CharacterTemplate = {
           id: "020002_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: top two rows (6 cells).
+          newHitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1]],
         },
       ],
       },

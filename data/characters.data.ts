@@ -42,7 +42,7 @@ import { goblinSlayer } from "./characters/goblin-slayer.data";
 import { priestess } from "./characters/priestess.data";
 import { highElfArcher } from "./characters/high-elf-archer.data";
 import { swordMaiden } from "./characters/sword-maiden.data";
-import { karuga } from "./characters/karuga.data";
+import { ikaruga } from "./characters/ikaruga.data";
 import { alec } from "./characters/alec.data";
 import { celia } from "./characters/celia.data";
 import { anastasia } from "./characters/anastasia.data";
@@ -126,7 +126,7 @@ export const CHARACTER_TEMPLATES: CharacterTemplate[] = [
   priestess,
   highElfArcher,
   swordMaiden,
-  karuga,
+  ikaruga,
   alec,
   celia,
   anastasia,

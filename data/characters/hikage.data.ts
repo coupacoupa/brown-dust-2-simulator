@@ -41,7 +41,7 @@ export const hikage: CharacterTemplate = {
         {
           spCost: 4,
           cooldown: 3,
-          scaling: 40,
+          scaling: 50, // wiki text3 literal "40" is a stale copy — value carries from +2
         },
         {
           spCost: 4,
@@ -51,7 +51,7 @@ export const hikage: CharacterTemplate = {
         {
           spCost: 4,
           cooldown: 1,
-          scaling: 90,
+          scaling: 70,
         },
       ],
       potentials: [

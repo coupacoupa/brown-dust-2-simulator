@@ -1,5 +1,5 @@
 import { Boss, Character, SkillEffect, SummonSpec } from "@/domain.type";
-import { ActiveEffect, ActiveSummon, BattleState, ComputedStats } from "./engine.type";
+import { ActiveEffect, BattleState, ComputedStats } from "./engine.type";
 
 // BattleState lifecycle: creation, cloning, effect application and decay.
 // simulateTurn (./turn.ts) clones the incoming state once at entry and only
@@ -29,7 +29,12 @@ export function cloneBattleState(state: BattleState): BattleState {
       Array.from(state.characterDebuffs, ([charId, debuffs]) => [charId, debuffs.map((d) => ({ ...d }))]),
     ),
     bossBuffs: state.bossBuffs.map((b) => ({ ...b })),
-    summons: state.summons.map((s) => ({ ...s, tiles: [...s.tiles], effect: { ...s.effect } })),
+    summons: state.summons.map((s) => ({
+      ...s,
+      tiles: [...s.tiles],
+      effect: s.effect ? { ...s.effect } : undefined,
+      attack: s.attack ? { ...s.attack } : undefined,
+    })),
   };
 }
 
@@ -43,22 +48,25 @@ export function registerSummon(
   tiles: number[],
   store: BattleState,
 ): void {
+  const common = {
+    remainingTurns: spec.duration,
+    tiles,
+    effect: spec.effect ? { ...spec.effect } : undefined,
+    maxStacks: spec.maxStacks,
+    attack: spec.attack ? { ...spec.attack } : undefined,
+    originTile: sourceChar.position ?? 0,
+    hitboxPattern: spec.hitboxPattern,
+  };
   const existing = store.summons.find((s) => s.id === spec.id);
   if (existing) {
-    existing.remainingTurns = spec.duration;
-    existing.tiles = tiles;
-    existing.effect = { ...spec.effect };
-    existing.maxStacks = spec.maxStacks;
+    Object.assign(existing, common);
     return;
   }
   store.summons.push({
     id: spec.id,
     sourceCharacterId: sourceChar.id,
-    effect: { ...spec.effect },
-    tiles,
-    maxStacks: spec.maxStacks,
     stacks: 0,
-    remainingTurns: spec.duration,
+    ...common,
   });
 }
 
@@ -68,8 +76,10 @@ export function registerSummon(
 // (matched by summonId) so re-application never double-stacks.
 export function actSummons(store: BattleState, characters: Character[]): void {
   store.summons.forEach((summon) => {
-    summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks);
-    const value = summon.effect.value * summon.stacks;
+    const eff = summon.effect;
+    if (!eff) return; // damage summons are resolved in turn.service
+    summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks ?? 1);
+    const value = eff.value * summon.stacks;
     characters.forEach((ally) => {
       if (ally.position === undefined || !summon.tiles.includes(ally.position)) return;
       if (store.deadCharacters.has(ally.id)) return;
@@ -77,11 +87,11 @@ export function actSummons(store: BattleState, characters: Character[]): void {
       if (!buffs) return;
       const kept = buffs.filter((b) => b.summonId !== summon.id);
       kept.push({
-        type: summon.effect.type,
+        type: eff.type,
         value,
-        remainingTurns: summon.effect.duration,
+        remainingTurns: eff.duration,
         sourceCharacterId: summon.sourceCharacterId,
-        element: summon.effect.element,
+        element: eff.element,
         summonId: summon.id,
       });
       store.characterBuffs.set(ally.id, kept);
@@ -99,10 +109,25 @@ export function applyEffects(
   characters: Character[],
   store: BattleState,
   casterStats?: ComputedStats,
+  chainCount: number = 0,
 ): void {
+  // Snapshot the caster's buffs BEFORE this skill applies any, so "apply X but
+  // Y instead if you already have <buff>" conditions read pre-cast state.
+  const casterBuffsBefore = [...(store.characterBuffs.get(sourceChar.id) ?? [])];
+  const STAT_REINFORCEMENT_TYPES: SkillEffect['type'][] =
+    ['buff_atk', 'buff_matk', 'buff_crit_rate', 'buff_crit_dmg', 'buff_prop_dmg'];
+  const applyConditionMet = (cond: NonNullable<SkillEffect['applyCondition']>): boolean => {
+    let met = false;
+    if (cond.type === 'chain_min') met = chainCount >= (cond.value ?? 0);
+    else if (cond.type === 'self_has_augmentation') met = casterBuffsBefore.some((b) => b.type === 'buff_augmentation');
+    else if (cond.type === 'self_has_stat_reinforcement') met = casterBuffsBefore.some((b) => STAT_REINFORCEMENT_TYPES.includes(b.type));
+    return cond.negate ? !met : met;
+  };
+
   effects.forEach((eff) => {
     if (eff.type === 'gain_sp') return; // Instantaneous SP restoration doesn't linger as a buff
     if (eff.type === 'dot') return;     // DoTs need stat context — applied via applyDotEffects
+    if (eff.applyCondition && !applyConditionMet(eff.applyCondition)) return; // "instead" gating
 
     let actualValue = eff.value;
     let actualStacks = eff.stacks ?? 1;
@@ -170,11 +195,17 @@ export function applyEffects(
         chainLimit: eff.chainLimit,
         element: eff.element,
         isIrremovable: eff.isIrremovable,
+        counterStat: eff.counterStat,
+        augmentScope: eff.augmentScope,
+        augmentChainMin: eff.augmentChainMin,
+        ...(eff.type === 'buff_reactive'
+          ? { reactiveEffect: eff.reactiveEffect, reactiveRemaining: eff.reactiveMaxTriggers ?? Infinity }
+          : {}),
         stacks: finalStacks,
         ...(eff.type === 'buff_energy_guard'
           ? (() => {
               const shield = energyGuardShield(recipient, finalValue);
-              return shield > 0 ? { shieldRemaining: shield } : {};
+              return shield > 0 ? { shieldRemaining: shield, shieldMax: shield, egRegen: eff.egRegen } : {};
             })()
           : {}),
       };
@@ -186,6 +217,14 @@ export function applyEffects(
         if (currentHp !== undefined && currentHp !== null) {
           store.characterHp.set(ally.id, Math.max(1, Math.floor(currentHp * (1 - eff.value / 100))));
         }
+      } else if (eff.type === 'heal_continuous' || eff.type === 'heal_self_hp_percent') {
+        // Restore HP now (value% of recipient Max HP, or caster's MATK). A
+        // per-turn heal is modeled as an up-front restore of one tick's amount.
+        const currentHp = store.characterHp.get(ally.id);
+        if (currentHp != null && ally.baseHp > 0) {
+          const base = eff.healSource === 'caster_matk' ? (casterStats?.finalMatk ?? 0) : ally.baseHp;
+          store.characterHp.set(ally.id, Math.min(ally.baseHp, currentHp + base * (eff.value / 100)));
+        }
       } else if (eff.type === 'buff_duration_extend') {
         const buffs = store.characterBuffs.get(ally.id) || [];
         buffs.forEach((b) => {
@@ -195,6 +234,13 @@ export function applyEffects(
         store.characterBuffs.get(ally.id)!.push(makeEffect(ally));
       }
     };
+
+    // "Extend all debuffs on the enemy" (Palette): bump every boss debuff's
+    // remaining turns instead of applying a new debuff.
+    if (eff.type === 'buff_duration_extend' && (eff.target === 'target_enemy' || eff.target === 'all_enemies')) {
+      store.bossDebuffs.forEach((d) => { d.remainingTurns += eff.value; });
+      return;
+    }
 
     if (eff.target === 'self') {
       giveTo(sourceChar);
@@ -258,7 +304,13 @@ export function applyDotEffects(
 // energy guard (pool at 0) drops with its duration like any other buff.
 export function tickEffectDurations(store: BattleState): void {
   store.characterBuffs.forEach((buffs, charId) => {
-    buffs.forEach((b) => b.remainingTurns--);
+    buffs.forEach((b) => {
+      b.remainingTurns--;
+      // Regenerating energy guards (Diana's aura) refill to full each turn.
+      if (b.egRegen && b.shieldMax !== undefined && b.remainingTurns > 0) {
+        b.shieldRemaining = b.shieldMax;
+      }
+    });
     store.characterBuffs.set(charId, buffs.filter((b) => b.remainingTurns > 0));
   });
   store.bossDebuffs.forEach((d) => d.remainingTurns--);

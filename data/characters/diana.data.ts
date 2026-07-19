@@ -128,11 +128,10 @@ export const diana: CharacterTemplate = {
         damageType: "magic",
         // "Apply an Aura for 2 turns. Allies within the Aura gain an Energy
         //  Guard equal to X% of your (Diana's) Magic ATK, which regenerates
-        //  each turn." Shield scales off the CASTER's MATK (egScalingStat).
-        //  NOTE: the per-turn regeneration of the shield pool is not modeled;
-        //  the shield is snapshotted once at cast.
+        //  each turn." Shield scales off the CASTER's MATK (egScalingStat) and
+        //  refills to full each turn (egRegen).
         effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ],
         // Base Range: 5×5 diamond centered on Diana, projected on the ally grid.
         hitboxPattern: [[0, 0], [-2, 0], [-1, -1], [-1, 0], [-1, 1], [0, -2], [0, -1], [0, 1], [0, 2], [1, -1], [1, 0], [1, 1], [2, 0]],
@@ -140,22 +139,22 @@ export const diana: CharacterTemplate = {
       },
       upgrades: [
         { spCost: 2, cooldown: 5, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
         { spCost: 1, cooldown: 5, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 500, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
         { spCost: 1, cooldown: 5, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 650, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 650, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
         { spCost: 1, cooldown: 5, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 800, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 800, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
         { spCost: 1, cooldown: 3, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 800, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 800, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
         { spCost: 1, cooldown: 3, scaling: 0, effects: [
-          { id: "diana_anti_eg", type: "buff_energy_guard", value: 1000, duration: 2, target: "area_allies", egScalingStat: "caster_matk" },
+          { id: "diana_anti_eg", type: "buff_energy_guard", value: 1000, duration: 2, target: "area_allies", egScalingStat: "caster_matk", egRegen: true },
         ] },
       ],
       potentials: [

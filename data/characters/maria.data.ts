@@ -18,9 +18,9 @@ export const maria: CharacterTemplate = {
         name: "Destructive Magic",
         hitCount: 2,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "col", // Range: vertical column of 3 (forward from the tick)
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, 0], [-2, 0]],
       },
       upgrades: [
         {
@@ -51,7 +51,7 @@ export const maria: CharacterTemplate = {
         {
           spCost: 4,
           cooldown: 3,
-          scaling: 250,
+          scaling: 200,
         },
       ],
       potentials: [
