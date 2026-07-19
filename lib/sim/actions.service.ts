@@ -2,8 +2,8 @@ import {
   ActiveCostume,
   ApproachType,
   Character,
+  Condition,
   DamageType,
-  SkillCondition,
   SkillEffect,
   SummonSpec,
   TargetShape,
@@ -20,6 +20,18 @@ import { ActiveEffect } from "./engine/engine.type";
 export const MAX_BURST_LEVEL = 3;
 export const BURST_SCALING_PER_LEVEL = 40; // +40% skill scaling per burst level
 
+// Identity of an effect for burst-tier merging: a tier effect matching one
+// the skill already applies (same family, target, element scope and
+// conditions) raises that effect's value instead of stacking a second copy.
+const effectMergeKey = (e: SkillEffect): string =>
+  JSON.stringify([
+    e.type,
+    e.target,
+    'element' in e ? e.element ?? null : null,
+    e.condition ?? null,
+    'resonateCondition' in e ? e.resonateCondition ?? null : null,
+  ]);
+
 // A TurnAction resolved against its character: everything the engine or a
 // grid preview needs to know about what this action actually does.
 export interface ResolvedAction {
@@ -35,7 +47,7 @@ export interface ResolvedAction {
   damageType: DamageType;
   targetShape?: TargetShape;
   conditionalScaling?: number;
-  conditional?: SkillCondition; // gates conditionalScaling; see types.ts
+  conditional?: Condition; // gates conditionalScaling; see domain.type.ts
   effects: SkillEffect[];
   hitboxPattern: [number, number][];
   targetGrid: "enemy" | "ally";
@@ -60,7 +72,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
   let baseMainTargetScaling = upgrade?.mainTargetScaling ?? skill.mainTargetScaling;
   let baseConditionalScaling = upgrade?.conditionalScaling;
   let baseEnergyGuardScaling = upgrade?.energyGuardScaling ?? skill.energyGuardScaling;
-  let baseHitCount = upgrade?.hitCount ?? skill.hitCount;
+  const baseHitCount = upgrade?.hitCount ?? skill.hitCount;
   let baseCooldown = upgrade?.cooldown ?? 0;
   let baseEffects = upgrade?.effects ?? skill.effects;
   let baseCountScalingPerUnit = upgrade?.countScalingPerUnit ?? skill.countScalingPerUnit;
@@ -225,12 +237,7 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
             // that effect's value — one stronger buff, like in-game — instead of
             // stacking a second instance. Genuinely new effects still append.
             upgrade.effects.forEach((burstEff) => {
-              const idx = finalEffects.findIndex((e) =>
-                e.type === burstEff.type
-                && e.target === burstEff.target
-                && e.element === burstEff.element
-                && e.applyCondition === burstEff.applyCondition
-                && e.resonateCondition === burstEff.resonateCondition);
+              const idx = finalEffects.findIndex((e) => effectMergeKey(e) === effectMergeKey(burstEff));
               if (idx >= 0) {
                 const base = finalEffects[idx];
                 finalEffects[idx] = {
@@ -245,7 +252,10 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
           }
           if (upgrade.resonateMultiplierBonus !== undefined) {
             finalEffects = finalEffects.map((eff) => {
-              if (upgrade.targetEffectId ? eff.id === upgrade.targetEffectId : eff.resonateCondition !== undefined) {
+              if (
+                eff.type === 'buff_augmentation'
+                && (upgrade.targetEffectId ? eff.id === upgrade.targetEffectId : eff.resonateCondition !== undefined)
+              ) {
                 return {
                   ...eff,
                   resonateMultiplier: (eff.resonateMultiplier ?? 1) + upgrade.resonateMultiplierBonus!,

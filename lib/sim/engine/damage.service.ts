@@ -2,6 +2,7 @@ import { Boss, Character, SkillEffect } from "@/domain.type";
 import { getTilesHit } from "../targeting.util";
 import { ResolvedAction, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent } from "../breakdown.service";
+import { evaluateCondition } from "./condition.util";
 import { getElementMultiplier } from "./element-advantage.util";
 import { ActionDamageResult, ActiveEffect, BossStatEffect, ComputedStats, DamageBand } from "./engine.type";
 
@@ -121,32 +122,15 @@ export function calculateActionDamage(
           ? (boss.weakPointMultipliers?.[partIndex] ?? boss.weakPointMultiplier ?? 1.0)
           : 1.0;
 
-        // Conditional scaling activates per hit once the skill's declared
-        // condition is met (falls back to chain >= 15 when data omits it).
-        let isConditionMet = false;
-        if (resolved.conditional) {
-          if (resolved.conditional.type === 'chain_min') {
-            isConditionMet = localChain >= resolved.conditional.value;
-          } else if (resolved.conditional.type === 'chain_max') {
-            isConditionMet = localChain <= resolved.conditional.value;
-          } else if (resolved.conditional.type === 'target_has_dot') {
-            isConditionMet = bossDebuffs.some((d) => d.type === 'dot');
-          } else if (resolved.conditional.type === 'target_has_taunt_or_concentrated_fire') {
-            isConditionMet = bossDebuffs.some((d) => d.type === 'debuff_concentrated_fire' || d.type === 'buff_taunt');
-          } else if (resolved.conditional.type === 'target_has_vulnerability') {
-            isConditionMet = bossDebuffs.some((d) => d.type === 'debuff_vulnerability');
-          } else if (resolved.conditional.type === 'target_debuff_count') {
-            // "Debuff Count": number of distinct debuffs (incl. DoTs) on the enemy.
-            const debuffCount = bossDebuffs.filter((d) => d.type.startsWith('debuff_') || d.type === 'dot').length;
-            isConditionMet = debuffCount >= resolved.conditional.value;
-          } else if (resolved.conditional.type === 'target_is_physical') {
-            isConditionMet = boss.atkType === 'physical' || boss.atkType === undefined;
-          } else if (resolved.conditional.type === 'target_chain_multiple_of_3') {
-            isConditionMet = localChain > 0 && localChain % 3 === 0;
-          }
-        } else {
-          isConditionMet = localChain >= 15;
-        }
+        // Conditional scaling activates per hit while the skill's declared
+        // condition holds; the chain the evaluator sees advances mid-action.
+        const isConditionMet = resolved.conditional !== undefined
+          && evaluateCondition(resolved.conditional, {
+            chain: localChain,
+            casterBuffs: activeBuffs,
+            bossDebuffs,
+            boss,
+          });
 
         const conditionalOrBase = (resolved.conditionalScaling !== undefined && isConditionMet)
           ? resolved.conditionalScaling

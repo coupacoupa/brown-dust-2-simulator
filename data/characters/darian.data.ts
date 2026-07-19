@@ -84,7 +84,7 @@ export const darian: CharacterTemplate = {
         // Conditional: if the enemy is under a DoT, each hit deals the higher
         // conditionalScaling instead of base. Frostbite (stacking DoT, ≤7) is
         // applied on cast — per-level values live on the upgrades.
-        conditional: { type: "target_has_dot", value: 1 },
+        conditional: { kind: "enemy_has", effect: "dot" },
         effects: [
           { id: "darian_frostbite", type: "dot", value: 110, duration: 5, target: "target_enemy", dotSource: "caster_atk", dotLabel: "Frostbite", stacks: 1, maxStacks: 7 },
         ],

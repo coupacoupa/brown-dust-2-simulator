@@ -97,7 +97,7 @@ export const palette: CharacterTemplate = {
         targetShape: "square", // Range: all3x3 (full 3×3 block)
         // "If the target has 7+ Debuffs, each hit deals the higher conditional
         //  scaling instead." Per-level conditionalScaling lives on the upgrades.
-        conditional: { type: "target_debuff_count", value: 7 },
+        conditional: { kind: "enemy_debuff_count", min: 7 },
         effects: [],
         hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },

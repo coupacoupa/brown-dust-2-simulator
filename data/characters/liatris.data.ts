@@ -346,10 +346,7 @@ export const liatris: CharacterTemplate = {
         hitCount: 1,
         damageType: "physical",
         effects: [],
-        conditional: {
-          type: "target_has_dot",
-          value: 0,
-        },
+        conditional: { kind: "enemy_has", effect: "dot" },
         // Range: Plus shape
         hitboxPattern: [
           [0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]

@@ -235,7 +235,7 @@ export const scheherazade: CharacterTemplate = {
         name: "Midsummer Heat Wave",
         hitCount: 5,
         damageType: "magic",
-        conditional: { type: "chain_min", value: 15 },
+        conditional: { kind: "chain_min", value: 15 },
         effects: [],
         hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [-2, -2], [-2, 2]],
       },

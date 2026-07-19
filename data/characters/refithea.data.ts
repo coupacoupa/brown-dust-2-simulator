@@ -512,7 +512,7 @@ export const refithea: CharacterTemplate = {
             value: 25,
             duration: 6,
             target: "all_allies",
-            elementCondition: "light",
+            amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
           },
           {
             id: "refithea_pool_sp",
@@ -542,7 +542,7 @@ export const refithea: CharacterTemplate = {
               value: 25,
               duration: 6,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",
@@ -564,7 +564,7 @@ export const refithea: CharacterTemplate = {
               value: 25,
               duration: 6,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",
@@ -586,7 +586,7 @@ export const refithea: CharacterTemplate = {
               value: 30,
               duration: 6,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",
@@ -608,7 +608,7 @@ export const refithea: CharacterTemplate = {
               value: 30,
               duration: 8,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",
@@ -630,7 +630,7 @@ export const refithea: CharacterTemplate = {
               value: 35,
               duration: 8,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",
@@ -652,7 +652,7 @@ export const refithea: CharacterTemplate = {
               value: 40,
               duration: 8,
               target: "all_allies",
-              elementCondition: "light",
+              amplify: { when: { kind: "recipient_element", element: "light" }, multiplier: 2 },
             },
             {
               id: "refithea_pool_sp",

@@ -16,7 +16,7 @@ export default function CharacterStatsEditor({ character, onChange, onClose }: C
     onChange({ ...character, [key]: value });
   };
 
-  const handleCostumeStatChange = (costumeId: string, key: keyof ActiveCostume, value: any) => {
+  const handleCostumeStatChange = (costumeId: string, key: keyof ActiveCostume, value: number | string[]) => {
     const updatedCostumes = character.costumes.map(c => 
       c.id === costumeId ? { ...c, [key]: value } : c
     );

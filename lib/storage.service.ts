@@ -6,21 +6,41 @@ import { BossRecord, RosterEntry, SavedTeam, Character, CharacterTemplate, TurnS
 import { SEED_BOSSES } from "./bosses.service";
 import { CHARACTER_TEMPLATES } from "@/data/characters.data";
 
-const BOSSES_KEY = "bd2sim.bosses.v1";
-const ROSTER_KEY = "bd2sim.roster.v1";
-const TEAMS_KEY = "bd2sim.teams.v1";
+// Every stored shape shares one schema version. Bump SCHEMA_VERSION whenever
+// a breaking change lands in the persisted types (SavedTeam, RosterEntry,
+// BossRecord, SkillEffect…) — pre-1.0 there are no in-place migrations: any
+// older or unknown schema is cleared and reseeded from defaults.
+const SCHEMA_VERSION = 2;
+const SCHEMA_KEY = "bd2sim.schema";
+const BOSSES_KEY = "bd2sim.bosses";
+const ROSTER_KEY = "bd2sim.roster";
+const TEAMS_KEY = "bd2sim.teams";
 
 export const uid = (prefix: string) =>
   `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
 const canStore = () => typeof window !== "undefined";
 
-const memoryStore = new Map<string, string>();
+let schemaChecked = false;
+function ensureSchema() {
+  if (schemaChecked || !canStore()) return;
+  schemaChecked = true;
+  try {
+    if (window.localStorage.getItem(SCHEMA_KEY) === String(SCHEMA_VERSION)) return;
+    Object.keys(window.localStorage)
+      .filter((k) => k.startsWith("bd2sim."))
+      .forEach((k) => window.localStorage.removeItem(k));
+    window.localStorage.setItem(SCHEMA_KEY, String(SCHEMA_VERSION));
+  } catch {
+    // Storage unavailable (private mode, quota) — reads fall back to defaults.
+  }
+}
 
 function readJson<T>(key: string): T | null {
   if (!canStore()) return null;
   try {
-    const raw = memoryStore.get(key);
+    ensureSchema();
+    const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
@@ -30,9 +50,10 @@ function readJson<T>(key: string): T | null {
 function writeJson(key: string, value: unknown) {
   if (!canStore()) return;
   try {
-    memoryStore.set(key, JSON.stringify(value));
+    ensureSchema();
+    window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Silently fail on errors
+    // Quota exceeded / storage unavailable — the in-page state stays usable.
   }
 }
 
@@ -115,40 +136,12 @@ export function defaultRoster(): RosterEntry[] {
 }
 
 export function loadRoster(): RosterEntry[] {
-  const stored = readJson<any[]>(ROSTER_KEY);
-  let next = stored;
-  if (!stored) {
-    next = defaultRoster();
-  } else {
-    // Legacy migration: Map root-level upgradeLevel/activePotentials to all costumes
-    next = stored.map((e) => {
-      const charTemplate = CHARACTER_TEMPLATES.find((t) => charKeyOf(t) === e.charKey);
-      if (e.upgradeLevel !== undefined || e.activePotentials !== undefined) {
-        const legacyUpgrade = e.upgradeLevel ?? 0;
-        const legacyPots = e.activePotentials ?? [];
-        const migratedCostumes: Record<string, { upgradeLevel: number; activePotentials: string[] }> = {};
-        
-        if (charTemplate) {
-          for (const c of charTemplate.costumes) {
-            migratedCostumes[c.id] = { upgradeLevel: legacyUpgrade, activePotentials: [...legacyPots] };
-          }
-        }
-        return {
-          charKey: e.charKey,
-          owned: e.owned ?? true,
-          level: e.level ?? 100,
-          costumes: e.costumes ?? migratedCostumes,
-        };
-      }
-      return e;
-    });
-
-    // Backfill entries for characters added to the game after the user last saved
-    const seen = new Set(next.map((e) => e.charKey));
-    const missing = defaultRoster().filter((e) => !seen.has(e.charKey));
-    next = [...next, ...missing];
-  }
-  return next as RosterEntry[];
+  const stored = readJson<RosterEntry[]>(ROSTER_KEY);
+  if (!stored) return defaultRoster();
+  // Backfill entries for characters added to the game after the user last saved
+  const seen = new Set(stored.map((e) => e.charKey));
+  const missing = defaultRoster().filter((e) => !seen.has(e.charKey));
+  return [...stored, ...missing];
 }
 
 export function saveRoster(roster: RosterEntry[]) {
@@ -245,7 +238,7 @@ export function buildCharacterFromRoster(
     baseMres: 0,
     basePropDmg: 0,
     ...(JSON.parse(JSON.stringify(template)) as CharacterTemplate),
-    costumes: template.costumes.map((c: any) => ({ ...c, upgradeLevel: 0, activePotentials: [] })),
+    costumes: template.costumes.map((c) => ({ ...c, upgradeLevel: 0, activePotentials: [] })),
     id: uid("char"),
     position,
   } as Character;

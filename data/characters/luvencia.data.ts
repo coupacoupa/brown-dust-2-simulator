@@ -105,10 +105,7 @@ export const luvencia: CharacterTemplate = {
         name: "Wildbyte R-3",
         hitCount: 8,
         damageType: "physical",
-        conditional: {
-          type: "target_chain_multiple_of_3",
-          value: 1,
-        },
+        conditional: { kind: "chain_multiple_of", value: 3 },
         effects: [],
         hitboxPattern: [
           [0, -1],

@@ -22,7 +22,7 @@ export const eris: CharacterTemplate = {
         targetShape: "plus", // Range: center + left/right + bottom diagonals
         // Conditional: if the attack leaves the enemy at Chain 7 or LESS, deal
         // the higher conditionalScaling instead (rewards opening early).
-        conditional: { type: "chain_max", value: 7 },
+        conditional: { kind: "chain_max", value: 7 },
         effects: [],
         hitboxPattern: [[0, 0], [0, -1], [0, 1], [1, -1], [1, 1]],
       },

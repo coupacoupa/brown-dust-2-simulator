@@ -25,35 +25,35 @@ export const nebris: CharacterTemplate = {
         // Modeled as an applyCondition pair (self_has_augmentation; aug = negate),
         // evaluated against the caster's pre-cast buffs.
         effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ],
         hitboxPattern: [[0, 0], [-1, 0], [-2, 0], [-3, 0]],
       },
       upgrades: [
         { spCost: 4, cooldown: 3, scaling: 125, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 125, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 100, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 200, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 125, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 125, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 250, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 125, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 250, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 150, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 125, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 250, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 125, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 250, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 150, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 150, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 300, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 150, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 300, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 175, effects: [
-          { id: "nebris_gate_aug", type: "buff_augmentation", value: 150, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation", negate: true } },
-          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 300, duration: 6, target: "self", applyCondition: { type: "self_has_augmentation" } },
+          { id: "nebris_gate_aug", type: "buff_augmentation", value: 150, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "augmentation" } } },
+          { id: "nebris_gate_cdmg", type: "buff_crit_dmg", value: 300, duration: 6, target: "self", condition: { kind: "self_has", buff: "augmentation" } },
         ] },
       ],
       potentials: [
@@ -93,35 +93,35 @@ export const nebris: CharacterTemplate = {
         // DMG (2t) INSTEAD. Modeled as an applyCondition pair
         // (self_has_stat_reinforcement; ATK = negate).
         effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ],
         hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1]],
       },
       upgrades: [
         { spCost: 4, cooldown: 3, scaling: 100, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 100, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 120, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 6, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 140, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 160, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
         { spCost: 3, cooldown: 3, scaling: 180, effects: [
-          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", applyCondition: { type: "self_has_stat_reinforcement", negate: true } },
-          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", applyCondition: { type: "self_has_stat_reinforcement" } },
+          { id: "nebris_life_atk", type: "buff_atk", value: 50, duration: 10, target: "self", condition: { kind: "not", condition: { kind: "self_has", buff: "stat_reinforcement" } } },
+          { id: "nebris_life_prop", type: "buff_prop_dmg", value: 50, duration: 2, target: "self", condition: { kind: "self_has", buff: "stat_reinforcement" } },
         ] },
       ],
       potentials: [

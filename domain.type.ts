@@ -2,8 +2,8 @@ export type ElementType = 'fire' | 'water' | 'wind' | 'light' | 'dark';
 export type DamageType = 'physical' | 'magic' | 'pure';
 export type ApproachType = 'very_front' | 'vault';
 
-export type TargetShape = 
-  | 'single' 
+export type TargetShape =
+  | 'single'
   | 'row'       // Horizontal row (3 tiles)
   | 'col'       // Vertical column (4 tiles)
   | 'plus'      // Plus shape (+): Center, Top, Bottom, Left, Right
@@ -11,97 +11,176 @@ export type TargetShape =
   | 'square'    // 2x2 area centered at target
   | 'all';      // All 12 tiles (3x4)
 
-export interface SkillEffect {
+// ---------------------------------------------------------------------------
+// Conditions — the single vocabulary for every "only if / only while <state>"
+// rule in skill data. One declaration shape, one evaluator
+// (lib/sim/engine/condition.util.ts). The evaluation MOMENT is decided by the
+// call site: conditional-scaling checks run per hit (the chain counter
+// advances mid-action); effect apply-conditions run once at cast against the
+// caster's pre-cast buffs.
+//   chain_*      — the team's current chain counter.
+//   enemy_*      — state on the boss (debuffs, stat sheet).
+//   recipient_*  — the character an effect is landing on.
+//   self_has     — buffs the CASTER already carries (pre-cast snapshot).
+//   not          — negation; compose for "apply X, but Y instead if <cond>".
+// ---------------------------------------------------------------------------
+export type Condition =
+  | { kind: 'chain_min'; value: number }         // chain ≥ value
+  | { kind: 'chain_max'; value: number }         // chain ≤ value
+  | { kind: 'chain_multiple_of'; value: number } // chain > 0 and divisible by value
+  | { kind: 'enemy_has'; effect: 'dot' | 'vulnerability' | 'taunt_or_concentrated_fire' }
+  | { kind: 'enemy_debuff_count'; min: number }  // distinct debuffs (incl. DoTs) on the enemy
+  | { kind: 'enemy_is_physical' }                // boss deals physical damage (default when unlabeled)
+  | { kind: 'recipient_element'; element: ElementType }
+  | { kind: 'self_has'; buff: 'augmentation' | 'stat_reinforcement' }
+  | { kind: 'not'; condition: Condition };
+
+// ---------------------------------------------------------------------------
+// Skill effects — a discriminated union by effect family. Every family
+// carries only the fields that mean something for it, so an invalid
+// combination (a DoT with a shield pool, a heal with a chain scope) is a
+// type error instead of silently-ignored data. Shared fields live on
+// EffectBase; the engine dispatches on `type`.
+// ---------------------------------------------------------------------------
+
+export type EffectTarget = 'self' | 'all_allies' | 'area_allies' | 'target_enemy' | 'all_enemies';
+
+export interface EffectBase {
   id: string;
-  type: 
-    | 'buff_atk' 
-    | 'buff_matk' 
-    | 'buff_crit_rate' 
-    | 'buff_crit_dmg' 
-    | 'buff_prop_dmg' 
-    | 'buff_energy_guard'
-    | 'buff_barrier'
-    | 'buff_evasion'
-    | 'buff_chain_reinforcement'
-    | 'buff_taunt'
-    | 'buff_counter'
-    | 'buff_duration_extend'
-    | 'buff_augmentation'
-    | 'buff_transform'
-    | 'buff_sp_reduce'
+  value: number;    // magnitude — % for stats/damage/heals, count for evasion charges
+  duration: number; // turns (for 'dot': number of ticks)
+  target: EffectTarget;
+  // Apply-gate: the effect only lands when this holds at cast, evaluated
+  // against the caster's PRE-cast buffs and the chain count at cast. Encode
+  // "apply X, but Y instead if <cond>" as two effects: the alternative gated
+  // on the condition, the base gated on { kind: 'not', condition: <same> }.
+  condition?: Condition;
+  // Multiplies `value` when the condition holds for the recipient at cast,
+  // e.g. Refithea's "doubled for Light allies":
+  //   amplify: { when: { kind: 'recipient_element', element: 'light' }, multiplier: 2 }
+  amplify?: { when: Condition; multiplier: number };
+  isIrremovable?: boolean; // survives dispel/buff-removal
+}
+
+// Stat Reinforcement — feeds the additive stat bracket (stats.service).
+export interface StatBuffEffect extends EffectBase {
+  type: 'buff_atk' | 'buff_matk' | 'buff_crit_rate' | 'buff_crit_dmg' | 'buff_prop_dmg';
+  // Authored stack semantics from the game text (Ikaruga, Yuri). The sim
+  // applies `value` per cast and refreshes same-source casts; stack caps are
+  // recorded but not yet enforced.
+  stacks?: number;
+  maxStacks?: number;
+}
+
+// Stat Weakening / vulnerability debuffs sitting on the enemy.
+export interface EnemyDebuffEffect extends EffectBase {
+  type:
     | 'debuff_def'
     | 'debuff_mres'
     | 'debuff_atk'   // reduces the boss's physical damage to the team
     | 'debuff_matk'  // reduces the boss's magic damage to the team
     | 'debuff_vulnerability'
-    | 'debuff_dot_vulnerability'
-    | 'debuff_property_vulnerability'
-    | 'debuff_concentrated_fire'
-    | 'gain_sp'
-    | 'burn_sp'
-    | 'heal_continuous'
-    | 'heal_self_hp_percent'
-    | 'consume_hp_percent'
-    | 'target_avoidance'
-    | 'buff_revive'
-    | 'buff_reactive'  // fires `reactiveEffect` each time the holder is hit (Seir, Mamonir)
-    | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
-  value: number; // e.g., 50 for +50% or count of times; for 'dot', the per-tick % of the source stat
-  duration: number; // in turns (for 'dot', the number of ticks)
-  target: 'self' | 'all_allies' | 'area_allies' | 'target_enemy' | 'all_enemies';
-  element?: ElementType; // for debuff_property_vulnerability (e.g. 'wind')
-  elementCondition?: ElementType; // e.g. 'light' (triggers conditional bonus if target matches element)
-  // DoT-only: which stat the per-tick damage scales off (snapshotted at cast),
-  // and a display label. Ignored for non-'dot' effects.
-  dotSource?: 'caster_atk' | 'caster_matk' | 'enemy_atk' | 'enemy_maxhp';
-  dotLabel?: string; // e.g. "Poison", "Bleed", "Burn"
-  // buff_energy_guard: which stat the shield pool scales off. 'recipient_hp'
-  // (default) → value% × the recipient's Max HP; 'caster_matk' → value% × the
-  // CASTER's Magic ATK at cast time (e.g. Diana's aura shields).
-  egScalingStat?: 'recipient_hp' | 'caster_matk';
-  egRegen?: boolean; // buff_energy_guard: refill the shield to full each turn
-  // buff_counter: which stat the retaliation scales off. 'max_hp' (default) →
-  // value% × the holder's Max HP; 'atk' → value% × the holder's ATK (Blade).
-  counterStat?: 'max_hp' | 'atk';
-  // buff_augmentation: which actions it boosts. 'all' (default) → every damage
-  // instance; 'basic_attack' → only Normal Attacks (Yozakura's follow-up).
-  augmentScope?: 'all' | 'basic_attack';
-  // buff_augmentation: only boosts hits at/above this chain (Liberta Onsen's
-  // "damage to enemies with 10+ Chains"). Evaluated per hit.
-  augmentChainMin?: number;
-  // buff_reactive: the payload applied once per hit the holder receives (its
-  // `target` decides who it lands on). `reactiveMaxTriggers` caps total procs
-  // over the buff's lifetime (e.g. Mamonir's "disappears after 8 hits").
-  reactiveEffect?: SkillEffect;
-  reactiveMaxTriggers?: number;
-  // heal_continuous / heal_self_hp_percent: what `value`% scales off.
-  // 'recipient_hp' (default) → recipient's Max HP; 'caster_matk' → caster's MATK.
-  healSource?: 'recipient_hp' | 'caster_matk';
-  chainLimit?: number; // optional chain count limit for the effect to apply (e.g., 5 for Teresse)
-  stacks?: number; // number of stacks this effect counts as (defaults to 1)
-  maxStacks?: number; // maximum stack count allowed on target for this dotLabel
-  resonateCondition?: 'stat_weakening' | 'dot' | 'buff' | 'target_debuff_count'; // Resonate effect condition
-  resonateMultiplier?: number; // Stacks per resonate target (defaults to 1)
-  isIrremovable?: boolean; // Cannot be removed by dispel/removal effects
-  // Gates whether this effect applies at cast, for "apply X, but Y instead if
-  // <condition>" skills. Evaluated against the caster's pre-cast state (buffs
-  // snapshotted before this skill's own effects) and the chain count at cast.
-  // Encode the pair as two effects: the base one with `negate: true` and the
-  // alternative with `negate: false` on the same condition.
-  applyCondition?: {
-    type: 'chain_min' | 'self_has_augmentation' | 'self_has_stat_reinforcement';
-    value?: number;   // threshold for 'chain_min'
-    negate?: boolean; // apply only when the condition is FALSE
-  };
+    | 'debuff_dot_vulnerability';
 }
 
-// Condition gating a costume upgrade's `conditionalScaling`: damage instances
-// where the condition holds use the conditional scaling instead of the base
-// one. Evaluated per hit (the chain counter advances mid-action).
-export interface SkillCondition {
-  type: 'chain_min' | 'chain_max' | 'target_has_dot' | 'target_is_physical' | 'target_has_taunt_or_concentrated_fire' | 'target_has_vulnerability' | 'target_chain_multiple_of_3' | 'target_debuff_count'; // active while condition holds
-  value: number; // 'chain_min'/'chain_max': chain threshold; 'target_debuff_count': min debuffs on the enemy
+// Property (elemental) vulnerability on the enemy, element-scoped when set.
+export interface PropertyVulnerabilityEffect extends EffectBase {
+  type: 'debuff_property_vulnerability';
+  element?: ElementType; // e.g. 'dark'; omitted → applies to every attacker
 }
+
+// DMG-increase (augmentation) — joins the vulnerability bracket per hit.
+export interface AugmentationEffect extends EffectBase {
+  type: 'buff_augmentation';
+  // Which actions it boosts: 'all' (default) → every damage instance;
+  // 'basic_attack' → only Normal Attacks (Yozakura's follow-up).
+  augmentScope?: 'all' | 'basic_attack';
+  // Only boosts hits at/above this chain (Liberta's "10+ Chains"). Per hit.
+  augmentChainMin?: number;
+  // Only boosts hits at/BELOW this chain (Teresse). Per hit.
+  chainLimit?: number;
+  // Resonance — the value stacks with matching state at cast:
+  //   'stat_weakening' | 'dot' | 'buff' — per matching state on the ENEMY,
+  //     value × (targets × resonateMultiplier) stacks, capped at maxStacks.
+  //   'target_debuff_count' — ABSORBS (cleanses) the recipient's debuffs:
+  //     +resonateMultiplier per debuff absorbed, capped at maxStacks.
+  resonateCondition?: 'stat_weakening' | 'dot' | 'buff' | 'target_debuff_count';
+  resonateMultiplier?: number;
+  stacks?: number;
+  maxStacks?: number;
+}
+
+// Energy Guard — a shield pool snapshotted at cast, soaked before HP.
+export interface EnergyGuardEffect extends EffectBase {
+  type: 'buff_energy_guard';
+  // 'recipient_hp' (default) → value% × the recipient's Max HP;
+  // 'caster_matk' → value% × the CASTER's Magic ATK at cast (Diana's aura).
+  egScalingStat?: 'recipient_hp' | 'caster_matk';
+  egRegen?: boolean; // refill the pool to full each turn
+}
+
+// Counter — retaliation fired per boss hit the holder receives.
+export interface CounterEffect extends EffectBase {
+  type: 'buff_counter';
+  // 'max_hp' (default) → value% × holder's Max HP; 'atk' → holder's ATK (Blade).
+  counterStat?: 'max_hp' | 'atk';
+}
+
+// Reactive — fires a payload once per hit the holder receives (Seir, Mamonir).
+export interface ReactiveBuffEffect extends EffectBase {
+  type: 'buff_reactive';
+  reactiveEffect?: SkillEffect; // payload; its `target` decides who it lands on
+  reactiveMaxTriggers?: number; // total procs before the buff expires
+}
+
+// Heals — instantaneous HP restoration.
+export interface HealEffect extends EffectBase {
+  type: 'heal_continuous' | 'heal_self_hp_percent';
+  // 'recipient_hp' (default) → value% × recipient Max HP; 'caster_matk' → caster's MATK.
+  healSource?: 'recipient_hp' | 'caster_matk';
+}
+
+// Damage-over-time on the enemy; per-tick damage snapshotted at cast.
+export interface DotEffect extends EffectBase {
+  type: 'dot';
+  dotSource?: 'caster_atk' | 'caster_matk' | 'enemy_atk' | 'enemy_maxhp';
+  dotLabel?: string;  // display label: "Poison", "Bleed", "Burn"
+  stacks?: number;    // stacks this application counts as (default 1)
+  maxStacks?: number; // stack cap per dotLabel on the enemy
+}
+
+// Families whose value/duration/target say everything.
+export interface SimpleEffect extends EffectBase {
+  type:
+    | 'buff_barrier'             // % damage reduction; barriers stack multiplicatively
+    | 'buff_evasion'             // value = dodge charges
+    | 'buff_chain_reinforcement' // extra chain per damage instance
+    | 'buff_taunt'
+    | 'buff_duration_extend'     // extends active buff/debuff durations by value turns
+    | 'buff_transform'           // costume transform: SP costs drop to 0
+    | 'buff_sp_reduce'
+    | 'buff_revive'              // declared for display; deaths are permanent in-sim
+    | 'target_avoidance'         // declared for display; not simulated
+    | 'debuff_concentrated_fire'
+    | 'gain_sp'                  // instantaneous; consumed by the SP timeline pass
+    | 'burn_sp'                  // declared for display; hunt bosses have no SP pool
+    | 'consume_hp_percent';      // costs the recipient value% of current HP
+}
+
+export type SkillEffect =
+  | StatBuffEffect
+  | EnemyDebuffEffect
+  | PropertyVulnerabilityEffect
+  | AugmentationEffect
+  | EnergyGuardEffect
+  | CounterEffect
+  | ReactiveBuffEffect
+  | HealEffect
+  | DotEffect
+  | SimpleEffect;
+
+// Every effect discriminant, for stores that track effects generically.
+export type EffectKind = SkillEffect['type'];
 
 // A persistent "Allied Zone" summon created by a skill (e.g. Diana's Magic
 // Amplifier). Once created it acts every turn, re-applying `effect` to allies
@@ -136,7 +215,11 @@ export interface Skill {
   scalingStat?: 'atk' | 'matk' | 'enemy_maxhp' | 'caster_hp';
   energyGuardScaling?: number; // secondary scaling based on current Energy Guard
   targetShape?: TargetShape;
-  conditional?: SkillCondition; // required for upgrades with conditionalScaling
+  // Gates the upgrades' `conditionalScaling`: damage instances where this
+  // holds use the conditional scaling instead of the base one. Evaluated per
+  // hit (the chain counter advances mid-action). Required whenever any
+  // upgrade declares conditionalScaling — there is no fallback condition.
+  conditional?: Condition;
   // Higher scaling applied ONLY to the Main Target tile — the origin ([0,0])
   // of an AoE, i.e. the tile the tick lands on. The other covered ("arm")
   // tiles use the ordinary `scaling`. Per-level values live on CostumeUpgrade.
@@ -264,15 +347,6 @@ export interface Character {
 }
 
 export type CharacterTemplate = Omit<Character, 'id' | 'costumes' | 'baseAtk' | 'baseMatk' | 'baseHp' | 'baseCritRate' | 'baseCritDmg' | 'baseDef' | 'baseMres' | 'basePropDmg'> & { costumes: Costume[] };
-
-// LEGACY rotation entry — older stored bosses (localStorage) may still carry
-// this flat shape. New bosses define `skillDefs` + `rotation` instead; both
-// shapes are read through resolveBossRotation() in lib/bosses.ts.
-export interface BossSkillInfo {
-  name: string;
-  icon?: string;    // emoji placeholder until boss skill art exists
-  isWeak?: boolean; // this attack exposes the boss's weak points
-}
 
 // A debuff that a boss skill applies to the player's team on hit.
 export interface BossSkillDebuff {
@@ -406,8 +480,6 @@ export interface Boss {
 
   skillDefs?: BossSkillDef[];    // unique skills (the "Skill used" strip)
   rotation?: BossRotationStep[]; // scripted cast order over skillDefs
-  /** @deprecated legacy flat rotation; superseded by skillDefs + rotation */
-  skills?: BossSkillInfo[];
   startDate?: string; // YYYY-MM-DD
   endDate?: string;   // YYYY-MM-DD
 }

@@ -333,10 +333,7 @@ export const levia: CharacterTemplate = {
         name: "Beast Overdrive",
         hitCount: 1,
         damageType: "magic",
-        conditional: {
-          type: "target_has_vulnerability",
-          value: 1,
-        },
+        conditional: { kind: "enemy_has", effect: "vulnerability" },
         effects: [],
         hitboxPattern: [
           [0, 0],

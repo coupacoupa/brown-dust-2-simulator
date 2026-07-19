@@ -63,9 +63,8 @@ export const SEED_BOSSES: BossRecord[] = SEED_BOSS_CONFIGS.map(parseSeedBoss);
 
 // ---------------------------------------------------------------------------
 // Rotation resolution — the single read path for every rotation display
-// (boss preview panel, battle HUD queue). Handles all three data shapes:
-// new skillDefs+rotation, legacy flat `skills`, and bosses with nothing
-// scripted yet (admin drafts) via a generic fallback.
+// (boss preview panel, battle HUD queue). Bosses with nothing scripted yet
+// (admin drafts) resolve to an empty rotation.
 // ---------------------------------------------------------------------------
 
 export interface ResolvedRotationStep {
@@ -74,23 +73,14 @@ export interface ResolvedRotationStep {
 }
 
 export function resolveBossRotation(boss: Boss): ResolvedRotationStep[] {
-  if (boss.skillDefs?.length && boss.rotation?.length) {
-    const byId = new Map(boss.skillDefs.map((s) => [s.id, s]));
-    const steps: ResolvedRotationStep[] = [];
-    for (const step of boss.rotation) {
-      const skill = byId.get(step.skillId);
-      if (skill) steps.push({ skill, weakExposurePct: step.weakExposurePct });
-    }
-    if (steps.length) return steps;
+  if (!boss.skillDefs?.length || !boss.rotation?.length) return [];
+  const byId = new Map(boss.skillDefs.map((s) => [s.id, s]));
+  const steps: ResolvedRotationStep[] = [];
+  for (const step of boss.rotation) {
+    const skill = byId.get(step.skillId);
+    if (skill) steps.push({ skill, weakExposurePct: step.weakExposurePct });
   }
-  // Legacy stored bosses: flat entries where isWeak marked the exposing casts
-  if (boss.skills?.length) {
-    return boss.skills.map((s, i) => ({
-      skill: { id: `legacy_${i}`, name: s.name, icon: s.icon, description: "" },
-      weakExposurePct: s.isWeak ? 100 : undefined,
-    }));
-  }
-  return [];
+  return steps;
 }
 
 // Unique skills of a boss in rotation order — the game's "Skill used" strip.

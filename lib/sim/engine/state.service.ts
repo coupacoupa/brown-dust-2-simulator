@@ -1,9 +1,10 @@
-import { Boss, Character, SkillEffect, SummonSpec } from "@/domain.type";
-import { ActiveEffect, BattleState, ComputedStats } from "./engine.type";
+import { Character, SummonSpec } from "@/domain.type";
+import { ActiveEffect, BattleState } from "./engine.type";
 
-// BattleState lifecycle: creation, cloning, effect application and decay.
-// simulateTurn (./turn.ts) clones the incoming state once at entry and only
-// ever mutates its own working copy through these helpers.
+// BattleState lifecycle: creation, cloning, summon bookkeeping and effect
+// decay. HOW effects enter the stores lives in effect-behaviors.service.ts;
+// simulateTurn (./turn.service) clones the incoming state once at entry and
+// only ever mutates its own working copy through these helpers.
 
 export function createBattleState(characters: Character[]): BattleState {
   return {
@@ -17,6 +18,8 @@ export function createBattleState(characters: Character[]): BattleState {
   };
 }
 
+// One level deep by convention: nested arrays/objects that are never mutated
+// after creation (hitbox patterns, attack specs' effect lists) stay shared.
 export function cloneBattleState(state: BattleState): BattleState {
   return {
     characterBuffs: new Map(
@@ -77,7 +80,7 @@ export function registerSummon(
 export function actSummons(store: BattleState, characters: Character[]): void {
   store.summons.forEach((summon) => {
     const eff = summon.effect;
-    if (!eff) return; // damage summons are resolved in turn.service
+    if (!eff) return; // damage summons detonate in turn.service's summon phase
     summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks ?? 1);
     const value = eff.value * summon.stacks;
     characters.forEach((ally) => {
@@ -91,7 +94,7 @@ export function actSummons(store: BattleState, characters: Character[]): void {
         value,
         remainingTurns: eff.duration,
         sourceCharacterId: summon.sourceCharacterId,
-        element: eff.element,
+        element: 'element' in eff ? eff.element : undefined,
         summonId: summon.id,
       });
       store.characterBuffs.set(ally.id, kept);
@@ -105,7 +108,7 @@ export function actSummons(store: BattleState, characters: Character[]): void {
 // still stack additively. Summon-applied buffs manage their own refresh via
 // summonId, and DoTs stack under their own max-stack caps, so both are
 // excluded here.
-function upsertEffect(list: ActiveEffect[], next: ActiveEffect): void {
+export function upsertEffect(list: ActiveEffect[], next: ActiveEffect): void {
   const idx = list.findIndex((b) =>
     b.summonId === undefined
     && b.type === next.type
@@ -116,207 +119,6 @@ function upsertEffect(list: ActiveEffect[], next: ActiveEffect): void {
   );
   if (idx >= 0) list[idx] = next;
   else list.push(next);
-}
-
-// Route skill effects into the appropriate buff/debuff stores. Used by both
-// preemptive actions and regular actions — single source of truth. Mutates
-// the given state, so callers pass their own working copy, never an input.
-export function applyEffects(
-  effects: SkillEffect[],
-  sourceChar: Character,
-  tilesTargeted: number[],
-  characters: Character[],
-  store: BattleState,
-  casterStats?: ComputedStats,
-  chainCount: number = 0,
-): void {
-  // Snapshot the caster's buffs BEFORE this skill applies any, so "apply X but
-  // Y instead if you already have <buff>" conditions read pre-cast state.
-  const casterBuffsBefore = [...(store.characterBuffs.get(sourceChar.id) ?? [])];
-  const STAT_REINFORCEMENT_TYPES: SkillEffect['type'][] =
-    ['buff_atk', 'buff_matk', 'buff_crit_rate', 'buff_crit_dmg', 'buff_prop_dmg'];
-  const applyConditionMet = (cond: NonNullable<SkillEffect['applyCondition']>): boolean => {
-    let met = false;
-    if (cond.type === 'chain_min') met = chainCount >= (cond.value ?? 0);
-    else if (cond.type === 'self_has_augmentation') met = casterBuffsBefore.some((b) => b.type === 'buff_augmentation');
-    else if (cond.type === 'self_has_stat_reinforcement') met = casterBuffsBefore.some((b) => STAT_REINFORCEMENT_TYPES.includes(b.type));
-    return cond.negate ? !met : met;
-  };
-
-  effects.forEach((eff) => {
-    if (eff.type === 'gain_sp') return; // Instantaneous SP restoration doesn't linger as a buff
-    if (eff.type === 'dot') return;     // DoTs need stat context — applied via applyDotEffects
-    if (eff.applyCondition && !applyConditionMet(eff.applyCondition)) return; // "instead" gating
-
-    let actualValue = eff.value;
-    let actualStacks = eff.stacks ?? 1;
-
-    if (eff.resonateCondition) {
-      let targetCount = 0;
-      if (eff.resonateCondition === 'stat_weakening') {
-        const bossHasStatWeakening = store.bossDebuffs.some((d) => d.type.startsWith('debuff_'));
-        if (bossHasStatWeakening) targetCount = 1;
-      } else if (eff.resonateCondition === 'dot') {
-        const bossHasDot = store.bossDebuffs.some((d) => d.type === 'dot');
-        if (bossHasDot) targetCount = 1;
-      } else if (eff.resonateCondition === 'buff') {
-        const bossHasBuff = store.bossBuffs.length > 0;
-        if (bossHasBuff) targetCount = 1;
-      }
-
-      const multiplier = eff.resonateMultiplier ?? 1;
-      const calculatedStacks = targetCount * multiplier;
-      const maxAllowed = eff.maxStacks ?? 30;
-      actualStacks = Math.min(calculatedStacks, maxAllowed);
-
-      if (actualStacks <= 0) {
-        return; // Resonate condition met no targets
-      }
-      actualValue = eff.value * actualStacks;
-    }
-
-    // Energy guard snapshots its shield pool at cast: value% of either the
-    // recipient's Max HP (default) or the caster's Magic ATK ('caster_matk').
-    const energyGuardShield = (recipient: Character, finalValue: number): number => {
-      const base = eff.egScalingStat === 'caster_matk'
-        ? (casterStats?.finalMatk ?? 0)
-        : recipient.baseHp;
-      return base > 0 ? base * (finalValue / 100) : 0;
-    };
-    const makeEffect = (recipient: Character): ActiveEffect => {
-      let finalValue = actualValue;
-      let finalStacks = actualStacks;
-
-      if (eff.resonateCondition === 'target_debuff_count') {
-        const allyBuffs = store.characterBuffs.get(recipient.id) || [];
-        const debuffs = allyBuffs.filter((b) => b.type.startsWith('debuff_') || b.type === 'dot');
-        const debuffCount = debuffs.length;
-
-        // Absorb / Cleanse the debuffs from the target ally
-        if (debuffCount > 0) {
-          const cleanBuffs = allyBuffs.filter((b) => !(b.type.startsWith('debuff_') || b.type === 'dot'));
-          store.characterBuffs.set(recipient.id, cleanBuffs);
-        }
-
-        const addPerStack = eff.resonateMultiplier ?? 10;
-        const maxAllowed = eff.maxStacks ?? 15;
-        finalStacks = Math.min(debuffCount, maxAllowed);
-        finalValue = eff.value + addPerStack * finalStacks;
-      } else if (eff.elementCondition && recipient.element === eff.elementCondition) {
-        finalValue = actualValue * 2;
-      }
-
-      return {
-        type: eff.type,
-        value: finalValue,
-        remainingTurns: eff.duration,
-        sourceCharacterId: sourceChar.id,
-        chainLimit: eff.chainLimit,
-        element: eff.element,
-        isIrremovable: eff.isIrremovable,
-        counterStat: eff.counterStat,
-        augmentScope: eff.augmentScope,
-        augmentChainMin: eff.augmentChainMin,
-        ...(eff.type === 'buff_reactive'
-          ? { reactiveEffect: eff.reactiveEffect, reactiveRemaining: eff.reactiveMaxTriggers ?? Infinity }
-          : {}),
-        stacks: finalStacks,
-        ...(eff.type === 'buff_energy_guard'
-          ? (() => {
-              const shield = energyGuardShield(recipient, finalValue);
-              return shield > 0 ? { shieldRemaining: shield, shieldMax: shield, egRegen: eff.egRegen } : {};
-            })()
-          : {}),
-      };
-    };
-    const giveTo = (ally: Character) => {
-      if (store.deadCharacters.has(ally.id)) return; // the dead take no buffs
-      if (eff.type === 'consume_hp_percent') {
-        const currentHp = store.characterHp.get(ally.id);
-        if (currentHp !== undefined && currentHp !== null) {
-          store.characterHp.set(ally.id, Math.max(1, Math.floor(currentHp * (1 - eff.value / 100))));
-        }
-      } else if (eff.type === 'heal_continuous' || eff.type === 'heal_self_hp_percent') {
-        // Restore HP now (value% of recipient Max HP, or caster's MATK). A
-        // per-turn heal is modeled as an up-front restore of one tick's amount.
-        const currentHp = store.characterHp.get(ally.id);
-        if (currentHp != null && ally.baseHp > 0) {
-          const base = eff.healSource === 'caster_matk' ? (casterStats?.finalMatk ?? 0) : ally.baseHp;
-          store.characterHp.set(ally.id, Math.min(ally.baseHp, currentHp + base * (eff.value / 100)));
-        }
-      } else if (eff.type === 'buff_duration_extend') {
-        const buffs = store.characterBuffs.get(ally.id) || [];
-        buffs.forEach((b) => {
-          b.remainingTurns += eff.value;
-        });
-      } else {
-        upsertEffect(store.characterBuffs.get(ally.id)!, makeEffect(ally));
-      }
-    };
-
-    // "Extend all debuffs on the enemy" (Palette): bump every boss debuff's
-    // remaining turns instead of applying a new debuff.
-    if (eff.type === 'buff_duration_extend' && (eff.target === 'target_enemy' || eff.target === 'all_enemies')) {
-      store.bossDebuffs.forEach((d) => { d.remainingTurns += eff.value; });
-      return;
-    }
-
-    if (eff.target === 'self') {
-      giveTo(sourceChar);
-    } else if (eff.target === 'all_allies') {
-      characters.forEach(giveTo);
-    } else if (eff.target === 'area_allies') {
-      characters.forEach((ally) => {
-        if (ally.position !== undefined && tilesTargeted.includes(ally.position)) {
-          giveTo(ally);
-        }
-      });
-    } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
-      upsertEffect(store.bossDebuffs, makeEffect(sourceChar));
-    }
-  });
-}
-
-// Resolve the stat a DoT's per-tick damage scales off, at application time.
-function resolveDotSourceStat(
-  source: SkillEffect["dotSource"],
-  stats: ComputedStats,
-  boss: Boss,
-): number {
-  switch (source) {
-    case 'caster_matk': return stats.finalMatk;
-    case 'enemy_atk': return boss.atk ?? 0;
-    case 'enemy_maxhp': return boss.maxHp ?? 0;
-    case 'caster_atk':
-    default: return stats.finalAtk; // default to the caster's ATK
-  }
-}
-
-// Apply DoT (poison/bleed/burn) effects to the enemy. The per-tick damage is
-// snapshotted from the source stat NOW (buffs already applied), then ticked
-// each turn by the turn loop. Kept separate from applyEffects because it needs
-// the caster's computed stats and the boss stat sheet.
-export function applyDotEffects(
-  effects: SkillEffect[],
-  sourceChar: Character,
-  stats: ComputedStats,
-  boss: Boss,
-  store: BattleState,
-): void {
-  effects.forEach((eff) => {
-    if (eff.type !== 'dot') return;
-    const sourceStat = resolveDotSourceStat(eff.dotSource, stats, boss);
-    store.bossDebuffs.push({
-      type: 'dot',
-      value: eff.value,
-      remainingTurns: eff.duration,
-      sourceCharacterId: sourceChar.id,
-      dotPerTick: sourceStat * (eff.value / 100),
-      dotLabel: eff.dotLabel ?? 'DoT',
-      stacks: eff.stacks,
-      maxStacks: eff.maxStacks,
-    });
-  });
 }
 
 // Decrement durations and drop expired effects at end of turn. A spent

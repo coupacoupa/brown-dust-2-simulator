@@ -19,10 +19,7 @@ export const nartas: CharacterTemplate = {
         name: "Half-Demon Divine Palm",
         hitCount: 1,
         damageType: "magic",
-        conditional: {
-          type: "target_is_physical",
-          value: 1,
-        },
+        conditional: { kind: "enemy_is_physical" },
         effects: [
           {
             id: "nartas_sage_barrier",

@@ -16,13 +16,12 @@ import {
   upsertTeam,
   upsertBoss,
   loadRoster,
-  rosterEntryFor,
   isHypothetical,
   saveRoster,
 } from "@/lib/storage.service";
 import { applyBossLevel } from "@/lib/bosses.service";
-import { runSimulation } from "@/lib/sim/engine";
-import { CHARACTER_TEMPLATES } from "@/data/characters.data";
+import { applyRosterState, syncCharacterWithTemplate } from "@/lib/characters.service";
+import { createSimulationCache } from "@/lib/sim/engine";
 
 // All state and persistence for the team workspace page: one saved team with
 // three lineup variants fighting the boss as one continuous flow (Team 1's
@@ -63,37 +62,8 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     setTeamName(team.name);
 
     // Sync saved characters with the latest game data templates
-    const syncedVariants = team.variants.map(v => 
-      v.map(char => {
-        if (!char) return null;
-        const template = CHARACTER_TEMPLATES.find(t => (t.charId ?? t.name) === (char.charId ?? char.name));
-        if (!template) return char;
-        const legacyUpgrade = (char as any).upgradeLevel;
-        const legacyPots = (char as any).activePotentials;
-        const mergedCostumes = template.costumes.map(c => {
-          const savedCostume = char.costumes?.find(sc => sc.id === c.id);
-          if (savedCostume) return { ...c, ...savedCostume };
-          if (legacyUpgrade !== undefined) return { ...c, upgradeLevel: legacyUpgrade, activePotentials: legacyPots || [] };
-          return c;
-        });
-        return {
-          ...JSON.parse(JSON.stringify(template)),
-          id: char.id,
-          level: char.level,
-          costumes: mergedCostumes,
-          position: char.position,
-          // Base stats are typed by the user, not part of the template —
-          // carry the saved values through the re-sync or they reset on load.
-          baseAtk: char.baseAtk ?? 0,
-          baseMatk: char.baseMatk ?? 0,
-          baseHp: char.baseHp ?? 0,
-          baseCritRate: char.baseCritRate ?? 10,
-          baseCritDmg: char.baseCritDmg ?? 50,
-          baseDef: char.baseDef ?? 0,
-          baseMres: char.baseMres ?? 0,
-          basePropDmg: char.basePropDmg ?? 0,
-        } as Character;
-      })
+    const syncedVariants = team.variants.map((v) =>
+      v.map((char) => (char ? syncCharacterWithTemplate(char) : null)),
     );
     setVariants(syncedVariants);
 
@@ -129,16 +99,26 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
 
   // Simulate every variant; empty teams take no turns and don't advance the
   // flow. The boss rotation carries across the team swap, so each team's sim
-  // starts at the cast the previous teams left off at.
+  // starts at the cast the previous teams left off at. The cache threads each
+  // variant's previous run back into simulateIncremental, so editing turn k
+  // only re-simulates turns k..n (simulate() is idempotent — see engine docs).
+  const [simCache] = useState(createSimulationCache);
   const variantResults = useMemo<(SimulationResult | null)[]>(() => {
     if (!loaded || !boss) return [null, null, null];
     return variantTurns.map((turns, idx) => {
       const chars = variantCharacters[idx] ?? [];
-      return chars.length > 0
-        ? runSimulation(chars, boss, turns, { bossCastOffset: flowOffsets[idx] ?? 0 })
-        : null;
+      if (chars.length === 0) {
+        simCache.evict(idx);
+        return null;
+      }
+      return simCache.simulate(idx, {
+        characters: chars,
+        boss,
+        turns,
+        bossCastOffset: flowOffsets[idx] ?? 0,
+      }).result;
     });
-  }, [loaded, boss, variantCharacters, variantTurns, flowOffsets]);
+  }, [loaded, boss, variantCharacters, variantTurns, flowOffsets, simCache]);
 
   const simulationResult = variantResults[activeVariantIdx] ?? null;
 
@@ -215,17 +195,9 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     setRoster(freshRoster);
     setVariants((prev) => {
       const copy = [...prev];
-      copy[activeVariantIdx] = copy[activeVariantIdx].map((c) => {
-        if (!c) return null;
-        const entry = rosterEntryFor(freshRoster, c);
-        if (!entry) return c;
-        const newCostumes = c.costumes.map(costume => {
-          const state = entry.costumes[costume.id];
-          if (!state) return costume;
-          return { ...costume, upgradeLevel: state.upgradeLevel ?? 0, activePotentials: state.activePotentials || [] };
-        });
-        return { ...c, level: entry.level, costumes: newCostumes };
-      });
+      copy[activeVariantIdx] = copy[activeVariantIdx].map((c) =>
+        c ? applyRosterState(c, freshRoster) : null,
+      );
       return copy;
     });
   };

@@ -19,10 +19,7 @@ export const ventana: CharacterTemplate = {
         name: "End of Fairytale",
         hitCount: 1,
         damageType: "physical",
-        conditional: {
-          type: "target_has_taunt_or_concentrated_fire",
-          value: 1,
-        },
+        conditional: { kind: "enemy_has", effect: "taunt_or_concentrated_fire" },
         effects: [],
         hitboxPattern: [
           [0, 0],
@@ -100,10 +97,7 @@ export const ventana: CharacterTemplate = {
         name: "Idol Drive!",
         hitCount: 1,
         damageType: "physical",
-        conditional: {
-          type: "target_has_taunt_or_concentrated_fire",
-          value: 1,
-        },
+        conditional: { kind: "enemy_has", effect: "taunt_or_concentrated_fire" },
         effects: [
           {
             id: "ventana_comeback_atk",
@@ -239,10 +233,7 @@ export const ventana: CharacterTemplate = {
         name: "Towel Blade Style: Point Breakthrough",
         hitCount: 1,
         damageType: "physical",
-        conditional: {
-          type: "target_has_taunt_or_concentrated_fire",
-          value: 1,
-        },
+        conditional: { kind: "enemy_has", effect: "taunt_or_concentrated_fire" },
         effects: [
           {
             id: "ventana_onsen_vuln",
