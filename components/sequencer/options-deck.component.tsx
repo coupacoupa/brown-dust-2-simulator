@@ -223,6 +223,18 @@ export default function OptionsDeck({
                         </span>
                       )}
                     </div>
+
+                {/* ON COOLDOWN full dark overlay */}
+                {skillState.onCd && (
+                  <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none rounded-xl">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
+                      <span className="text-[10px]">🔒</span>
+                      <span className="text-[8px] font-black text-rose-200 uppercase tracking-widest">
+                        ON CD ({skillState.remainingTurns}T)
+                      </span>
+                    </div>
+                  </div>
+                )}
                     {/* Display effects */}
                     {cost.displayEffects && cost.displayEffects.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-0.5">

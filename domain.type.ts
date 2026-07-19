@@ -394,7 +394,7 @@ export interface BossRangeStamp {
 export interface BossSkillDef {
   id: string;
   name: string;
-  icon?: string;           // emoji placeholder until boss skill art exists
+  icon?: string;           // Optional path to boss skill icon asset
   description: string;     // rules text as shown in-game (supports {damage} placeholder)
   hitCount?: number;       // hits per cast
   scalingPct?: number;     // % of the boss's ATK dealt per hit

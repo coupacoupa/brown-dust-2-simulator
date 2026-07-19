@@ -479,19 +479,23 @@ export function getSkillCooldownState(
   characters: Character[],
   turns: TurnSetup[],
   charId: string,
-  skillId: string,
+  costumeIdOrSkillId: string,
   targetTurnIdx: number,
 ): { onCd: boolean; remainingTurns: number } {
   const char = characters.find((c) => c.id === charId);
-  const costume = char?.costumes?.find((c) => c.skill.id === skillId);
+  const costume = char?.costumes?.find(
+    (c) => c.id === costumeIdOrSkillId || c.skill?.id === costumeIdOrSkillId
+  );
   if (!char || !costume) return { onCd: false, remainingTurns: 0 };
 
-  // Check if cast as a preemptive action on Turn 1 (which represents Turn 0/battle start)
+  // Check if cast as a preemptive action on Turn 1 (before Turn 1 starts)
   if (turns[0]?.preemptiveCostumeIds?.includes(costume.id)) {
     const prevSkill = resolveSkillStats(char, costume);
-    const cooldownEndsAtTurnIdx = 0 + prevSkill.cooldown;
-    if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
-      return { onCd: true, remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1 };
+    const effectiveCooldown = Math.max(0, prevSkill.cooldown);
+    const globalTurnsElapsed = targetTurnIdx * 2;
+    const remainingTurns = effectiveCooldown - globalTurnsElapsed;
+    if (remainingTurns > 0) {
+      return { onCd: true, remainingTurns };
     }
   }
 
@@ -500,15 +504,26 @@ export function getSkillCooldownState(
     if (!prevAction || prevAction.actionType !== "costume") continue;
 
     const prevCostume = char.costumes?.find((c) => c.id === prevAction.costumeId);
-    if (prevCostume?.skill.id !== skillId) continue;
+    if (!prevCostume) continue;
+
+    // Check if the same costume or skill was cast on an earlier turn
+    const matchesSkill =
+      prevCostume.id === costume.id ||
+      (prevCostume.skill?.id && prevCostume.skill.id === costume.skill?.id);
+    if (!matchesSkill) continue;
 
     const prevSkill = resolveSkillStats(char, prevCostume);
     const burstCdReduction = getBurstCooldownReduction(prevCostume, prevAction.burstLevel || 0);
     const effectiveCooldown = Math.max(0, prevSkill.cooldown - burstCdReduction);
-    const cooldownEndsAtTurnIdx = prevTurnIdx + effectiveCooldown;
-    if (targetTurnIdx <= cooldownEndsAtTurnIdx) {
-      return { onCd: true, remainingTurns: cooldownEndsAtTurnIdx - targetTurnIdx + 1 };
+
+    // Each player turn step (e.g. Turn 1 → Turn 3) includes the boss turn, so 2 global turns elapse.
+    const globalTurnsElapsed = (targetTurnIdx - prevTurnIdx) * 2;
+    const remainingTurns = effectiveCooldown - globalTurnsElapsed;
+
+    if (remainingTurns > 0) {
+      return { onCd: true, remainingTurns };
     }
   }
+
   return { onCd: false, remainingTurns: 0 };
 }

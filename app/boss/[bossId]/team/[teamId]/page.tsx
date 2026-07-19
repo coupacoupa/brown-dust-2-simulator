@@ -214,8 +214,13 @@ export default function TeamWorkspacePage() {
               />
               <ActiveEffectsPanel
                 snapshot={ws.simulationResult?.effectSnapshots.find((s) => s.turn === ws.activeTurnIndex + 1)}
+                allSnapshots={ws.simulationResult?.effectSnapshots}
                 turnNumber={ws.globalTurnNumber}
                 characterNames={Object.fromEntries(ws.activeCharacters.map((c) => [c.id, c.name]))}
+                activeTurnIndex={ws.activeTurnIndex}
+                flowTurnOffset={ws.flowOffsets[ws.activeVariantIdx] ?? 0}
+                onSelectTurn={ws.selectFlowTurn}
+                activeTeamIdx={ws.activeVariantIdx}
               />
               <TurnSequencer
                 characters={ws.activeCharacters}

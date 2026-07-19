@@ -11,35 +11,35 @@ import { ELEMENT_BOSS_GRADIENTS } from "@/lib/elements.constant";
 // boss, …), so player flow turn i faces the boss's cast i on global turn 2i+2.
 export default function BossSkillQueue({
   boss,
-  flowTurnIdx,
+  activeTurnIndex,
+  flowTurnOffset = 0,
 }: {
   boss: Boss;
-  // Player turns already resolved across the whole flow (earlier teams + the
-  // active team's turns before the selected one)
-  flowTurnIdx: number;
+  activeTurnIndex: number;
+  flowTurnOffset?: number;
 }) {
   const rotation = useMemo(() => resolveBossRotation(boss), [boss]);
 
-  // Upcoming boss attacks: flowTurnIdx casts have already resolved, so the
-  // rotation slides down one card per turn; NEXT is always the top card.
+  // Upcoming boss attacks for this team's match. The skill cards remain fixed
+  // in order (Turn 1, 2, 3...) while the NEXT banner moves down to the active turn.
   const queue = useMemo(() => {
     if (rotation.length === 0) return [];
-    const QUEUE_LENGTH = 6;
+    const QUEUE_LENGTH = Math.max(6, activeTurnIndex + 1);
     return Array.from({ length: QUEUE_LENGTH }, (_, i) => {
-      const attackIdx = flowTurnIdx + i;
-      const step = rotation[attackIdx % rotation.length];
+      const step = rotation[i % rotation.length];
+      const globalTurn = (flowTurnOffset + i) * 2 + 2;
       return {
         name: step.skill.name,
-        icon: step.skill.icon,
+        moveNumber: (i % rotation.length) + 1,
         weakExposurePct: step.weakExposurePct,
-        globalTurn: attackIdx * 2 + 2,
-        isNext: i === 0,
+        globalTurn,
+        isNext: i === activeTurnIndex,
       };
     });
-  }, [rotation, flowTurnIdx]);
+  }, [rotation, activeTurnIndex, flowTurnOffset]);
 
   const gradient = ELEMENT_BOSS_GRADIENTS[boss.element];
-  const allyGlobalTurn = flowTurnIdx * 2 + 1;
+  const allyGlobalTurn = (flowTurnOffset + activeTurnIndex) * 2 + 1;
 
   return (
     <div className="flex flex-col gap-3 w-[200px] max-w-full self-end">
@@ -68,10 +68,10 @@ export default function BossSkillQueue({
               }
             `}
           >
-            {/* Element gradient + oversized icon stand-in for boss skill art */}
+            {/* Element gradient + simple move number watermark (1, 2, 3, 4, 5, 6...) */}
             <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
-            <span className="absolute inset-0 flex items-center justify-center text-5xl opacity-55 select-none">
-              {entry.icon}
+            <span className="absolute inset-0 flex items-center justify-center text-4xl font-black text-white/30 select-none font-mono tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              {entry.moveNumber}
             </span>
 
             {/* Global turn badge — same corner style as the team cards */}

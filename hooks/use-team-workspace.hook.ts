@@ -98,10 +98,10 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
   }, [variantTurns, variantCharacters]);
 
   // Simulate every variant; empty teams take no turns and don't advance the
-  // flow. The boss rotation carries across the team swap, so each team's sim
-  // starts at the cast the previous teams left off at. The cache threads each
-  // variant's previous run back into simulateIncremental, so editing turn k
-  // only re-simulates turns k..n (simulate() is idempotent — see engine docs).
+  // flow. When a new team enters the match (e.g. Team 1 wipes/swaps → Team 2),
+  // the boss rotation resets to Move 1. The cache threads each variant's
+  // previous run back into simulateIncremental, so editing turn k only
+  // re-simulates turns k..n (simulate() is idempotent — see engine docs).
   const [simCache] = useState(createSimulationCache);
   const variantResults = useMemo<(SimulationResult | null)[]>(() => {
     if (!loaded || !boss) return [null, null, null];
@@ -115,10 +115,10 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
         characters: chars,
         boss,
         turns,
-        bossCastOffset: flowOffsets[idx] ?? 0,
+        bossCastOffset: 0,
       }).result;
     });
-  }, [loaded, boss, variantCharacters, variantTurns, flowOffsets, simCache]);
+  }, [loaded, boss, variantCharacters, variantTurns, simCache]);
 
   const simulationResult = variantResults[activeVariantIdx] ?? null;
 

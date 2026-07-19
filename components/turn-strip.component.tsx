@@ -5,9 +5,6 @@ import { Character, TurnSetup, SimulationResult } from "@/domain.type";
 import { computeSpTimeline } from "@/lib/sim/actions.service";
 import { formatCompact } from "@/lib/format.util";
 
-// One team's slice of the battle flow. Teams fight in order (1 → 2 → 3);
-// `offset` is how many player turns earlier teams already used, so this
-// team's turn i displays as global turn offset + i + 1.
 export interface TeamFlowEntry {
   turns: TurnSetup[];
   characters: Character[];
@@ -27,9 +24,6 @@ interface TurnStripProps {
   maxSp: number;
 }
 
-// Battle-flow rail: one container per team, in fight order, each holding its
-// own turn tabs numbered globally (Team 2 continues from Team 1's last turn).
-// Selecting a turn in another container also switches the active team.
 export default function TurnStrip({
   teams,
   activeTeamIdx,
@@ -41,8 +35,6 @@ export default function TurnStrip({
   spRecovery,
   maxSp,
 }: TurnStripProps) {
-  // SP resets when a fresh team takes the field, so overdraft never carries
-  // across the team boundary.
   const overdraftByTeam = useMemo(
     () =>
       teams.map((team) =>
@@ -58,8 +50,6 @@ export default function TurnStrip({
     [teams],
   );
 
-  // Cumulative damage through the selected global turn: earlier teams in full,
-  // plus the active team's turns up to the selection.
   const throughExpected = useMemo(() => {
     let sum = 0;
     teams.forEach((team, idx) => {
@@ -83,6 +73,39 @@ export default function TurnStrip({
           const isActiveTeam = teamIdx === activeTeamIdx;
           const hasMembers = team.characters.length > 0;
           const overdrafts = overdraftByTeam[teamIdx];
+
+          // Compute active buff tracks across turns for continuous span lines
+          const activeBuffTracks = (() => {
+            if (!team.result?.effectSnapshots) return [];
+            const trackMap = new Map<string, { key: string; label: string; colorClass: string; activeTurns: boolean[] }>();
+
+            team.result.effectSnapshots.forEach((snap, tIdx) => {
+              Object.entries(snap.characterBuffs).forEach(([_, effs]) => {
+                effs.forEach((eff) => {
+                  const key = `${eff.type}_${eff.sourceCharacterName}`;
+                  if (!trackMap.has(key)) {
+                    let colorClass = "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]";
+                    if (eff.type.includes("prop")) colorClass = "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.7)]";
+                    else if (eff.type.includes("crit")) colorClass = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)]";
+                    else if (eff.type.includes("atk")) colorClass = "bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.7)]";
+                    else if (eff.type.includes("matk")) colorClass = "bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.7)]";
+
+                    trackMap.set(key, {
+                      key,
+                      label: `${eff.sourceCharacterName} ${eff.type.replace("buff_", "").toUpperCase()}`,
+                      colorClass,
+                      activeTurns: new Array(team.turns.length).fill(false),
+                    });
+                  }
+                  if (tIdx < team.turns.length) {
+                    trackMap.get(key)!.activeTurns[tIdx] = true;
+                  }
+                });
+              });
+            });
+
+            return Array.from(trackMap.values()).slice(0, 4); // Max 4 span lines under turn tabs
+          })();
 
           return (
             <div
@@ -128,30 +151,52 @@ export default function TurnStrip({
                         key={idx}
                         type="button"
                         onClick={() => onSelectTurn(teamIdx, idx)}
-                        className={`relative flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-xl border min-w-23 transition-all cursor-pointer shrink-0 ${
+                        className={`relative flex flex-col items-center justify-between gap-1 px-3.5 pt-2 pb-1.5 rounded-xl border min-w-23 transition-all cursor-pointer shrink-0 ${
                           isActive
                             ? "border-indigo-500 bg-indigo-950/25 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
                             : "border-zinc-900 bg-zinc-950/40 hover:border-zinc-700"
                         }`}
                       >
-                        <span
-                          className={`text-[9px] font-black uppercase tracking-widest ${
-                            isActive ? "text-indigo-300" : "text-zinc-500"
-                          }`}
-                        >
-                          Turn {(team.offset + idx) * 2 + 1}
-                        </span>
-                        <span
-                          className={`text-xs font-black font-mono tracking-tight ${
-                            isActive ? "text-white" : "text-zinc-400"
-                          }`}
-                        >
-                          {dmg ? formatCompact(dmg.expected) : "—"}
-                        </span>
+                        <div className="flex flex-col items-center gap-0.5 w-full">
+                          <span
+                            className={`text-[9px] font-black uppercase tracking-widest ${
+                              isActive ? "text-indigo-300" : "text-zinc-500"
+                            }`}
+                          >
+                            Turn {(team.offset + idx) * 2 + 1}
+                          </span>
+                          <span
+                            className={`text-xs font-black font-mono tracking-tight ${
+                              isActive ? "text-white" : "text-zinc-400"
+                            }`}
+                          >
+                            {dmg ? formatCompact(dmg.expected) : "—"}
+                          </span>
+                        </div>
+
+                        {/* Continuous Buff Uptime Span Lines directly under turn tab */}
+                        {activeBuffTracks.length > 0 && (
+                          <div className="w-full flex flex-col gap-1 mt-1 pt-1 border-t border-zinc-900/60 z-10">
+                            {activeBuffTracks.map((track) => {
+                              const isActiveOnThisTurn = track.activeTurns[idx];
+
+                              return (
+                                <div key={track.key} className="h-1 w-full flex items-center justify-center relative" title={track.label}>
+                                  {isActiveOnThisTurn ? (
+                                    <div className={`h-[3.5px] w-full rounded-full transition-all ${track.colorClass}`} />
+                                  ) : (
+                                    <div className="h-[1px] w-full bg-zinc-900/50" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         {overdrawn && (
                           <span
                             title="This turn overspends SP — the rotation is not castable"
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 border border-rose-400 text-[8px] font-black text-white flex items-center justify-center shadow-md"
+                            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 border border-rose-400 text-[8px] font-black text-white flex items-center justify-center shadow-md z-20"
                           >
                             !
                           </span>

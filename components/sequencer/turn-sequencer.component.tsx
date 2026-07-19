@@ -157,22 +157,20 @@ export default function TurnSequencer({
   // Player turn i of THIS team is flow turn (flowTurnOffset + i) overall
   const flowTurnIdx = flowTurnOffset + activeTurnIndex;
 
-  // Where the boss's answering cast lands on the ally board this turn (global
-  // turn 2i+2). Uses the same fixed-tile resolver as the incoming-damage
-  // engine, so the rose overlay matches exactly what will hit. Non-fixed casts
-  // (buffs) and rotationless bosses show nothing.
+  // Where the boss's answering cast lands on the ally board this turn.
+  // Boss rotation resets to Move 1 whenever a new team enters the match.
   const bossDangerTiles = useMemo(() => {
     const rotation = resolveBossRotation(boss);
     if (rotation.length === 0) return [];
-    const skill = rotation[flowTurnIdx % rotation.length].skill;
+    const skill = rotation[activeTurnIndex % rotation.length].skill;
     return resolveFixedBossTiles(skill);
-  }, [boss, flowTurnIdx]);
+  }, [boss, activeTurnIndex]);
 
   const bossCastName = useMemo(() => {
     const rotation = resolveBossRotation(boss);
     if (rotation.length === 0) return null;
-    return rotation[flowTurnIdx % rotation.length].skill.name;
-  }, [boss, flowTurnIdx]);
+    return rotation[activeTurnIndex % rotation.length].skill.name;
+  }, [boss, activeTurnIndex]);
 
   // Remaining HP after earlier teams' damage plus this team's player turns up
   // to the active one
@@ -297,7 +295,7 @@ export default function TurnSequencer({
 
         {/* COLUMN 4: BOSS SKILLS QUEUE (fixed width) */}
         <div className="xl:w-56 xl:shrink-0 flex flex-col gap-4">
-          <BossSkillQueue boss={boss} flowTurnIdx={flowTurnIdx} />
+          <BossSkillQueue boss={boss} activeTurnIndex={activeTurnIndex} flowTurnOffset={flowTurnOffset} />
         </div>
       </div>
     </div>

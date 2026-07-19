@@ -54,7 +54,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_sticky_leg",
       name: "Sticky Octopus Leg",
-      icon: "🐙",
       description: "Attack the enemy {hitCount} times, dealing {damage} Magic DMG equal to {scalingPct}% of your Magic ATK per hit.\nReduce enemy Magic Resistance by 20% for 12 turn(s).",
       hitCount: 4,
       scalingPct: 100,
@@ -80,7 +79,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_tidal_strike",
       name: "Tidal Strike",
-      icon: "🌊",
       description: "Deal {damage} Magic DMG to the enemy equal to {scalingPct}% of your Magic ATK. Increase the <orange>Property DMG</orange> of enemies with <orange>Stat Weakening</orange> by 200% for 4 turn(s).",
       hitCount: 1,
       scalingPct: 300,
@@ -105,7 +103,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_massive_leg",
       name: "Massive Octopus Leg",
-      icon: "🪨",
       description: "Attack the enemy {hitCount} times, dealing {damage} Magic DMG equal to {scalingPct}% of your Magic ATK per hit. If the enemy is in a <orange>Stat Weakening</orange> state, deal {atk} Magic DMG equal to 100% of your Magic ATK instead.",
       hitCount: 4,
       scalingPct: 1000,
@@ -128,7 +125,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_tuna_slam",
       name: "Tuna Slam",
-      icon: "🐟",
       description: "If a Part has 4 or more <orange>Debuffs</orange>, Remove all <orange>Debuffs</orange> on it. Deal {damage} Magic DMG to the enemy equal to {scalingPct}% of your Magic ATK. Increase the enemy's <orange>Property DMG</orange> by 200% for 4 turn(s).",
       hitCount: 1,
       scalingPct: 300,
@@ -144,7 +140,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_dry_out",
       name: "Dry Out",
-      icon: "💨",
       description: "100% chance to <orange>Evade</orange> enemy attacks until all Parts have performed 10 successful <orange>Evasion</orange>s. If affected by <orange>Stat Weakening</orange>, 100% chance to <orange>Evade</orange> enemy attacks until 1 successful <orange>Evasion</orange>s.",
       // Boss-side evasion is not modeled yet — a no-damage buff turn for now.
       kind: "buff",
@@ -152,7 +147,6 @@ export const octoviusI: SeedBossConfig = {
     {
       id: "octovius_summer_splash",
       name: "Summer Splash",
-      icon: "☠️",
       description: "<orange>Remove Buffs</orange> from the enemy and cause instant <orange>Death</orange>.",
       // Enrage: strips buffs then kills the whole team, wherever they stand.
       kind: "fixed",
