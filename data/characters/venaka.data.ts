@@ -1,5 +1,5 @@
 import { CharacterTemplate } from "@/domain.type";
-import { invenIllust, skillIllust } from "@/lib/assets.util";
+import { invenIllust, costumeArt } from "@/lib/assets.util";
 
 export const venaka: CharacterTemplate = {
   charId: "0672",
@@ -12,71 +12,150 @@ export const venaka: CharacterTemplate = {
     {
       id: "067201",
       name: "DJ",
-      invenImage: invenIllust("char067201_129"),
-      image: skillIllust("char067201_129"),
+      ...costumeArt("char067201_129"),
+      approach: "very_front",
       hasBurst: true,
       skill: {
         id: "s067201",
         name: "Stand Up, Music On!",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        effects: [
+          {
+            id: "venaka_dj_mres",
+            type: "debuff_mres",
+            value: 50,
+            duration: 4,
+            target: "target_enemy",
+          },
+        ],
+        hitboxPattern: [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ],
       },
       upgrades: [
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 50,
+          scaling: 500,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 50,
+          scaling: 500,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 50,
+          scaling: 600,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 50,
+          scaling: 700,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 50,
+          scaling: 800,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 50,
+          scaling: 900,
+          effects: [
+            {
+              id: "venaka_dj_mres",
+              type: "debuff_mres",
+              value: 50,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
       ],
       potentials: [
         {
-          id: "067201_pot1",
+          id: "venaka_dj_pot1",
           type: "damage",
           value: 100,
           name: "Skill damage +100%",
         },
         {
-          id: "067201_pot2",
+          id: "venaka_dj_pot2",
           type: "cooldown_reduce",
           value: 2,
           name: "Cooldown -2 turns",
         },
         {
-          id: "067201_pot3",
+          id: "venaka_dj_pot3",
           type: "range_increase",
           name: "Range increases",
+          newHitboxPattern: [
+            [0, 0],
+            [-1, 0],
+            [-2, 0],
+            [1, 0],
+            [2, 0],
+            [0, -1],
+            [0, -2],
+            [0, 1],
+            [0, 2],
+          ],
         },
       ],
       burstUpgrades: [
         {
+          cooldownReduction: 2,
         },
         {
           scalingBonus: 155,
@@ -85,73 +164,152 @@ export const venaka: CharacterTemplate = {
           scalingBonus: 315,
         },
       ],
-      },
+    },
     {
       id: "067202",
       name: "Wind Dancer",
-      invenImage: invenIllust("char067202_147"),
-      image: skillIllust("char067202_147"),
+      ...costumeArt("char067202_147"),
+      approach: "very_front",
       skill: {
         id: "s067202",
         name: "Zephyr's Waltz",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        effects: [
+          {
+            id: "venaka_dancer_vuln",
+            type: "debuff_property_vulnerability",
+            element: "wind",
+            value: 75,
+            duration: 4,
+            target: "target_enemy",
+          },
+        ],
+        hitboxPattern: [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+          [-1, -1],
+          [-1, 1],
+          [1, -1],
+          [1, 1],
+        ],
       },
       upgrades: [
         {
           spCost: 4,
           cooldown: 3,
-          scaling: 75,
+          scaling: 200,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 75,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 75,
+          scaling: 200,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 75,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 75,
+          scaling: 250,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 75,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 125,
+          scaling: 250,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 125,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 125,
+          scaling: 300,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 125,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 150,
+          scaling: 350,
+          effects: [
+            {
+              id: "venaka_dancer_vuln",
+              type: "debuff_property_vulnerability",
+              element: "wind",
+              value: 125,
+              duration: 4,
+              target: "target_enemy",
+            },
+          ],
         },
       ],
       potentials: [
         {
-          id: "067202_pot1",
+          id: "venaka_dancer_pot1",
           type: "damage",
           value: 25,
           name: "Skill damage +25%",
         },
         {
-          id: "067202_pot2",
+          id: "venaka_dancer_pot2",
           type: "damage",
           value: 25,
           name: "Skill damage +25%",
         },
         {
-          id: "067202_pot3",
-          type: "damage",
+          id: "venaka_dancer_pot3",
+          type: "effect_value_increase",
+          targetEffectId: "venaka_dancer_vuln",
           value: 25,
           name: "Wind Vulnerability +25%",
         },
       ],
-      },
+    },
   ],
 };

@@ -1,5 +1,5 @@
-import { Boss, Character, SkillEffect } from "@/domain.type";
-import { ActiveEffect, BattleState, ComputedStats } from "./engine.type";
+import { Boss, Character, SkillEffect, SummonSpec } from "@/domain.type";
+import { ActiveEffect, ActiveSummon, BattleState, ComputedStats } from "./engine.type";
 
 // BattleState lifecycle: creation, cloning, effect application and decay.
 // simulateTurn (./turn.ts) clones the incoming state once at entry and only
@@ -13,6 +13,7 @@ export function createBattleState(characters: Character[]): BattleState {
     deadCharacters: new Set(),
     characterDebuffs: new Map(characters.map((c) => [c.id, []])),
     bossBuffs: [],
+    summons: [],
   };
 }
 
@@ -28,7 +29,64 @@ export function cloneBattleState(state: BattleState): BattleState {
       Array.from(state.characterDebuffs, ([charId, debuffs]) => [charId, debuffs.map((d) => ({ ...d }))]),
     ),
     bossBuffs: state.bossBuffs.map((b) => ({ ...b })),
+    summons: state.summons.map((s) => ({ ...s, tiles: [...s.tiles], effect: { ...s.effect } })),
   };
+}
+
+// Register a new Allied Zone summon on the field. `tiles` is its zone on the
+// ally grid (computed from the summoner's position + the spec's pattern by the
+// caller). Idempotent per summon id: a re-cast refreshes the existing summon
+// rather than stacking a second copy.
+export function registerSummon(
+  spec: SummonSpec,
+  sourceChar: Character,
+  tiles: number[],
+  store: BattleState,
+): void {
+  const existing = store.summons.find((s) => s.id === spec.id);
+  if (existing) {
+    existing.remainingTurns = spec.duration;
+    existing.tiles = tiles;
+    existing.effect = { ...spec.effect };
+    existing.maxStacks = spec.maxStacks;
+    return;
+  }
+  store.summons.push({
+    id: spec.id,
+    sourceCharacterId: sourceChar.id,
+    effect: { ...spec.effect },
+    tiles,
+    maxStacks: spec.maxStacks,
+    stacks: 0,
+    remainingTurns: spec.duration,
+  });
+}
+
+// Every live summon acts once: it gains a stack (capped at maxStacks) and
+// refreshes its buff on each living ally in its zone. The buff value is
+// per-stack × current stacks; the summon replaces its own prior contribution
+// (matched by summonId) so re-application never double-stacks.
+export function actSummons(store: BattleState, characters: Character[]): void {
+  store.summons.forEach((summon) => {
+    summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks);
+    const value = summon.effect.value * summon.stacks;
+    characters.forEach((ally) => {
+      if (ally.position === undefined || !summon.tiles.includes(ally.position)) return;
+      if (store.deadCharacters.has(ally.id)) return;
+      const buffs = store.characterBuffs.get(ally.id);
+      if (!buffs) return;
+      const kept = buffs.filter((b) => b.summonId !== summon.id);
+      kept.push({
+        type: summon.effect.type,
+        value,
+        remainingTurns: summon.effect.duration,
+        sourceCharacterId: summon.sourceCharacterId,
+        element: summon.effect.element,
+        summonId: summon.id,
+      });
+      store.characterBuffs.set(ally.id, kept);
+    });
+  });
 }
 
 // Route skill effects into the appropriate buff/debuff stores. Used by both
@@ -40,25 +98,95 @@ export function applyEffects(
   tilesTargeted: number[],
   characters: Character[],
   store: BattleState,
+  casterStats?: ComputedStats,
 ): void {
   effects.forEach((eff) => {
     if (eff.type === 'gain_sp') return; // Instantaneous SP restoration doesn't linger as a buff
     if (eff.type === 'dot') return;     // DoTs need stat context — applied via applyDotEffects
 
-    // Energy guard snapshots its shield pool from the RECIPIENT's max HP.
-    const makeEffect = (recipient: Character): ActiveEffect => ({
-      type: eff.type,
-      value: eff.value,
-      remainingTurns: eff.duration,
-      sourceCharacterId: sourceChar.id,
-      chainLimit: eff.chainLimit,
-      ...(eff.type === 'buff_energy_guard' && recipient.baseHp > 0
-        ? { shieldRemaining: recipient.baseHp * (eff.value / 100) }
-        : {}),
-    });
+    let actualValue = eff.value;
+    let actualStacks = eff.stacks ?? 1;
+
+    if (eff.resonateCondition) {
+      let targetCount = 0;
+      if (eff.resonateCondition === 'stat_weakening') {
+        const bossHasStatWeakening = store.bossDebuffs.some((d) => d.type.startsWith('debuff_'));
+        if (bossHasStatWeakening) targetCount = 1;
+      } else if (eff.resonateCondition === 'dot') {
+        const bossHasDot = store.bossDebuffs.some((d) => d.type === 'dot');
+        if (bossHasDot) targetCount = 1;
+      } else if (eff.resonateCondition === 'buff') {
+        const bossHasBuff = store.bossBuffs.length > 0;
+        if (bossHasBuff) targetCount = 1;
+      }
+
+      const multiplier = eff.resonateMultiplier ?? 1;
+      const calculatedStacks = targetCount * multiplier;
+      const maxAllowed = eff.maxStacks ?? 30;
+      actualStacks = Math.min(calculatedStacks, maxAllowed);
+
+      if (actualStacks <= 0) {
+        return; // Resonate condition met no targets
+      }
+      actualValue = eff.value * actualStacks;
+    }
+
+    // Energy guard snapshots its shield pool at cast: value% of either the
+    // recipient's Max HP (default) or the caster's Magic ATK ('caster_matk').
+    const energyGuardShield = (recipient: Character, finalValue: number): number => {
+      const base = eff.egScalingStat === 'caster_matk'
+        ? (casterStats?.finalMatk ?? 0)
+        : recipient.baseHp;
+      return base > 0 ? base * (finalValue / 100) : 0;
+    };
+    const makeEffect = (recipient: Character): ActiveEffect => {
+      let finalValue = actualValue;
+      let finalStacks = actualStacks;
+
+      if (eff.resonateCondition === 'target_debuff_count') {
+        const allyBuffs = store.characterBuffs.get(recipient.id) || [];
+        const debuffs = allyBuffs.filter((b) => b.type.startsWith('debuff_') || b.type === 'dot');
+        const debuffCount = debuffs.length;
+
+        // Absorb / Cleanse the debuffs from the target ally
+        if (debuffCount > 0) {
+          const cleanBuffs = allyBuffs.filter((b) => !(b.type.startsWith('debuff_') || b.type === 'dot'));
+          store.characterBuffs.set(recipient.id, cleanBuffs);
+        }
+
+        const addPerStack = eff.resonateMultiplier ?? 10;
+        const maxAllowed = eff.maxStacks ?? 15;
+        finalStacks = Math.min(debuffCount, maxAllowed);
+        finalValue = eff.value + addPerStack * finalStacks;
+      } else if (eff.elementCondition && recipient.element === eff.elementCondition) {
+        finalValue = actualValue * 2;
+      }
+
+      return {
+        type: eff.type,
+        value: finalValue,
+        remainingTurns: eff.duration,
+        sourceCharacterId: sourceChar.id,
+        chainLimit: eff.chainLimit,
+        element: eff.element,
+        isIrremovable: eff.isIrremovable,
+        stacks: finalStacks,
+        ...(eff.type === 'buff_energy_guard'
+          ? (() => {
+              const shield = energyGuardShield(recipient, finalValue);
+              return shield > 0 ? { shieldRemaining: shield } : {};
+            })()
+          : {}),
+      };
+    };
     const giveTo = (ally: Character) => {
       if (store.deadCharacters.has(ally.id)) return; // the dead take no buffs
-      if (eff.type === 'buff_duration_extend') {
+      if (eff.type === 'consume_hp_percent') {
+        const currentHp = store.characterHp.get(ally.id);
+        if (currentHp !== undefined && currentHp !== null) {
+          store.characterHp.set(ally.id, Math.max(1, Math.floor(currentHp * (1 - eff.value / 100))));
+        }
+      } else if (eff.type === 'buff_duration_extend') {
         const buffs = store.characterBuffs.get(ally.id) || [];
         buffs.forEach((b) => {
           b.remainingTurns += eff.value;
@@ -141,4 +269,6 @@ export function tickEffectDurations(store: BattleState): void {
   });
   store.bossBuffs.forEach((b) => b.remainingTurns--);
   store.bossBuffs = store.bossBuffs.filter((b) => b.remainingTurns > 0);
+  store.summons.forEach((s) => s.remainingTurns--);
+  store.summons = store.summons.filter((s) => s.remainingTurns > 0);
 }

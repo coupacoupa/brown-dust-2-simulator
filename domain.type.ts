@@ -27,39 +27,73 @@ export interface SkillEffect {
     | 'buff_counter'
     | 'buff_duration_extend'
     | 'buff_augmentation'
+    | 'buff_transform'
+    | 'buff_sp_reduce'
     | 'debuff_def'
     | 'debuff_mres'
     | 'debuff_atk'   // reduces the boss's physical damage to the team
     | 'debuff_matk'  // reduces the boss's magic damage to the team
     | 'debuff_vulnerability'
     | 'debuff_dot_vulnerability'
+    | 'debuff_property_vulnerability'
+    | 'debuff_concentrated_fire'
     | 'gain_sp'
+    | 'burn_sp'
+    | 'heal_continuous'
+    | 'heal_self_hp_percent'
+    | 'consume_hp_percent'
+    | 'target_avoidance'
+    | 'buff_revive'
     | 'dot';           // damage-over-time (poison/bleed/burn) applied to the enemy
   value: number; // e.g., 50 for +50% or count of times; for 'dot', the per-tick % of the source stat
   duration: number; // in turns (for 'dot', the number of ticks)
   target: 'self' | 'all_allies' | 'area_allies' | 'target_enemy' | 'all_enemies';
+  element?: ElementType; // for debuff_property_vulnerability (e.g. 'wind')
+  elementCondition?: ElementType; // e.g. 'light' (triggers conditional bonus if target matches element)
   // DoT-only: which stat the per-tick damage scales off (snapshotted at cast),
   // and a display label. Ignored for non-'dot' effects.
   dotSource?: 'caster_atk' | 'caster_matk' | 'enemy_atk' | 'enemy_maxhp';
   dotLabel?: string; // e.g. "Poison", "Bleed", "Burn"
+  // buff_energy_guard: which stat the shield pool scales off. 'recipient_hp'
+  // (default) → value% × the recipient's Max HP; 'caster_matk' → value% × the
+  // CASTER's Magic ATK at cast time (e.g. Diana's aura shields).
+  egScalingStat?: 'recipient_hp' | 'caster_matk';
   chainLimit?: number; // optional chain count limit for the effect to apply (e.g., 5 for Teresse)
   stacks?: number; // number of stacks this effect counts as (defaults to 1)
   maxStacks?: number; // maximum stack count allowed on target for this dotLabel
+  resonateCondition?: 'stat_weakening' | 'dot' | 'buff' | 'target_debuff_count'; // Resonate effect condition
+  resonateMultiplier?: number; // Stacks per resonate target (defaults to 1)
+  isIrremovable?: boolean; // Cannot be removed by dispel/removal effects
 }
 
 // Condition gating a costume upgrade's `conditionalScaling`: damage instances
 // where the condition holds use the conditional scaling instead of the base
 // one. Evaluated per hit (the chain counter advances mid-action).
 export interface SkillCondition {
-  type: 'chain_min' | 'target_has_dot'; // active while condition holds
-  value: number;
+  type: 'chain_min' | 'target_has_dot' | 'target_is_physical' | 'target_has_taunt_or_concentrated_fire' | 'target_has_vulnerability' | 'target_chain_multiple_of_3' | 'target_debuff_count'; // active while condition holds
+  value: number; // for 'target_debuff_count': minimum number of debuffs on the enemy
+}
+
+// A persistent "Allied Zone" summon created by a skill (e.g. Diana's Magic
+// Amplifier). Once created it acts every turn, re-applying `effect` to allies
+// within its zone and adding one stack per turn up to `maxStacks`; the applied
+// buff's value is `effect.value × currentStacks`.
+export interface SummonSpec {
+  id: string;                        // stable id (also tags the applied buff)
+  effect: SkillEffect;               // per-STACK buff applied to the zone each turn
+  hitboxPattern: [number, number][]; // zone shape on the ally grid, relative to the summoner
+  duration: number;                  // summon lifetime in turns
+  maxStacks: number;                 // cap on accumulated stacks
 }
 
 export interface Skill {
   id: string;
   name: string;
   hitCount: number; // number of hits (for chain building)
+  summon?: SummonSpec; // creates a persistent Allied Zone summon on cast
   damageType: DamageType;
+  scalingStat?: 'atk' | 'matk' | 'enemy_maxhp' | 'caster_hp';
+  energyGuardScaling?: number; // secondary scaling based on current Energy Guard
   targetShape?: TargetShape;
   conditional?: SkillCondition; // required for upgrades with conditionalScaling
   // Higher scaling applied ONLY to the Main Target tile — the origin ([0,0])
@@ -80,7 +114,9 @@ export interface Skill {
 
 export interface CostumeUpgrade {
   scaling: number;
+  summon?: SummonSpec; // per-level summon override (buff value scales with level)
   mainTargetScaling?: number; // per-level Main Target (origin tile) scaling
+  energyGuardScaling?: number; // per-level Energy Guard scaling
   spCost: number;
   cooldown: number;
   hitCount?: number;
@@ -116,11 +152,16 @@ export interface BurstUpgrade {
   mainTargetScalingBonus?: number; // adds to Main Target scaling only
   conditionalScalingBonus?: number;
   effects?: SkillEffect[];
+  newEffect?: SkillEffect;
+  effectValueBonus?: number;
+  durationBonus?: number;
   cooldownReduction?: number; // turns shaved off the skill's cooldown at this burst tier
   // Additional SP this tier costs, on top of the base skill cost and lower
   // tiers. Burst cost is NOT a flat +1/tier — each tier has its own price.
   // Omit to fall back to +1 for that tier.
   spCost?: number;
+  resonateMultiplierBonus?: number; // Adds extra stacks per resonate target at this burst tier
+  targetEffectId?: string; // Optional target effect ID to modify for resonateMultiplierBonus
 }
 
 export interface Costume {

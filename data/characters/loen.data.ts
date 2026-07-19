@@ -20,9 +20,9 @@ export const loen: CharacterTemplate = {
         name: "Descending Inferno",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "plus", // Range: plus (center + up/down/left/right)
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
       },
       upgrades: [
         {
@@ -53,7 +53,7 @@ export const loen: CharacterTemplate = {
         {
           spCost: 5,
           cooldown: 3,
-          scaling: 1000,
+          scaling: 850,
         },
       ],
       potentials: [
@@ -73,6 +73,8 @@ export const loen: CharacterTemplate = {
           id: "003201_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: full 3×3 block.
+          newHitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
         },
       ],
       },
@@ -87,40 +89,50 @@ export const loen: CharacterTemplate = {
         name: "Explosive Dive!",
         hitCount: 2,
         damageType: "magic",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        targetShape: "row", // Range: horizontal row of 5 (all in the target's row)
+        // "Your Magic ATK is increased by X% for 4 turns" — self-buff applied
+        // before the hits. Per-level values live on each upgrade.
+        effects: [
+          { id: "loen_dive_matk", type: "buff_matk", value: 60, duration: 4, target: "self" },
+        ],
+        hitboxPattern: [[0, 0], [0, -1], [0, 1], [0, -2], [0, 2]],
       },
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
-          scaling: 60,
+          scaling: 200,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 60, duration: 4, target: "self" }],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 60,
+          scaling: 200,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 60, duration: 4, target: "self" }],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 80,
+          scaling: 215,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 80, duration: 4, target: "self" }],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 80,
+          scaling: 250,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 80, duration: 4, target: "self" }],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 100,
+          scaling: 265,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 100, duration: 4, target: "self" }],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 100,
+          scaling: 300,
+          effects: [{ id: "loen_dive_matk", type: "buff_matk", value: 100, duration: 4, target: "self" }],
         },
       ],
       potentials: [
@@ -155,9 +167,13 @@ export const loen: CharacterTemplate = {
         name: "EMP Flash",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
+        // Range: full 3×3 block. NOTE: the skill's "+75%→155% damage per target"
+        // bonus (scales with the number of enemy targets/boss tiles hit) is NOT
+        // modeled — the engine has no per-target-count scaling. Base 50% is
+        // encoded; the per-target bonus and its two potentials are unmodeled.
+        targetShape: "square",
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
         {
@@ -208,6 +224,8 @@ export const loen: CharacterTemplate = {
           id: "003203_pot3",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: 5×5 diamond.
+          newHitboxPattern: [[0, 0], [-2, 0], [-1, -1], [-1, 0], [-1, 1], [0, -2], [0, -1], [0, 1], [0, 2], [1, -1], [1, 0], [1, 1], [2, 0]],
         },
       ],
       },

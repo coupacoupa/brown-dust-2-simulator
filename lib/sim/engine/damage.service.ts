@@ -29,7 +29,12 @@ export function calculateActionDamage(
     resolved.targetShape,
   );
 
-  const primaryStat = damageType === 'physical' ? stats.finalAtk : stats.finalMatk;
+  let primaryStat: number = damageType === 'physical' ? stats.finalAtk : stats.finalMatk;
+  if (resolved.scalingStat === 'caster_hp') {
+    primaryStat = char.baseHp;
+  } else if (resolved.scalingStat === 'enemy_maxhp') {
+    primaryStat = boss.maxHp ?? 0;
+  }
 
   // Defense multiplier (1 - DEF%): the boss's DEF/MRES raised by its own
   // stat-up moves, shredded by ally-cast debuffs; pure damage ignores both.
@@ -44,7 +49,10 @@ export function calculateActionDamage(
   const elAdvantage = getElementMultiplier(char.element, boss.element);
   const propertyMultiplier = 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100;
 
-  const vulnerabilityMultiplier = 1 + stats.vulnDebuff / 100;
+  const propVulnDebuff = bossDebuffs
+    .filter((d) => d.type === "debuff_property_vulnerability" && (!d.element || d.element === char.element))
+    .reduce((acc, d) => acc + d.value, 0);
+  const vulnerabilityMultiplier = 1 + (stats.vulnDebuff + propVulnDebuff) / 100;
 
   // Standard crit deals 150% damage (+50% base crit damage), so the
   // multiplier is 1 + (baseCritDmg + buffs) / 100.
@@ -88,6 +96,18 @@ export function calculateActionDamage(
             isConditionMet = localChain >= resolved.conditional.value;
           } else if (resolved.conditional.type === 'target_has_dot') {
             isConditionMet = bossDebuffs.some((d) => d.type === 'dot');
+          } else if (resolved.conditional.type === 'target_has_taunt_or_concentrated_fire') {
+            isConditionMet = bossDebuffs.some((d) => d.type === 'debuff_concentrated_fire' || d.type === 'buff_taunt');
+          } else if (resolved.conditional.type === 'target_has_vulnerability') {
+            isConditionMet = bossDebuffs.some((d) => d.type === 'debuff_vulnerability');
+          } else if (resolved.conditional.type === 'target_debuff_count') {
+            // "Debuff Count": number of distinct debuffs (incl. DoTs) on the enemy.
+            const debuffCount = bossDebuffs.filter((d) => d.type.startsWith('debuff_') || d.type === 'dot').length;
+            isConditionMet = debuffCount >= resolved.conditional.value;
+          } else if (resolved.conditional.type === 'target_is_physical') {
+            isConditionMet = boss.atkType === 'physical' || boss.atkType === undefined;
+          } else if (resolved.conditional.type === 'target_chain_multiple_of_3') {
+            isConditionMet = localChain > 0 && localChain % 3 === 0;
           }
         } else {
           isConditionMet = localChain >= 15;
@@ -102,7 +122,11 @@ export function calculateActionDamage(
           partIndex === targetOrigin && resolved.mainTargetScaling !== undefined
             ? resolved.mainTargetScaling
             : conditionalOrBase;
-        const currentBaseDmg = primaryStat * (activeScaling / 100);
+        const egShield = activeBuffs
+          .filter((b) => b.type === "buff_energy_guard")
+          .reduce((acc, b) => acc + (b.shieldRemaining ?? (char.baseHp * (b.value / 100))), 0);
+        const egDamage = resolved.energyGuardScaling ? egShield * (resolved.energyGuardScaling / 100) : 0;
+        const currentBaseDmg = primaryStat * (activeScaling / 100) + egDamage;
 
         // Chain multiplier: each chain adds 10% damage
         const chainMultiplier = 1 + localChain * 0.10;

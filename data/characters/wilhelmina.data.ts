@@ -1,27 +1,26 @@
 import { CharacterTemplate } from "@/domain.type";
-import { invenIllust, skillIllust } from "@/lib/assets.util";
+import { invenIllust, costumeArt } from "@/lib/assets.util";
 
 export const wilhelmina: CharacterTemplate = {
   charId: "0676",
   name: "Wilhelmina",
   element: "water",
-  rarity: 0,
+  rarity: 5,
   level: 100,
   image: invenIllust("char067601_167"),
   costumes: [
     {
       id: "067601",
       name: "Iron Monarch",
-      invenImage: invenIllust("char067601_167"),
-      image: skillIllust("char067601_167"),
+      ...costumeArt("char067601_167"),
+      approach: "very_front",
       skill: {
         id: "s067601",
         name: "I am Beirun",
         hitCount: 12,
         damageType: "physical",
-        targetShape: "single",
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0]],
       },
       upgrades: [
         {
@@ -52,160 +51,292 @@ export const wilhelmina: CharacterTemplate = {
         {
           spCost: 4,
           cooldown: 1,
-          scaling: 95,
+          scaling: 81,
         },
       ],
       potentials: [
         {
-          id: "067601_pot1",
+          id: "wilhelmina_iron_pot1",
           type: "damage",
           value: 7,
           name: "Skill damage +7%",
         },
         {
-          id: "067601_pot2",
+          id: "wilhelmina_iron_pot2",
           type: "damage",
           value: 7,
           name: "Skill damage +7%",
         },
         {
-          id: "067601_pot3",
+          id: "wilhelmina_iron_pot3",
           type: "sp_reduce",
           value: 1,
           name: "SP cost -1",
         },
       ],
-      },
+    },
     {
       id: "067603",
       name: "Water Park Queen",
-      invenImage: invenIllust("char067603_171"),
-      image: skillIllust("char067603_171"),
+      ...costumeArt("char067603_171"),
+      approach: "very_front",
       skill: {
         id: "s067603",
         name: "Wave Breaker",
         hitCount: 9,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        effects: [
+          {
+            id: "wilhelmina_water_chain",
+            type: "buff_chain_reinforcement",
+            value: 1,
+            duration: 4,
+            target: "self",
+          },
+        ],
+        hitboxPattern: [
+          [0, 0],
+          [-1, -1],
+          [-1, 1],
+        ],
       },
       upgrades: [
         {
           spCost: 5,
           cooldown: 3,
           scaling: 45,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 3,
           scaling: 45,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 3,
           scaling: 55,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 3,
           scaling: 65,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 3,
           scaling: 75,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 6,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 3,
-          scaling: 90,
+          scaling: 75,
+          effects: [
+            {
+              id: "wilhelmina_water_chain",
+              type: "buff_chain_reinforcement",
+              value: 1,
+              duration: 6,
+              target: "self",
+            },
+          ],
         },
       ],
       potentials: [
         {
-          id: "067603_pot1",
+          id: "wilhelmina_water_pot1",
           type: "damage",
           value: 5,
           name: "Skill damage +5%",
         },
         {
-          id: "067603_pot2",
+          id: "wilhelmina_water_pot2",
           type: "damage",
           value: 5,
           name: "Skill damage +5%",
         },
         {
-          id: "067603_pot3",
+          id: "wilhelmina_water_pot3",
           type: "damage",
           value: 5,
           name: "Skill damage +5%",
         },
       ],
-      },
+    },
     {
       id: "067604",
       name: "Frozen Queen",
-      invenImage: invenIllust("char067604_189"),
-      image: skillIllust("char067604_189"),
+      ...costumeArt("char067604_189"),
+      approach: "very_front",
       hasBurst: true,
       skill: {
         id: "s067604",
         name: "Frozen Resolve",
         hitCount: 6,
         damageType: "physical",
-        targetShape: "single",
-        effects: [],
-        hitboxPattern: [[0,0]],
+        effects: [
+          {
+            id: "wilhelmina_frozen_prop",
+            type: "buff_prop_dmg",
+            value: 30,
+            duration: 4,
+            target: "self",
+          },
+        ],
+        hitboxPattern: [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+        ],
       },
       upgrades: [
         {
           spCost: 5,
           cooldown: 5,
-          scaling: 30,
+          scaling: 60,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 30,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 30,
+          scaling: 60,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 30,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 30,
+          scaling: 85,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 30,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 45,
+          scaling: 85,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 45,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 45,
+          scaling: 110,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 45,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
         {
           spCost: 4,
           cooldown: 5,
-          scaling: 90,
+          scaling: 110,
+          effects: [
+            {
+              id: "wilhelmina_frozen_prop",
+              type: "buff_prop_dmg",
+              value: 60,
+              duration: 4,
+              target: "self",
+            },
+          ],
         },
       ],
       potentials: [
         {
-          id: "067604_pot1",
+          id: "wilhelmina_frozen_pot1",
           type: "sp_reduce",
           value: 1,
           name: "SP cost -1",
         },
         {
-          id: "067604_pot2",
+          id: "wilhelmina_frozen_pot2",
           type: "damage",
           value: 10,
           name: "Skill damage +10%",
         },
         {
-          id: "067604_pot3",
-          type: "damage",
+          id: "wilhelmina_frozen_pot3",
+          type: "duration_increase",
+          targetEffectId: "wilhelmina_frozen_prop",
+          value: 2,
           name: "Buff duration +2 turns",
         },
       ],
@@ -217,9 +348,10 @@ export const wilhelmina: CharacterTemplate = {
           scalingBonus: 40,
         },
         {
-          scalingBonus: 30,
+          targetEffectId: "wilhelmina_frozen_prop",
+          effectValueBonus: 30,
         },
       ],
-      },
+    },
   ],
 };

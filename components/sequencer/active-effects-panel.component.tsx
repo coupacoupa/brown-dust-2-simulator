@@ -26,12 +26,17 @@ const EFFECT_META: Record<
   buff_taunt:        { label: "Taunt",       icon: "💢",  color: "text-orange-300",  bg: "bg-orange-950/40",  border: "border-orange-500/40", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",  isBuff: true },
   buff_counter:      { label: "Counter",     icon: "↩️",  color: "text-blue-300",    bg: "bg-blue-950/40",    border: "border-blue-500/40",   glow: "shadow-[0_0_8px_rgba(59,130,246,0.15)]",  isBuff: true },
   buff_augmentation: { label: "Augment",     icon: "⭐",  color: "text-amber-400",   bg: "bg-amber-950/40",   border: "border-amber-500/40",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: true },
+  buff_transform:    { label: "Transform",   icon: "🦊",  color: "text-purple-300",  bg: "bg-purple-950/40",  border: "border-purple-500/40", glow: "shadow-[0_0_8px_rgba(168,85,247,0.15)]", isBuff: true },
+  buff_sp_reduce:    { label: "SP Cost-1",  icon: "⚡",  color: "text-sky-300",     bg: "bg-sky-950/40",     border: "border-sky-500/40",    glow: "shadow-[0_0_8px_rgba(56,189,248,0.15)]",  isBuff: true },
   debuff_def:        { label: "DEF",         icon: "🔻",  color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_mres:       { label: "MRES",        icon: "🔻",  color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_atk:        { label: "ATK",         icon: "🔻",  color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_matk:       { label: "MATK",        icon: "🔻",  color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
   debuff_vulnerability: { label: "Vuln",     icon: "⚡",  color: "text-amber-300",   bg: "bg-amber-950/40",   border: "border-amber-500/40",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: false },
   debuff_dot_vulnerability: { label: "DoT Vuln", icon: "🔥", color: "text-orange-300", bg: "bg-orange-950/40", border: "border-orange-500/40", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]", isBuff: false },
+  debuff_property_vulnerability: { label: "Elem Vuln", icon: "🌀", color: "text-emerald-300", bg: "bg-emerald-950/40", border: "border-emerald-500/40", glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]", isBuff: false },
+  debuff_concentrated_fire: { label: "Conc Fire", icon: "🎯", color: "text-red-400", bg: "bg-red-950/40", border: "border-red-500/40", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
+  consume_hp_percent: { label: "HP Sac", icon: "🩸", color: "text-red-400", bg: "bg-red-950/40", border: "border-red-500/40", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
   dot:               { label: "DoT",         icon: "☠️",  color: "text-lime-300",    bg: "bg-lime-950/40",    border: "border-lime-500/40",   glow: "shadow-[0_0_8px_rgba(132,204,22,0.15)]",  isBuff: false },
 };
 

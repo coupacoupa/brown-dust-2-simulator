@@ -20,9 +20,12 @@ export const palette: CharacterTemplate = {
         name: "My Masterpiece...!",
         hitCount: 1,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "cross", // Range: diagcross (X) = center + 4 diagonals
+        // Also "Extend all debuffs on the enemy by 2 turns" — enemy-debuff
+        // duration extension is not modeled (buff_duration_extend only extends
+        // ally buffs). Utility only; damage is unaffected.
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
       },
       upgrades: [
         {
@@ -53,7 +56,7 @@ export const palette: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 3,
-          scaling: 800,
+          scaling: 700,
         },
       ],
       potentials: [
@@ -61,6 +64,8 @@ export const palette: CharacterTemplate = {
           id: "004201_pot1",
           type: "range_increase",
           name: "Range increases",
+          // Range increase: full 3×3 block.
+          newHitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
         },
         {
           id: "004201_pot2",
@@ -88,41 +93,20 @@ export const palette: CharacterTemplate = {
         name: "Violet☆Ultra Rush",
         hitCount: 7,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "square", // Range: all3x3 (full 3×3 block)
+        // "If the target has 7+ Debuffs, each hit deals the higher conditional
+        //  scaling instead." Per-level conditionalScaling lives on the upgrades.
+        conditional: { type: "target_debuff_count", value: 7 },
         effects: [],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
       },
       upgrades: [
-        {
-          spCost: 4,
-          cooldown: 3,
-          scaling: 35,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 35,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 40,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 45,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 50,
-        },
-        {
-          spCost: 3,
-          cooldown: 3,
-          scaling: 115,
-        },
+        { spCost: 4, cooldown: 3, scaling: 35, conditionalScaling: 110 },
+        { spCost: 3, cooldown: 3, scaling: 35, conditionalScaling: 110 },
+        { spCost: 3, cooldown: 3, scaling: 40, conditionalScaling: 125 },
+        { spCost: 3, cooldown: 3, scaling: 45, conditionalScaling: 140 },
+        { spCost: 3, cooldown: 3, scaling: 50, conditionalScaling: 155 },
+        { spCost: 3, cooldown: 3, scaling: 55, conditionalScaling: 170 },
       ],
       potentials: [
         {
@@ -144,16 +128,11 @@ export const palette: CharacterTemplate = {
           name: "Conditional skill damage +15%",
         },
       ],
+      // CostumeBurst panel: T1 Skill dmg +50% / T2,T3 Conditional dmg +25% each.
       burstUpgrades: [
-        {
-          scalingBonus: 50,
-        },
-        {
-          scalingBonus: 25,
-        },
-        {
-          scalingBonus: 25,
-        },
+        { spCost: 1, scalingBonus: 50 },
+        { spCost: 1, conditionalScalingBonus: 25 },
+        { spCost: 1, conditionalScalingBonus: 25 },
       ],
       },
   ],

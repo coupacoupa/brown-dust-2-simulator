@@ -1,4 +1,4 @@
-import { BossSkillDebuff, BossSelfBuff, SkillEffect, TurnEffectSnapshot, TurnFormulaBreakdown, TurnSurvivalSnapshot } from "@/domain.type";
+import { BossSkillDebuff, BossSelfBuff, ElementType, SkillEffect, SummonSpec, TurnEffectSnapshot, TurnFormulaBreakdown, TurnSurvivalSnapshot } from "@/domain.type";
 import { ActionDamageEvent } from "../breakdown.service";
 
 // Shared shapes of the simulation engine. Logic lives in the sibling
@@ -10,6 +10,7 @@ export interface ActiveEffect {
   value: number;
   remainingTurns: number;
   sourceCharacterId: string;
+  element?: ElementType;
   // DoT-only: per-tick flat damage snapshotted at application, plus a label
   // for the breakdown/UI. Undefined for non-'dot' effects.
   dotPerTick?: number;
@@ -20,6 +21,23 @@ export interface ActiveEffect {
   chainLimit?: number;
   stacks?: number;
   maxStacks?: number;
+  isIrremovable?: boolean;
+  // Tags a buff applied by an active summon, so the summon can refresh/replace
+  // its own contribution each turn without stacking duplicates.
+  summonId?: string;
+}
+
+// A live Allied Zone summon on the field. Each turn it adds a stack (up to
+// maxStacks) and re-applies its buff (value = effect.value × stacks) to allies
+// standing on its `tiles`.
+export interface ActiveSummon {
+  id: string;
+  sourceCharacterId: string;
+  effect: SkillEffect;   // per-stack buff template
+  tiles: number[];       // ally-grid tiles the zone covers
+  maxStacks: number;
+  stacks: number;        // accumulated so far
+  remainingTurns: number;
 }
 
 // A boss-applied stat debuff sitting on one ally (from BossSkillDebuff), or a
@@ -46,6 +64,8 @@ export interface BattleState {
   characterDebuffs: Map<string, BossStatEffect[]>;
   // The boss's own active stat buffs (from 'buff' moves).
   bossBuffs: BossStatEffect[];
+  // Live Allied Zone summons that act each turn (Diana's Magic Amplifier, …).
+  summons: ActiveSummon[];
 }
 
 // min = no crits, max = all crits, expected = crit-rate weighted.

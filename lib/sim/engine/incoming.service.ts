@@ -35,7 +35,7 @@ function seekVictim(
   state: BattleState,
 ): Character | null {
   const taunter = aliveChars.find((c) =>
-    (state.characterBuffs.get(c.id) ?? []).some((b) => b.type === "buff_taunt"),
+    (state.characterBuffs.get(c.id) ?? []).some((b) => b.type === "buff_taunt" || b.type === "debuff_concentrated_fire"),
   );
   if (taunter) return taunter;
 

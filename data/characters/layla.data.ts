@@ -18,7 +18,7 @@ export const layla: CharacterTemplate = {
         name: "Anvil of Destruction",
         hitCount: 2,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "cross", // Range: diagcross3x3 = X shape (center + 4 diagonals)
         effects: [
           {
             id: "gain_sp",
@@ -28,7 +28,7 @@ export const layla: CharacterTemplate = {
             target: "self",
           },
         ],
-        hitboxPattern: [[0,0]],
+        hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
       },
       upgrades: [
         {

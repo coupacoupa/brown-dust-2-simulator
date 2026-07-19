@@ -5,11 +5,13 @@ import {
   DamageType,
   SkillCondition,
   SkillEffect,
+  SummonSpec,
   TargetShape,
   TurnAction,
   TurnSetup,
 } from "@/domain.type";
 import { calculateAutoTarget } from "./targeting.util";
+import { ActiveEffect } from "./engine/engine.type";
 
 // Battle rules shared by the simulation engine and the sequencer UI, so SP
 // costs, burst scaling, targeting and cooldowns can never drift between the
@@ -35,8 +37,11 @@ export interface ResolvedAction {
   effects: SkillEffect[];
   hitboxPattern: [number, number][];
   targetGrid: "enemy" | "ally";
+  scalingStat?: "atk" | "matk" | "enemy_maxhp" | "caster_hp";
+  energyGuardScaling?: number;
   approach: ApproachType;
   skillId: string | null;
+  summon?: SummonSpec; // Allied Zone summon created on cast
 }
 
 // Dynamically computes the skill stats based on the character's upgrade level and active potentials.
@@ -51,9 +56,11 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
   let baseScaling = upgrade?.scaling ?? 0;
   let baseMainTargetScaling = upgrade?.mainTargetScaling ?? skill.mainTargetScaling;
   let baseConditionalScaling = upgrade?.conditionalScaling;
-  const baseHitCount = upgrade?.hitCount ?? skill.hitCount;
+  let baseEnergyGuardScaling = upgrade?.energyGuardScaling ?? skill.energyGuardScaling;
+  let baseHitCount = upgrade?.hitCount ?? skill.hitCount;
   let baseCooldown = upgrade?.cooldown ?? 0;
   let baseEffects = upgrade?.effects ?? skill.effects;
+  const baseSummon = upgrade?.summon ?? skill.summon;
   let baseTargetShape = skill.targetShape;
   let baseHitboxPattern = skill.hitboxPattern;
 
@@ -86,6 +93,11 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
               baseConditionalScaling += item.value;
             }
           } else if (item.type === "effect_value_increase" && item.value) {
+            if (item.name && item.name.includes("Energy Guard damage")) {
+              if (baseEnergyGuardScaling !== undefined) {
+                baseEnergyGuardScaling += item.value;
+              }
+            }
             baseEffects = baseEffects.map((eff: SkillEffect) => {
               if (item.targetEffectId ? eff.id === item.targetEffectId : true) {
                 return { ...eff, value: eff.value + item.value! };
@@ -113,17 +125,19 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
     spCost: baseSpCost,
     scaling: baseScaling,
     mainTargetScaling: baseMainTargetScaling,
+    energyGuardScaling: baseEnergyGuardScaling,
     conditionalScaling: baseConditionalScaling,
     hitCount: baseHitCount,
     cooldown: baseCooldown,
     effects: baseEffects,
+    summon: baseSummon,
     targetShape: baseTargetShape,
     hitboxPattern: baseHitboxPattern,
   };
 }
 
 
-export function resolveAction(char: Character, action: TurnAction): ResolvedAction {
+export function resolveAction(char: Character, action: TurnAction, activeBuffs?: ActiveEffect[]): ResolvedAction {
   const resolved: ResolvedAction = {
     name: "Skip",
     isSkip: action.actionType === "skip",
@@ -184,6 +198,17 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
           if (upgrade.effects) {
             finalEffects = [...finalEffects, ...upgrade.effects];
           }
+          if (upgrade.resonateMultiplierBonus !== undefined) {
+            finalEffects = finalEffects.map((eff) => {
+              if (upgrade.targetEffectId ? eff.id === upgrade.targetEffectId : eff.resonateCondition !== undefined) {
+                return {
+                  ...eff,
+                  resonateMultiplier: (eff.resonateMultiplier ?? 1) + upgrade.resonateMultiplierBonus!,
+                };
+              }
+              return eff;
+            });
+          }
           // Each tier adds its own SP cost; fall back to +1 when unspecified.
           burstSp += upgrade.spCost ?? 1;
         }
@@ -208,11 +233,27 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
         resolved.conditional = skill.conditional;
       }
       resolved.damageType = skill.damageType;
+      resolved.scalingStat = skill.scalingStat;
+      resolved.energyGuardScaling = skill.energyGuardScaling;
       resolved.targetShape = skill.targetShape ?? "single";
       resolved.effects = finalEffects;
+      resolved.summon = skill.summon;
       resolved.hitboxPattern = skill.hitboxPattern;
       resolved.targetGrid = skill.targetGrid ?? "enemy";
       resolved.approach = costume.approach ?? "very_front";
+
+      if (activeBuffs) {
+        const spReduce = activeBuffs
+          .filter((b) => b.type === "buff_sp_reduce")
+          .reduce((sum, b) => sum + b.value, 0);
+        if (spReduce > 0) {
+          resolved.spCost = Math.max(0, resolved.spCost - spReduce);
+        }
+        if (activeBuffs.some((b) => b.type === "buff_transform")) {
+          resolved.spCost = 0;
+          resolved.burstSpCost = 0;
+        }
+      }
     }
   }
 

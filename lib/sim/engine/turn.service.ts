@@ -2,7 +2,7 @@ import { Boss, BossSkillDef, Character, EffectSnapshot, TurnSetup, TurnSurvivalS
 import { getTilesHit } from "../targeting.util";
 import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin } from "../actions.service";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
-import { applyDotEffects, applyEffects, cloneBattleState, tickEffectDurations } from "./state.service";
+import { actSummons, applyDotEffects, applyEffects, cloneBattleState, registerSummon, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
 import { calculateActionDamage, computeCounterDamage } from "./damage.service";
 import { resolveBossCast } from "./incoming.service";
@@ -36,9 +36,19 @@ export function simulateTurn(
     resolvePreemptiveCasts(characters, turnSetup.preemptiveCostumeIds).forEach(({ char, skill }) => {
       const targetOriginTile = char.position ?? 0;
       const tilesTargeted = getTilesHit(targetOriginTile, skill.hitboxPattern, skill.targetShape);
-      applyEffects(skill.effects, char, tilesTargeted, aliveCharacters, next);
+      const preStats = computeFinalStats(char, next.characterBuffs.get(char.id) ?? [], next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
+      applyEffects(skill.effects, char, tilesTargeted, aliveCharacters, next, preStats);
+      if (skill.summon) {
+        const zone = getTilesHit(char.position ?? 0, skill.summon.hitboxPattern, undefined);
+        registerSummon(skill.summon, char, zone, next);
+      }
     });
   }
+
+  // Allied Zone summons act at the start of every turn (after any preemptive
+  // summon was registered): they gain a stack and refresh their zone buff, so
+  // the buff is live for this turn's attackers.
+  actSummons(next, characters);
 
   // Damage events this turn — the formula-breakdown panel is derived from
   // these after the turn resolves (see lib/sim/breakdown.ts).
@@ -63,7 +73,8 @@ export function simulateTurn(
     const char = charMap.get(action.characterId);
     if (!char || next.deadCharacters.has(char.id)) return;
 
-    const resolved = resolveAction(char, action);
+    const charBuffs = next.characterBuffs.get(char.id);
+    const resolved = resolveAction(char, action, charBuffs);
     if (resolved.isSkip) {
       // Even skipped characters get a snapshot of their current buffs
       const activeBuffs = next.characterBuffs.get(char.id)!;
@@ -79,8 +90,17 @@ export function simulateTurn(
     const targetOriginTile = resolveTargetOrigin(char, resolved, boss.hitbox);
     const tilesTargeted = getTilesHit(targetOriginTile, resolved.hitboxPattern, resolved.targetShape);
 
-    // Apply buffs/debuffs *before* damage calculation if this action applies them
-    applyEffects(resolved.effects, char, tilesTargeted, aliveCharacters, next);
+    // Apply buffs/debuffs *before* damage calculation if this action applies
+    // them. Caster stats (pre-this-cast buffs) let MATK-scaled energy-guard
+    // shields snapshot the caster's Magic ATK; HP-scaled shields ignore it.
+    const casterStats = computeFinalStats(char, next.characterBuffs.get(char.id) ?? [], next.bossDebuffs, next.characterDebuffs.get(char.id) ?? []);
+    applyEffects(resolved.effects, char, tilesTargeted, aliveCharacters, next, casterStats);
+    // A summon created by a normal cast starts acting next turn (this turn's
+    // summon phase already ran).
+    if (resolved.summon) {
+      const zone = getTilesHit(char.position ?? 0, resolved.summon.hitboxPattern, undefined);
+      registerSummon(resolved.summon, char, zone, next);
+    }
 
     // Snapshot this character's buffs at the moment they act
     const activeBuffs = next.characterBuffs.get(char.id)!;
