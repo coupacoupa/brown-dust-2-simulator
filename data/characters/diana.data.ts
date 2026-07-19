@@ -14,6 +14,7 @@ export const diana: CharacterTemplate = {
       name: "Adventurer of the Unknown",
       ...costumeArt("char002401_58"),
       approach: "vault",
+      hasBurst: true,
       displayEffects: ["Property DMG +100% (8t)", "Crit Rate +20% (8t)"],
       skill: {
         id: "s002401",
@@ -67,6 +68,13 @@ export const diana: CharacterTemplate = {
           // 7×7 plus (radius 3).
           newHitboxPattern: [[0, 0], [-3, 0], [-2, 0], [-1, 0], [1, 0], [2, 0], [3, 0], [0, -3], [0, -2], [0, -1], [0, 1], [0, 2], [0, 3]],
         },
+      ],
+      // CostumeBurst panel: each tier is +1 SP and grants Property DMG buff +20%
+      // (up to +60% at full Burst), applied to the Aura's Property DMG effect.
+      burstUpgrades: [
+        { spCost: 1, effectValueBonus: 20, targetEffectId: "diana_adv_prop" },
+        { spCost: 1, effectValueBonus: 20, targetEffectId: "diana_adv_prop" },
+        { spCost: 1, effectValueBonus: 20, targetEffectId: "diana_adv_prop" },
       ],
     },
     {
