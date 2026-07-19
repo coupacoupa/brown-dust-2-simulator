@@ -12,10 +12,12 @@ export default function SurvivalStrip({
   characters,
   simulationResult,
   activeTurnIndex,
+  flowTurnOffset = 0,
 }: {
   characters: Character[];
   simulationResult: SimulationResult | null;
   activeTurnIndex: number;
+  flowTurnOffset?: number;
 }) {
   const survival = simulationResult?.survival;
   const turnSnap = survival?.perTurn[activeTurnIndex];
@@ -68,7 +70,7 @@ export default function SurvivalStrip({
               </div>
               {!snap.alive ? (
                 <span className="text-[8px] font-black text-rose-400 uppercase tracking-wider">
-                  Died T{deathTurn ?? "?"}
+                  Died T{deathTurn !== undefined ? (flowTurnOffset + deathTurn - 1) * 2 + 1 : "?"}
                 </span>
               ) : snap.hp === null ? (
                 <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-wider">HP not set</span>
@@ -93,7 +95,7 @@ export default function SurvivalStrip({
 
       {survival.wipeTurn !== null && (
         <div className="text-[9px] font-black text-rose-400 uppercase tracking-widest border-t border-rose-950 pt-1.5">
-          ⚠ Team wipes on turn {survival.wipeTurn}
+          ⚠ Team wipes on turn {(flowTurnOffset + survival.wipeTurn - 1) * 2 + 1}
         </div>
       )}
     </div>

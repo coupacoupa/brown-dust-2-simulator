@@ -291,6 +291,7 @@ export default function TurnSequencer({
             characters={characters}
             simulationResult={simulationResult}
             activeTurnIndex={activeTurnIndex}
+            flowTurnOffset={flowTurnOffset}
           />
         </div>
 

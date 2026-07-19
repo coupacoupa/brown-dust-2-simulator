@@ -339,7 +339,7 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                       textAnchor="middle"
                       className="font-bold"
                     >
-                      T{p.turn + turnOffset}
+                      T{(turnOffset + p.turn - 1) * 2 + 1}
                     </text>
                     {/* Val tooltip above dot */}
                     <text 

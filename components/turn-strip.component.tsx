@@ -74,7 +74,7 @@ export default function TurnStrip({
     return sum;
   }, [teams, activeTeamIdx, activeTurnIndex]);
 
-  const globalActiveTurn = (teams[activeTeamIdx]?.offset ?? 0) + activeTurnIndex + 1;
+  const globalActiveTurn = ((teams[activeTeamIdx]?.offset ?? 0) + activeTurnIndex) * 2 + 1;
 
   return (
     <div className="flex items-stretch gap-2 bg-zinc-950/65 border border-zinc-900 rounded-2xl p-3 backdrop-blur-md overflow-x-auto">
@@ -139,7 +139,7 @@ export default function TurnStrip({
                             isActive ? "text-indigo-300" : "text-zinc-500"
                           }`}
                         >
-                          Turn {team.offset + idx + 1}
+                          Turn {(team.offset + idx) * 2 + 1}
                         </span>
                         <span
                           className={`text-xs font-black font-mono tracking-tight ${

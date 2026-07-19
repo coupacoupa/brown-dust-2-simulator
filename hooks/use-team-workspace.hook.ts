@@ -126,7 +126,7 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
   // script — derived clamp, the raw state may briefly point past the end
   const clampedTurnIndex = Math.max(0, Math.min(activeTurnIndex, activeTurns.length - 1));
 
-  const globalTurnNumber = (flowOffsets[activeVariantIdx] ?? 0) + clampedTurnIndex + 1;
+  const globalTurnNumber = ((flowOffsets[activeVariantIdx] ?? 0) + clampedTurnIndex) * 2 + 1;
 
   // Damage already dealt by the teams fielded before the active one
   const carryoverDamage = useMemo(
