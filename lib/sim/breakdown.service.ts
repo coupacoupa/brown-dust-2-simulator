@@ -112,14 +112,19 @@ export function buildTurnFormulaBreakdown(
     if (ev.bossBaseDefPct !== null) {
       defBaseSum += w * ev.bossBaseDefPct;
       const totalShred = ev.defShreds.reduce((acc, d) => acc + d.value, 0);
-      ev.defShreds.forEach((d) => {
-        // Percentage points of boss defense this debuff strips away
-        const recovered =
-          totalShred > 0
-            ? ev.bossBaseDefPct! * (Math.min(100, totalShred) / 100) * (d.value / totalShred)
-            : 0;
-        defShredContribAgg.set(d.source, (defShredContribAgg.get(d.source) ?? 0) + w * recovered);
-      });
+      if (totalShred > 0) {
+        // Shreds subtract percentage points from the boss's DEF (additive
+        // bracket). Recover the points actually stripped from the effective
+        // multiplier the engine applied, then split them by shred share.
+        const effDefPct = (1 - ev.defMultiplier) * 100;
+        const removedPts = Math.max(0, ev.bossBaseDefPct - effDefPct);
+        ev.defShreds.forEach((d) => {
+          defShredContribAgg.set(
+            d.source,
+            (defShredContribAgg.get(d.source) ?? 0) + w * removedPts * (d.value / totalShred),
+          );
+        });
+      }
     }
   });
 

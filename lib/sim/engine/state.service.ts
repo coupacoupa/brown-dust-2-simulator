@@ -99,6 +99,25 @@ export function actSummons(store: BattleState, characters: Character[]): void {
   });
 }
 
+// Re-applying the same buff (same type, source and magnitude) before it
+// expires refreshes it in place — the game never keeps two instances of the
+// same buff. Different sources, or same-type effects with different values,
+// still stack additively. Summon-applied buffs manage their own refresh via
+// summonId, and DoTs stack under their own max-stack caps, so both are
+// excluded here.
+function upsertEffect(list: ActiveEffect[], next: ActiveEffect): void {
+  const idx = list.findIndex((b) =>
+    b.summonId === undefined
+    && b.type === next.type
+    && b.sourceCharacterId === next.sourceCharacterId
+    && b.value === next.value
+    && b.element === next.element
+    && b.augmentScope === next.augmentScope,
+  );
+  if (idx >= 0) list[idx] = next;
+  else list.push(next);
+}
+
 // Route skill effects into the appropriate buff/debuff stores. Used by both
 // preemptive actions and regular actions — single source of truth. Mutates
 // the given state, so callers pass their own working copy, never an input.
@@ -231,7 +250,7 @@ export function applyEffects(
           b.remainingTurns += eff.value;
         });
       } else {
-        store.characterBuffs.get(ally.id)!.push(makeEffect(ally));
+        upsertEffect(store.characterBuffs.get(ally.id)!, makeEffect(ally));
       }
     };
 
@@ -253,7 +272,7 @@ export function applyEffects(
         }
       });
     } else if (eff.target === 'target_enemy' || eff.target === 'all_enemies') {
-      store.bossDebuffs.push(makeEffect(sourceChar));
+      upsertEffect(store.bossDebuffs, makeEffect(sourceChar));
     }
   });
 }

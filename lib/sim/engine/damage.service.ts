@@ -29,34 +29,49 @@ export function calculateActionDamage(
     resolved.targetShape,
   );
 
+  // HP-scaled damage reads at most 50,000 HP (in-game cap); ATK/MATK are
+  // already capped at 100,000 by computeFinalStats.
   let primaryStat: number = damageType === 'physical' ? stats.finalAtk : stats.finalMatk;
   if (resolved.scalingStat === 'caster_hp') {
-    primaryStat = char.baseHp;
+    primaryStat = Math.min(50_000, char.baseHp);
   } else if (resolved.scalingStat === 'enemy_maxhp') {
-    primaryStat = boss.maxHp ?? 0;
+    primaryStat = Math.min(50_000, boss.maxHp ?? 0);
   }
   // Knockback-collision damage is negated if the boss is immune to Knockback.
   if (resolved.requiresKnockback && boss.immunities?.some((i) => i.toLowerCase().includes('knockback'))) {
     primaryStat = 0;
   }
 
-  // Defense multiplier (1 - DEF%): the boss's DEF/MRES raised by its own
-  // stat-up moves, shredded by ally-cast debuffs; pure damage ignores both.
+  // Defense bracket, additive like in-game: 100% − (DEF% + boss stat-up buffs
+  // − ally shreds), effective DEF clamped to [0, 90] (the in-game 90% cap).
+  // Debuffs subtract percentage points; they don't scale the base DEF.
+  // Pure damage ignores defense entirely.
   const sumBossBuff = (stat: BossStatEffect['stat']) =>
     bossBuffs.filter((b) => b.stat === stat).reduce((acc, b) => acc + b.valuePct, 0);
-  const bossDef = Math.max(0, boss.def * (1 + sumBossBuff('def') / 100) * (1 - stats.defDebuff / 100));
-  const bossMres = Math.max(0, boss.mres * (1 + sumBossBuff('mres') / 100) * (1 - stats.mresDebuff / 100));
+  const effectiveDefPct = (base: number, buff: number, shred: number) =>
+    Math.min(90, Math.max(0, base + buff - shred));
+  const bossDef = effectiveDefPct(boss.def, sumBossBuff('def'), stats.defDebuff);
+  const bossMres = effectiveDefPct(boss.mres, sumBossBuff('mres'), stats.mresDebuff);
   const defMultiplier =
     damageType === 'pure' ? 1.0 : damageType === 'physical' ? 1 - bossDef / 100 : 1 - bossMres / 100;
 
-  // Property multiplier: element advantage + character stat + buffs
+  // Property bracket: Property DMG (element advantage base + character stat +
+  // buffs) only engages when the attacker has the element advantage. Neutral
+  // matchups take no property multiplier at all; disadvantage applies the
+  // target's Property Resist instead — the two brackets are mutually exclusive.
   const elAdvantage = getElementMultiplier(char.element, boss.element);
-  const propertyMultiplier = 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100;
+  const hasAdvantage = elAdvantage > 0;
+  const propertyMultiplier = hasAdvantage
+    ? 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100
+    : 1 + elAdvantage;
 
   const propVulnDebuff = bossDebuffs
     .filter((d) => d.type === "debuff_property_vulnerability" && (!d.element || d.element === char.element))
     .reduce((acc, d) => acc + d.value, 0);
-  const vulnerabilityMultiplier = 1 + (stats.vulnDebuff + propVulnDebuff) / 100;
+  // Vulnerability debuffs and DMG-increase (augmentation) buffs share one
+  // additive bracket; the chain-gated augmentation part joins per hit below.
+  const vulnDebuffSum = stats.vulnDebuff + propVulnDebuff;
+  const vulnerabilityMultiplier = 1 + vulnDebuffSum / 100;
 
   // Standard crit deals 150% damage (+50% base crit damage), so the
   // multiplier is 1 + (baseCritDmg + buffs) / 100.
@@ -80,9 +95,6 @@ export function calculateActionDamage(
   const isBasicAttack = resolved.skillId === null;
   const augmentApplies = (b: ActiveEffect) =>
     b.type === 'buff_augmentation' && (b.augmentScope !== 'basic_attack' || isBasicAttack);
-  const augmentationValue = activeBuffs
-    .filter(augmentApplies)
-    .reduce((sum, b) => sum + b.value, 0);
 
   // "Damage increases by N% per <count>": a flat scaling bonus added to every
   // hit, sized by the count (enemy tiles hit / caster's active buffs / SP spent).
@@ -151,17 +163,17 @@ export function calculateActionDamage(
         const egDamage = resolved.energyGuardScaling ? egShield * (resolved.energyGuardScaling / 100) : 0;
         const currentBaseDmg = primaryStat * (activeScaling / 100) + egDamage;
 
-        // Chain multiplier: each chain adds 10% damage
-        const chainMultiplier = 1 + localChain * 0.10;
+        // Chain multiplier: each chain adds 10% damage (chain stacks cap at 100)
+        const chainMultiplier = 1 + Math.min(localChain, 100) * 0.10;
 
-        // Augmentation multiplier: active if localChain <= b.chainLimit (or b.chainLimit is undefined)
+        // Augmentation (DMG increase): active if localChain <= b.chainLimit (or
+        // b.chainLimit is undefined). Shares the additive vulnerability bracket.
         const hitAugmentValue = activeBuffs
           .filter((b) => augmentApplies(b)
             && (b.chainLimit === undefined || localChain <= b.chainLimit)
             && (b.augmentChainMin === undefined || localChain >= b.augmentChainMin))
           .reduce((sum, b) => sum + b.value, 0);
-        const augmentationMultiplier = 1 + hitAugmentValue / 100;
-        const hitVulnMult = vulnerabilityMultiplier * augmentationMultiplier;
+        const hitVulnMult = 1 + (vulnDebuffSum + hitAugmentValue) / 100;
 
         const nonCritDmg =
           currentBaseDmg * defMultiplier * propertyMultiplier * chainMultiplier * hitVulnMult * weakMultiplier;
@@ -182,11 +194,12 @@ export function calculateActionDamage(
       });
 
       // Every damage number that pops up adds 1 chain, so one hit landing
-      // on 2 tiles adds 2 chains. With Chain Reinforcement active, this increases.
+      // on 2 tiles adds 2 chains. With Chain Reinforcement active, this
+      // increases (chain per hit = 1 + reinforcements); stacks cap at 100.
       const chainReinforcement = activeBuffs
         .filter((b) => b.type === 'buff_chain_reinforcement')
         .reduce((sum, b) => sum + b.value, 0);
-      localChain += hitParts.length * (1 + chainReinforcement);
+      localChain = Math.min(100, localChain + hitParts.length * (1 + chainReinforcement));
     }
   }
 
@@ -215,10 +228,11 @@ export function calculateActionDamage(
       propertyMultiplier,
       defMultiplier,
       elAdvantagePct: elAdvantage * 100,
-      basePropDmgPct: char.basePropDmg,
+      // Property stat/buffs only counted when they actually applied (advantage).
+      basePropDmgPct: hasAdvantage ? char.basePropDmg : 0,
       bossBaseDefPct: damageType === 'pure' ? null : damageType === 'physical' ? boss.def : boss.mres,
       atkBuffs: sourced(activeBuffs.filter((b) => b.type === relevantBuffType)),
-      propBuffs: sourced(activeBuffs.filter((b) => b.type === 'buff_prop_dmg')),
+      propBuffs: hasAdvantage ? sourced(activeBuffs.filter((b) => b.type === 'buff_prop_dmg')) : [],
       vulnDebuffs: (() => {
         const list = sourced(bossDebuffs.filter((d) => d.type === 'debuff_vulnerability'));
         activeBuffs.filter((b) => b.type === 'buff_augmentation').forEach((b) => {
@@ -263,14 +277,19 @@ export function computeCounterDamage(
     return { damage: { min: 0, expected: 0, max: 0 }, event: null };
   }
 
-  // Boss physical DEF, raised by its own stat-ups, shredded by ally debuffs.
+  // Boss physical DEF: additive bracket (base + boss stat-ups − ally shreds),
+  // clamped to [0, 90] like the outgoing pipeline above.
   const sumBossBuff = (stat: BossStatEffect['stat']) =>
     bossBuffs.filter((b) => b.stat === stat).reduce((acc, b) => acc + b.valuePct, 0);
-  const bossDef = Math.max(0, boss.def * (1 + sumBossBuff('def') / 100) * (1 - stats.defDebuff / 100));
+  const bossDef = Math.min(90, Math.max(0, boss.def + sumBossBuff('def') - stats.defDebuff));
   const defMultiplier = 1 - bossDef / 100;
 
+  // Property DMG only applies on element advantage (see calculateActionDamage).
   const elAdvantage = getElementMultiplier(char.element, boss.element);
-  const propertyMultiplier = 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100;
+  const hasAdvantage = elAdvantage > 0;
+  const propertyMultiplier = hasAdvantage
+    ? 1 + elAdvantage + char.basePropDmg / 100 + stats.propDmgBuff / 100
+    : 1 + elAdvantage;
   const vulnerabilityMultiplier = 1 + stats.vulnDebuff / 100;
 
   const critMultValue = 1 + stats.finalCritDmg / 100;
@@ -295,7 +314,7 @@ export function computeCounterDamage(
     propertyMultiplier,
     defMultiplier,
     elAdvantagePct: elAdvantage * 100,
-    basePropDmgPct: char.basePropDmg,
+    basePropDmgPct: hasAdvantage ? char.basePropDmg : 0,
     bossBaseDefPct: boss.def,
     atkBuffs: [],
     propBuffs: [],

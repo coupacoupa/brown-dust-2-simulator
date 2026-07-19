@@ -220,7 +220,28 @@ export function resolveAction(char: Character, action: TurnAction, activeBuffs?:
             });
           }
           if (upgrade.effects) {
-            finalEffects = [...finalEffects, ...upgrade.effects];
+            // Burst upgrades the skill in place: a tier effect matching one the
+            // skill already applies (same type/target/element/conditions) raises
+            // that effect's value — one stronger buff, like in-game — instead of
+            // stacking a second instance. Genuinely new effects still append.
+            upgrade.effects.forEach((burstEff) => {
+              const idx = finalEffects.findIndex((e) =>
+                e.type === burstEff.type
+                && e.target === burstEff.target
+                && e.element === burstEff.element
+                && e.applyCondition === burstEff.applyCondition
+                && e.resonateCondition === burstEff.resonateCondition);
+              if (idx >= 0) {
+                const base = finalEffects[idx];
+                finalEffects[idx] = {
+                  ...base,
+                  value: base.value + burstEff.value,
+                  duration: Math.max(base.duration, burstEff.duration),
+                };
+              } else {
+                finalEffects.push(burstEff);
+              }
+            });
           }
           if (upgrade.resonateMultiplierBonus !== undefined) {
             finalEffects = finalEffects.map((eff) => {

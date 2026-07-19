@@ -120,8 +120,9 @@ export function resolveBossCast(
   if (victims.length === 0) return result;
 
   // --- Boss outgoing damage per hit ---
-  // ATK buffed by its own stat-ups, shredded by ally-cast ATK/MATK-downs
-  // (matched to the skill's damage type).
+  // ATK bracket, additive like every stat bracket: base × (100% + own stat-ups
+  // − ally-cast ATK/MATK-downs matched to the skill's damage type). ATK caps
+  // at 100,000 in the damage calculation.
   const damageType = skill.damageType ?? "magic";
   const atkDownType = damageType === "physical" ? "debuff_atk" : "debuff_matk";
   const atkDown = state.bossDebuffs
@@ -130,7 +131,7 @@ export function resolveBossCast(
   const atkUp = state.bossBuffs
     .filter((b) => b.stat === "atk")
     .reduce((acc, b) => acc + b.valuePct, 0);
-  const bossAtk = Math.max(0, (boss.atk ?? 0) * (1 + atkUp / 100) * (1 - Math.min(100, atkDown) / 100));
+  const bossAtk = Math.min(100_000, Math.max(0, (boss.atk ?? 0) * (1 + (atkUp - atkDown) / 100)));
 
   // Expected crit multiplier (most hunt bosses have 0% crit).
   const critMult = 1 + ((boss.critRate ?? 0) / 100) * ((boss.critDmg ?? 0) / 100);
@@ -163,8 +164,8 @@ export function resolveBossCast(
 
     if (scaling <= 0) continue;
 
-    // Victim mitigation: DEF/MRES (as % reduction) weakened by boss-applied
-    // stat debuffs, relative like the ally-side shred model.
+    // Victim mitigation: DEF/MRES bracket, additive like the boss-side model —
+    // 100% − (DEF% − boss-applied stat debuffs), clamped to the [0, 90] cap.
     const charDebuffs = state.characterDebuffs.get(victim.id) ?? [];
     const mitStat = damageType === "physical" ? victim.baseDef : victim.baseMres;
     const mitDebuff = charDebuffs
@@ -172,10 +173,14 @@ export function resolveBossCast(
       .reduce((acc, d) => acc + d.valuePct, 0);
     const mitigation = damageType === "pure"
       ? 1
-      : 1 - Math.max(0, mitStat * (1 - mitDebuff / 100)) / 100;
+      : 1 - Math.min(90, Math.max(0, mitStat - mitDebuff)) / 100;
 
-    const barrier = Math.min(100, sumBuffs(activeBuffs, "buff_barrier"));
-    const perHit = bossAtk * scaling * mitigation * critMult * (1 - barrier / 100);
+    // Barriers stack multiplicatively — (100%−r1)×(100%−r2)… — so combined
+    // reduction approaches but never reaches 100%.
+    const barrierMult = activeBuffs
+      .filter((b) => b.type === "buff_barrier")
+      .reduce((acc, b) => acc * (1 - Math.min(100, b.value) / 100), 1);
+    const perHit = bossAtk * scaling * mitigation * critMult * barrierMult;
 
     let taken = 0;
     let connectingHits = 0; // hits the victim actually receives (fuel for Counter)
