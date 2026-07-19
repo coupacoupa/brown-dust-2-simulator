@@ -21,8 +21,10 @@ export function calculateActionDamage(
   bossBuffs: BossStatEffect[] = [],
 ): ActionDamageResult {
   const { hitCount, scaling, damageType } = resolved;
+  // The origin ([0,0]) tile is the Main Target — the tile the tick lands on.
+  const targetOrigin = resolveTargetOrigin(char, resolved, boss.hitbox);
   const tilesTargeted = getTilesHit(
-    resolveTargetOrigin(char, resolved, boss.hitbox),
+    targetOrigin,
     resolved.hitboxPattern,
     resolved.targetShape,
   );
@@ -68,7 +70,7 @@ export function calculateActionDamage(
   let totalWeightedVuln = 0;
 
   // If we don't hit any part of the boss, damage is 0
-  if (hitParts.length > 0 && scaling > 0) {
+  if (hitParts.length > 0 && (scaling > 0 || resolved.mainTargetScaling !== undefined)) {
     // Execute hit by hit, tile by tile — every part receives every hit,
     // and each damage instance advances the chain counter.
     for (let hit = 0; hit < hitCount; hit++) {
@@ -91,9 +93,15 @@ export function calculateActionDamage(
           isConditionMet = localChain >= 15;
         }
 
-        const activeScaling = (resolved.conditionalScaling !== undefined && isConditionMet)
+        const conditionalOrBase = (resolved.conditionalScaling !== undefined && isConditionMet)
           ? resolved.conditionalScaling
           : scaling;
+        // The Main Target (origin) tile of a split-scaling AoE hits harder;
+        // arm tiles fall back to the ordinary scaling above.
+        const activeScaling =
+          partIndex === targetOrigin && resolved.mainTargetScaling !== undefined
+            ? resolved.mainTargetScaling
+            : conditionalOrBase;
         const currentBaseDmg = primaryStat * (activeScaling / 100);
 
         // Chain multiplier: each chain adds 10% damage
@@ -148,7 +156,9 @@ export function calculateActionDamage(
     event = {
       charName: char.name,
       actionName: resolved.name,
-      scaling,
+      // Headline scaling for the formula panel: the Main Target value when the
+      // skill has a hotter center, otherwise the ordinary scaling.
+      scaling: resolved.mainTargetScaling ?? scaling,
       baseStat: damageType === 'physical' ? char.baseAtk : char.baseMatk,
       atkBuffPct: damageType === 'physical' ? stats.atkBuff : stats.matkBuff,
       critExpectedMult,

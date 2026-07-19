@@ -133,11 +133,13 @@ export default function OptionsDeck({
             const costumeTargetGrid = resolvedSkill.targetGrid ?? 'enemy';
             const isPreemptive = resolvedSkill.isPreemptive === true;
             const isPreemptiveEnabled = turns[0]?.preemptiveCostumeIds?.includes(cost.id) ?? false;
-            // Damage preview: ATK × scaling%
+            // Damage preview: ATK × scaling%. For split-scaling skills show the
+            // Main Target (center) hit — the headline number players expect.
             const primaryStat = resolvedSkill.damageType === 'magic'
               ? selectedChar.baseMatk
               : selectedChar.baseAtk;
-            const dmgPreview = Math.round(primaryStat * (resolvedSkill.scaling / 100));
+            const previewScaling = resolvedSkill.mainTargetScaling ?? resolvedSkill.scaling;
+            const dmgPreview = Math.round(primaryStat * (previewScaling / 100));
 
             return (
               <div
@@ -209,7 +211,7 @@ export default function OptionsDeck({
                       <span className="text-[9px] font-black text-white truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                         {resolvedSkill.name}
                       </span>
-                      {resolvedSkill.scaling > 0 && (
+                      {previewScaling > 0 && (
                         <span className="text-[8px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                           ✖ {dmgPreview}
                         </span>

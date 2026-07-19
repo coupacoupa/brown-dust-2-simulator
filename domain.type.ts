@@ -62,6 +62,10 @@ export interface Skill {
   damageType: DamageType;
   targetShape?: TargetShape;
   conditional?: SkillCondition; // required for upgrades with conditionalScaling
+  // Higher scaling applied ONLY to the Main Target tile — the origin ([0,0])
+  // of an AoE, i.e. the tile the tick lands on. The other covered ("arm")
+  // tiles use the ordinary `scaling`. Per-level values live on CostumeUpgrade.
+  mainTargetScaling?: number;
   effects: SkillEffect[];
   icon?: string; // Optional path to skill icon asset
   // Custom hitbox pattern: array of [rowOffset, colOffset] relative to the
@@ -76,6 +80,7 @@ export interface Skill {
 
 export interface CostumeUpgrade {
   scaling: number;
+  mainTargetScaling?: number; // per-level Main Target (origin tile) scaling
   spCost: number;
   cooldown: number;
   hitCount?: number;
@@ -87,6 +92,10 @@ export interface SkillPotential {
   id: string;
   type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
   value?: number; // e.g. 15 for +15% damage
+  // For 'damage' potentials on a Main Target (split-scaling) skill: which
+  // scaling the bonus applies to. 'skill' (default) → arm/base scaling only;
+  // 'main' → Main Target scaling only; 'both' → both.
+  scalingTarget?: 'skill' | 'main' | 'both';
   newTargetShape?: TargetShape;
   newHitboxPattern?: [number, number][];
   targetEffectId?: string; // Optional target effect ID to modify
@@ -95,6 +104,7 @@ export interface SkillPotential {
   additionalEffects?: {
     type: 'damage' | 'sp_reduce' | 'cooldown_reduce' | 'range_increase' | 'effect_value_increase' | 'duration_increase' | 'conditional_damage' | 'add_effect';
     value?: number;
+    scalingTarget?: 'skill' | 'main' | 'both';
     targetEffectId?: string;
     newEffect?: SkillEffect;
     name?: string;
@@ -103,6 +113,7 @@ export interface SkillPotential {
 
 export interface BurstUpgrade {
   scalingBonus?: number;
+  mainTargetScalingBonus?: number; // adds to Main Target scaling only
   conditionalScalingBonus?: number;
   effects?: SkillEffect[];
   cooldownReduction?: number; // turns shaved off the skill's cooldown at this burst tier

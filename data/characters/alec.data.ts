@@ -14,6 +14,7 @@ export const alec: CharacterTemplate = {
       name: "The Destruction",
       invenImage: invenIllust("char060301_60"),
       image: skillIllust("char060301_60"),
+      approach: "very_front",
       skill: {
         id: "s060301",
         name: "Raging Strike",
@@ -21,7 +22,8 @@ export const alec: CharacterTemplate = {
         damageType: "pure",
         targetShape: "single",
         effects: [],
-        hitboxPattern: [[0,0]],
+        // Range: target tile + one tile in front (top-middle). Tick on center.
+        hitboxPattern: [[0,0],[-1,0]],
       },
       upgrades: [
         {
@@ -52,7 +54,7 @@ export const alec: CharacterTemplate = {
         {
           spCost: 2,
           cooldown: 5,
-          scaling: 1000,
+          scaling: 800,
         },
       ],
       potentials: [
@@ -81,6 +83,7 @@ export const alec: CharacterTemplate = {
       name: "Sword Breaker",
       invenImage: invenIllust("char060302_56"),
       image: skillIllust("char060302_56"),
+      approach: "very_front",
       skill: {
         id: "s060302",
         name: "Broken Sword Attack",
@@ -88,7 +91,8 @@ export const alec: CharacterTemplate = {
         damageType: "pure",
         targetShape: "single",
         effects: [],
-        hitboxPattern: [[0,0]],
+        // Range: diagonal line up-and-right from the tick tile.
+        hitboxPattern: [[0,0],[-1,1],[-2,2]],
       },
       upgrades: [
         {
@@ -119,7 +123,7 @@ export const alec: CharacterTemplate = {
         {
           spCost: 3,
           cooldown: 5,
-          scaling: 300,
+          scaling: 240,
         },
       ],
       potentials: [

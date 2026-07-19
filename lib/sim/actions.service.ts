@@ -27,6 +27,7 @@ export interface ResolvedAction {
   burstSpCost: number; // portion of spCost coming from burst tiers
   hitCount: number;
   scaling: number; // % — includes burst bonus
+  mainTargetScaling?: number; // % applied to the Main Target (origin) tile only
   damageType: DamageType;
   targetShape?: TargetShape;
   conditionalScaling?: number;
@@ -48,6 +49,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
 
   let baseSpCost = upgrade?.spCost ?? 0;
   let baseScaling = upgrade?.scaling ?? 0;
+  let baseMainTargetScaling = upgrade?.mainTargetScaling ?? skill.mainTargetScaling;
   let baseConditionalScaling = upgrade?.conditionalScaling;
   const baseHitCount = upgrade?.hitCount ?? skill.hitCount;
   let baseCooldown = upgrade?.cooldown ?? 0;
@@ -61,12 +63,17 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
     for (const pot of costume.potentials) {
       if (activePotentials.includes(pot.id)) {
         const effectsToApply = [
-          { type: pot.type, value: pot.value, targetEffectId: pot.targetEffectId, newEffect: pot.newEffect, name: pot.name },
+          { type: pot.type, value: pot.value, scalingTarget: pot.scalingTarget, targetEffectId: pot.targetEffectId, newEffect: pot.newEffect, name: pot.name },
           ...(pot.additionalEffects || []),
         ];
         for (const item of effectsToApply) {
           if (item.type === "damage" && item.value) {
-            baseScaling += item.value;
+            // 'main' → Main Target scaling only; 'both' → both; default → arm/base.
+            const target = item.scalingTarget ?? "skill";
+            if (target !== "main") baseScaling += item.value;
+            if ((target === "main" || target === "both") && baseMainTargetScaling !== undefined) {
+              baseMainTargetScaling += item.value;
+            }
           } else if (item.type === "sp_reduce" && item.value) {
             baseSpCost = Math.max(0, baseSpCost - item.value);
           } else if (item.type === "cooldown_reduce" && item.value) {
@@ -105,6 +112,7 @@ export function resolveSkillStats(char: Character, costume: ActiveCostume) {
     ...skill,
     spCost: baseSpCost,
     scaling: baseScaling,
+    mainTargetScaling: baseMainTargetScaling,
     conditionalScaling: baseConditionalScaling,
     hitCount: baseHitCount,
     cooldown: baseCooldown,
@@ -155,6 +163,7 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
       resolved.hitCount = skill.hitCount;
 
       let finalScaling = skill.scaling;
+      let finalMainTargetScaling = skill.mainTargetScaling;
       let finalConditionalScaling = skill.conditionalScaling;
       let finalEffects = [...skill.effects];
       let burstSp = 0;
@@ -165,6 +174,9 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
           const upgrade = costume.burstUpgrades[i];
           if (upgrade.scalingBonus !== undefined) {
             finalScaling += upgrade.scalingBonus;
+          }
+          if (upgrade.mainTargetScalingBonus !== undefined && finalMainTargetScaling !== undefined) {
+            finalMainTargetScaling += upgrade.mainTargetScalingBonus;
           }
           if (upgrade.conditionalScalingBonus !== undefined && finalConditionalScaling !== undefined) {
             finalConditionalScaling += upgrade.conditionalScalingBonus;
@@ -178,6 +190,9 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
       } else {
         // Fallback: standard +40% scaling and +1 SP per level.
         finalScaling += BURST_SCALING_PER_LEVEL * burst;
+        if (finalMainTargetScaling !== undefined) {
+          finalMainTargetScaling += BURST_SCALING_PER_LEVEL * burst;
+        }
         if (finalConditionalScaling !== undefined) {
           finalConditionalScaling += BURST_SCALING_PER_LEVEL * burst;
         }
@@ -187,6 +202,7 @@ export function resolveAction(char: Character, action: TurnAction): ResolvedActi
       resolved.burstSpCost = burstSp;
       resolved.spCost = Math.max(0, skill.spCost + burstSp);
       resolved.scaling = finalScaling;
+      resolved.mainTargetScaling = finalMainTargetScaling;
       if (finalConditionalScaling !== undefined) {
         resolved.conditionalScaling = finalConditionalScaling;
         resolved.conditional = skill.conditional;
