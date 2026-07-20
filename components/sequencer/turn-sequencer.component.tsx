@@ -110,13 +110,30 @@ export default function TurnSequencer({
     const turn1Setup = { ...turns[0] };
     const currentPreemptive = turn1Setup.preemptiveCostumeIds || [];
     let updatedPreemptive: string[];
+    const char = characters.find((c) => c.costumes?.some((cost) => cost.id === costumeId));
+
     if (enabled) {
       if (currentPreemptive.includes(costumeId)) return;
       updatedPreemptive = [...currentPreemptive, costumeId];
     } else {
       updatedPreemptive = currentPreemptive.filter((id) => id !== costumeId);
     }
-    onChange(turns.map((t, idx) => (idx === 0 ? { ...t, preemptiveCostumeIds: updatedPreemptive } : t)));
+
+    const updatedTurns = turns.map((t, idx) => {
+      if (idx !== 0) return t;
+      let newActions = [...t.actions];
+      if (enabled && char) {
+        newActions = newActions.map((act) => {
+          if (act.characterId === char.id && act.actionType === "costume" && act.costumeId === costumeId) {
+            return { characterId: char.id, actionType: "attack" as const };
+          }
+          return act;
+        });
+      }
+      return { ...t, actions: newActions, preemptiveCostumeIds: updatedPreemptive };
+    });
+
+    onChange(updatedTurns);
   };
 
   // Allied grid drag swaps reposition characters

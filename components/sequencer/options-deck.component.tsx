@@ -148,164 +148,246 @@ export default function OptionsDeck({
             const maxBurstLevel = cost.burstUpgrades?.length || (hasBurstCapability ? MAX_BURST_LEVEL : 0);
 
             return (
-              <div
-                key={cost.id}
-                onClick={() => {
-                  if (!skillState.onCd) {
-                    // Record this costume as the equipped one for this character
-                    onEquipCostume(selectedChar.id, cost.id);
-                    onActionChange(selectedActionIdx, {
-                      actionType: "costume",
-                      costumeId: cost.id,
-                      burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
-                    });
-                  }
-                }}
-                className={`
-                relative rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
-                ${isSkillSelected ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.15)] scale-[1.01]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
-                ${skillState.onCd ? "cursor-not-allowed border-zinc-900 bg-zinc-950/10" : ""}
-              `}
-              >
-                {/* Background covers the button container completely (100% opacity, zoomed close-up face crop) */}
-                <CardSkillBackground
-                  skillId={cost.skill.id}
-                  imagePath={cost.image}
-                  element={selectedChar.element}
-                  className="absolute inset-0 w-full h-full opacity-100 transition-opacity"
-                />
+              <div key={cost.id} className="relative">
+                <div
+                  onClick={() => {
+                    if (isPreemptiveEnabled) {
+                      onPreemptiveToggle?.(cost.id, false);
+                      onEquipCostume(selectedChar.id, cost.id);
+                      onActionChange(selectedActionIdx, {
+                        actionType: "costume",
+                        costumeId: cost.id,
+                        burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
+                      });
+                    } else if (!skillState.onCd) {
+                      onEquipCostume(selectedChar.id, cost.id);
+                      onActionChange(selectedActionIdx, {
+                        actionType: "costume",
+                        costumeId: cost.id,
+                        burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
+                      });
+                    }
+                  }}
+                  className={`
+                  relative rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
+                  ${isSkillSelected ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.15)] scale-[1.01]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
+                  ${skillState.onCd && !isPreemptiveEnabled ? "cursor-not-allowed border-zinc-900 bg-zinc-950/10" : ""}
+                `}
+                >
+                  {/* Background covers the button container completely (100% opacity, zoomed close-up face crop) */}
+                  <CardSkillBackground
+                    skillId={cost.skill.id}
+                    imagePath={cost.image}
+                    element={selectedChar.element}
+                    className="absolute inset-0 w-full h-full opacity-100 transition-opacity z-0"
+                  />
 
-                <div className="flex items-center gap-2.5 z-10 flex-1 min-w-0">
-                  <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[170px]">
-                    {/* Approach badge + costume name */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
-                        costumeTargetGrid === 'ally'
-                          ? 'bg-emerald-600/90 text-emerald-100'
-                          : costumeApproach === 'vault'
-                            ? 'bg-amber-600/90 text-amber-100'
-                            : 'bg-indigo-600/90 text-indigo-100'
-                      }`}>
-                        {costumeTargetGrid === 'ally' ? 'BUFF' : costumeApproach === 'vault' ? 'VAULT' : 'FRONT'}
-                      </span>
-                      <span className="text-[10px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[76px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                        {cost.name}
-                      </span>
-                      {isPreemptive && (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onPreemptiveToggle?.(cost.id, !isPreemptiveEnabled);
-                          }}
-                          className={`cursor-pointer text-[7px] font-black uppercase tracking-wider px-1 py-[1px] rounded transition-all duration-150 border ${
-                            isPreemptiveEnabled
-                              ? 'bg-amber-500 border-amber-400 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.4)] font-black'
-                              : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500'
-                          }`}
-                        >
-                          P.Action
+                  <div className="flex items-center gap-2.5 z-30 relative flex-1 min-w-0">
+                    <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[170px]">
+                      {/* Approach badge + costume name */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
+                          costumeTargetGrid === 'ally'
+                            ? 'bg-emerald-600/90 text-emerald-100'
+                            : costumeApproach === 'vault'
+                              ? 'bg-amber-600/90 text-amber-100'
+                              : 'bg-indigo-600/90 text-indigo-100'
+                        }`}>
+                          {costumeTargetGrid === 'ally' ? 'BUFF' : costumeApproach === 'vault' ? 'VAULT' : 'FRONT'}
                         </span>
-                      )}
-                      {skillState.onCd && (
-                        <span className="text-[9px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                          CD:{skillState.remainingTurns}t
+                        <span className="text-xs font-black text-slate-100 uppercase tracking-wider truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                          {cost.name}
                         </span>
-                      )}
-                    </div>
-                    {/* Skill name + damage preview */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-black text-white truncate max-w-[100px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                        {resolvedSkill.name}
-                      </span>
-                      {previewScaling > 0 && (
-                        <span className="text-[10px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                          ✖ {dmgPreview}
+                        {isPreemptiveEnabled && (
+                          <span className="text-[7px] font-black uppercase tracking-wider px-1 py-[1px] rounded bg-amber-500/90 border border-amber-400 text-amber-950 shadow-[0_0_6px_rgba(245,158,11,0.4)]">
+                            ⚡ Preemptive
+                          </span>
+                        )}
+                        {skillState.onCd && !isPreemptiveEnabled && (
+                          <span className="text-[9px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                            CD:{skillState.remainingTurns}t
+                          </span>
+                        )}
+                      </div>
+                      {/* Skill name + damage preview */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-black text-white truncate max-w-[100px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                          {resolvedSkill.name}
                         </span>
-                      )}
-                    </div>
+                        {previewScaling > 0 && (
+                          <span className="text-[10px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                            ✖ {dmgPreview}
+                          </span>
+                        )}
+                      </div>
 
-                {/* ON COOLDOWN full dark overlay */}
-                {skillState.onCd && (
-                  <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none rounded-xl">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
-                      <span className="text-xs">🔒</span>
-                      <span className="text-[10px] font-black text-rose-200 uppercase tracking-widest">
-                        ON CD ({skillState.remainingTurns}T)
-                      </span>
+                  {/* ON COOLDOWN full dark overlay */}
+                  {skillState.onCd && !isPreemptiveEnabled && (
+                    <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none rounded-xl">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
+                        <span className="text-xs">🔒</span>
+                        <span className="text-[10px] font-black text-rose-200 uppercase tracking-widest">
+                          ON CD ({skillState.remainingTurns}T)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                      {/* Display effects */}
+                      {cost.displayEffects && cost.displayEffects.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {cost.displayEffects.map((eff, effIdx) => (
+                            <span
+                              key={effIdx}
+                              className="text-[8px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/40 rounded px-1 py-[1px] truncate max-w-[150px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                            >
+                              {eff}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <OptionDiamonds
+                        baseCost={resolvedSkill.spCost}
+                        activeBurstSp={activeBurstSp}
+                        maxBurstSp={maxBurstSp}
+                      />
                     </div>
                   </div>
-                )}
-                    {/* Display effects */}
-                    {cost.displayEffects && cost.displayEffects.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-0.5">
-                        {cost.displayEffects.map((eff, effIdx) => (
-                          <span
-                            key={effIdx}
-                            className="text-[8px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/40 rounded px-1 py-[1px] truncate max-w-[150px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                          >
-                            {eff}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <OptionDiamonds
-                      baseCost={resolvedSkill.spCost}
-                      activeBurstSp={activeBurstSp}
-                      maxBurstSp={maxBurstSp}
+
+                  <div className="z-10 pl-2">
+                    <HitboxThumbnail
+                      shape={resolvedSkill.targetShape}
+                      hitboxPattern={resolvedSkill.hitboxPattern}
+                      approach={costumeApproach}
+                      targetGrid={costumeTargetGrid}
                     />
                   </div>
                 </div>
 
-                {/* Burst controllers overlay */}
-                {isSkillSelected && !skillState.onCd && hasBurstCapability && (
-                  <div
-                    className="absolute bottom-1 right-14 flex items-center bg-zinc-950/95 border border-zinc-850 rounded px-1.5 py-0.5 gap-1 z-20 scale-[0.85] origin-bottom-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentBurst = selectedAction.burstLevel || 0;
-                        if (currentBurst > 0) {
-                          onActionChange(selectedActionIdx, {
-                            burstLevel: currentBurst - 1,
-                          });
-                        }
-                      }}
-                      disabled={(selectedAction.burstLevel || 0) === 0}
-                      className="text-[11px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
-                    >
-                      ◀
-                    </button>
-                    <span className="text-[10px] font-black text-rose-400 select-none">
-                      BST {selectedAction.burstLevel || 0}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentBurst = selectedAction.burstLevel || 0;
-                        if (currentBurst < maxBurstLevel) {
-                          onActionChange(selectedActionIdx, {
-                            burstLevel: currentBurst + 1,
-                          });
-                        }
-                      }}
-                      disabled={(selectedAction.burstLevel || 0) === maxBurstLevel}
-                      className="text-[11px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
-                    >
-                      ▶
-                    </button>
+                {/* Right side controls (Preemptive & Burst) extended OUTSIDE to the right */}
+                {(isPreemptive || hasBurstCapability) && (
+                  <div className="absolute left-[calc(100%+8px)] top-0 bottom-0 flex gap-2 items-stretch z-30">
+                    {/* Preemptive Action Control Panel */}
+                    {isPreemptive && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPreemptiveToggle?.(cost.id, !isPreemptiveEnabled);
+                        }}
+                        className={`w-20 shrink-0 rounded-xl border flex flex-col items-center justify-center p-1.5 cursor-pointer transition-all duration-150 select-none ${
+                          isPreemptiveEnabled
+                            ? "border-amber-500/80 bg-zinc-950/95 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+                            : "border-zinc-850 bg-zinc-950/90 hover:bg-zinc-900/90 hover:border-zinc-700"
+                        }`}
+                      >
+                        <span className={`text-[8px] font-black uppercase tracking-wider mb-1.5 text-center ${
+                          isPreemptiveEnabled ? "text-amber-300" : "text-zinc-400"
+                        }`}>
+                          Preemptive
+                        </span>
+
+                        {/* Pill Toggle Switch */}
+                        <div className={`relative w-10 h-5 rounded-full p-0.5 transition-colors duration-200 ${
+                          isPreemptiveEnabled ? "bg-amber-500" : "bg-zinc-800 border border-zinc-700"
+                        }`}>
+                          <div className={`w-4 h-4 rounded-full shadow-md transition-transform duration-200 flex items-center justify-center text-[8px] font-black ${
+                            isPreemptiveEnabled ? "translate-x-5 bg-amber-100 text-amber-950" : "translate-x-0 bg-zinc-400 text-zinc-900"
+                          }`}>
+                            {isPreemptiveEnabled ? "✓" : ""}
+                          </div>
+                        </div>
+
+                        <span className={`text-[8px] font-black uppercase tracking-wider mt-1.5 h-3 ${
+                          isPreemptiveEnabled ? "text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.5)]" : ""
+                        }`}>
+                          {isPreemptiveEnabled ? "ON" : ""}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Burst Control Panel */}
+                    {hasBurstCapability && (!skillState.onCd || isPreemptiveEnabled) && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className={`w-20 shrink-0 rounded-xl border flex flex-col items-center justify-center p-1.5 select-none transition-all duration-150 ${
+                          (selectedAction?.burstLevel || 0) > 0 && isSkillSelected
+                            ? "border-rose-500/80 bg-zinc-950/95 shadow-[0_0_12px_rgba(244,63,94,0.3)]"
+                            : "border-zinc-850 bg-zinc-950/90 hover:bg-zinc-900/90 hover:border-zinc-700"
+                        }`}
+                      >
+                        <span className={`text-[8px] font-black uppercase tracking-wider mb-1.5 text-center ${
+                          (selectedAction?.burstLevel || 0) > 0 && isSkillSelected ? "text-rose-300" : "text-zinc-400"
+                        }`}>
+                          Burst
+                        </span>
+
+                        {/* Stepper Level Control */}
+                        <div className="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-lg px-1 py-0.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isSkillSelected) {
+                                onEquipCostume(selectedChar.id, cost.id);
+                                onActionChange(selectedActionIdx, {
+                                  actionType: "costume",
+                                  costumeId: cost.id,
+                                  burstLevel: 0,
+                                });
+                                return;
+                              }
+                              const currentBurst = selectedAction?.burstLevel || 0;
+                              if (currentBurst > 0) {
+                                onActionChange(selectedActionIdx, {
+                                  burstLevel: currentBurst - 1,
+                                });
+                              }
+                            }}
+                            disabled={isSkillSelected && (selectedAction?.burstLevel || 0) === 0}
+                            className="text-[11px] font-black text-zinc-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 px-0.5"
+                          >
+                            ◀
+                          </button>
+
+                          <span className="text-[9px] font-black text-rose-400 select-none min-w-[26px] text-center">
+                            {isSkillSelected ? `LV ${selectedAction?.burstLevel || 0}` : "LV 0"}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isSkillSelected) {
+                                onEquipCostume(selectedChar.id, cost.id);
+                                onActionChange(selectedActionIdx, {
+                                  actionType: "costume",
+                                  costumeId: cost.id,
+                                  burstLevel: 1,
+                                });
+                                return;
+                              }
+                              const currentBurst = selectedAction?.burstLevel || 0;
+                              if (currentBurst < maxBurstLevel) {
+                                onActionChange(selectedActionIdx, {
+                                  burstLevel: currentBurst + 1,
+                                });
+                              }
+                            }}
+                            disabled={isSkillSelected && (selectedAction?.burstLevel || 0) === maxBurstLevel}
+                            className="text-[11px] font-black text-zinc-400 hover:text-white disabled:opacity-20 cursor-pointer active:scale-95 px-0.5"
+                          >
+                            ▶
+                          </button>
+                        </div>
+
+                        <span className={`text-[8px] font-black uppercase tracking-wider mt-1.5 h-3 ${
+                          (selectedAction?.burstLevel || 0) > 0 && isSkillSelected ? "text-rose-400 drop-shadow-[0_0_4px_rgba(244,63,94,0.5)]" : ""
+                        }`}>
+                          {isSkillSelected && (selectedAction?.burstLevel || 0) > 0 ? `+${activeBurstSp} SP` : ""}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
-
-                <div className="z-10 pl-2">
-                  <HitboxThumbnail
-                    shape={resolvedSkill.targetShape}
-                    hitboxPattern={resolvedSkill.hitboxPattern}
-                    approach={costumeApproach}
-                    targetGrid={costumeTargetGrid}
-                  />
-                </div>
               </div>
             );
           })}

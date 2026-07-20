@@ -184,12 +184,12 @@ export default function TimelineCards({
                   )}
 
                   {/* Speed index badge */}
-                  <div className="absolute top-0 left-0 bg-cyan-950 border-r border-b border-cyan-800 text-[11px] font-black text-cyan-200 px-2 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
+                  <div className="absolute top-0 left-0 bg-slate-900/95 border-r border-b border-slate-700 text-xs font-black text-amber-300 px-2.5 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
                     {idx + 1}
                   </div>
 
                   {/* Top Row: Name (High Contrast Drop Shadow) */}
-                  <div className="z-10 mt-1 pl-4">
+                  <div className="z-10 mt-1 pl-5">
                     <span className="text-xs font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] truncate max-w-[100px] block">
                       {char.name}
                     </span>
@@ -197,7 +197,7 @@ export default function TimelineCards({
 
                   {/* Bottom Row: Green HP (High Contrast Drop Shadow) */}
                   <div className="z-10 flex justify-between items-baseline">
-                    <span className="font-mono text-base font-bold text-emerald-400 tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                    <span className="font-mono text-base font-black text-emerald-300 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       {waifuHP}
                     </span>
                   </div>

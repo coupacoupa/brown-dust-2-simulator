@@ -1,17 +1,29 @@
 @import "tailwindcss";
 
-/* Lift the dark end of the zinc scale so the app reads as dark grey, not black.
-   Nearly all surfaces/borders use zinc-800..950, so this rebases the whole UI. */
+/* Soft dark slate theme.
+   The whole UI addresses the zinc scale, so this remap rebases every surface:
+   deep slate-navy panels instead of pure black, and a compressed light end so
+   text steps stay legible without glaring white-on-black contrast.
+   Convention in this app: the page canvas is zinc-900 and panels sit RECESSED
+   on it (bg-zinc-950/xx with zinc-900 borders); cards/tiles use zinc-850. */
 @theme {
-  --color-zinc-950: #1c1c21; /* default #09090b */
-  --color-zinc-900: #26262c; /* default #18181b */
-  --color-zinc-850: #2d2d34; /* used in components; undefined in default theme */
-  --color-zinc-800: #34343c; /* default #27272a */
+  --color-zinc-950: #0e1420; /* Recessed panel surfaces - deepest slate navy */
+  --color-zinc-900: #171f30; /* Page canvas & panel borders */
+  --color-zinc-850: #212c42; /* Card / tile background */
+  --color-zinc-800: #2e3c57; /* Elevated containers & default borders */
+  --color-zinc-700: #405270; /* Distinct borders, hover borders */
+  --color-zinc-600: #5d7092; /* Dividers, placeholder text */
+  --color-zinc-500: #92a5c2; /* Muted label text (readable on all surfaces) */
+  --color-zinc-400: #c3cfe0; /* Secondary text */
+  --color-zinc-300: #dde5f0; /* Primary body text */
+  --color-zinc-250: #e9eef6; /* Bright input/body text (custom step) */
+  --color-zinc-200: #f2f6fa; /* High-contrast text */
+  --color-zinc-100: #ffffff; /* Crisp white headlines */
 }
 
 :root {
-  --background: #26262c;
-  --foreground: #f4f4f5;
+  --background: #171f30; /* keep in sync with --color-zinc-900 (page canvas) */
+  --foreground: #f2f6fa;
 }
 
 body {
@@ -19,6 +31,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  /* Subtle atmospheric depth behind the panels — composes with the
+     bg-zinc-900 utility on <body> (utilities only set background-color). */
+  background-image:
+    radial-gradient(1100px 520px at 18% -8%, rgba(99, 102, 241, 0.07), transparent 60%),
+    radial-gradient(900px 480px at 85% 0%, rgba(34, 211, 238, 0.05), transparent 55%);
+  background-attachment: fixed;
 }
 
 /* Custom premium scrollbars for the logs terminal */

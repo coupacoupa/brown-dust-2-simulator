@@ -5,13 +5,15 @@ import { ElementType } from "@/domain.type";
 // by more than one file live here.
 
 // Dark gradients for boss surfaces (battle HUD avatar, skill queue cards,
-// boss info panel tiles)
+// boss info panel tiles). Element-hued end to end — never route these through
+// the zinc scale: zinc-* is remapped in globals.css, so a zinc stop here
+// silently tracks the app surface color instead of staying a dark accent.
 export const ELEMENT_BOSS_GRADIENTS: Record<ElementType, string> = {
-  fire: "from-orange-900 via-zinc-900 to-red-950",
-  water: "from-cyan-900 via-zinc-900 to-blue-950",
-  wind: "from-emerald-900 via-zinc-900 to-teal-950",
-  light: "from-amber-900 via-zinc-900 to-yellow-950",
-  dark: "from-purple-900 via-zinc-900 to-indigo-950",
+  fire: "from-orange-800 via-red-950 to-slate-950",
+  water: "from-cyan-800 via-blue-950 to-slate-950",
+  wind: "from-emerald-800 via-teal-950 to-slate-950",
+  light: "from-amber-700 via-amber-950 to-slate-950",
+  dark: "from-purple-800 via-indigo-950 to-slate-950",
 };
 
 // Subtle tinted backgrounds for the boss list cards

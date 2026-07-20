@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { ElementType } from "@/domain.type";
 
 const ELEMENT_FALLBACK_GRADIENTS: Record<ElementType, string> = {
-  fire: "from-orange-950 via-zinc-900/50 to-red-950",
-  water: "from-cyan-950 via-zinc-900/50 to-blue-950",
-  wind: "from-emerald-950 via-zinc-900/50 to-teal-950",
-  light: "from-amber-955/65 via-zinc-900/50 to-yellow-950/65",
-  dark: "from-purple-955 via-zinc-900/50 to-indigo-950",
+  fire: "from-orange-950 via-slate-950/50 to-red-950",
+  water: "from-cyan-950 via-slate-950/50 to-blue-950",
+  wind: "from-emerald-950 via-slate-950/50 to-teal-950",
+  light: "from-amber-950/65 via-slate-950/50 to-yellow-950/65",
+  dark: "from-purple-950 via-slate-950/50 to-indigo-950",
 };
 
 // Full-cover skill image background with element gradient fallbacks.

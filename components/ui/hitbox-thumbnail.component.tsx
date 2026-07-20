@@ -37,7 +37,15 @@ export function HitboxThumbnail({
       </div>
     );
   }
-  const patternOffsets = hitboxPattern || [];
+  // "single" with no explicit pattern means the origin tile (the engine's
+  // resolveAction default is hitboxPattern [[0,0]]) — mirror it so basic
+  // attack cards still render their center cell + tick.
+  const patternOffsets: [number, number][] =
+    hitboxPattern && hitboxPattern.length > 0
+      ? hitboxPattern
+      : shape === "single"
+        ? [[0, 0]]
+        : [];
 
   let maxDr = 0;
   let maxDc = 0;

@@ -39,27 +39,27 @@ export default function BossHud({
       </div>
 
       <div className="flex flex-col flex-1 min-w-0 gap-1">
-        <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap leading-none">
-          <span className="text-sm font-black text-zinc-200 uppercase tracking-wide truncate">
+        <div className="flex items-baseline gap-2 min-w-0 flex-wrap leading-none">
+          <span className="text-sm font-black text-white uppercase tracking-wide truncate">
             {boss.name}
           </span>
-          <span className="text-[13px] font-black text-amber-400 shrink-0">
+          <span className="text-sm font-black text-amber-400 shrink-0">
             Lv.{boss.level ?? 18}
           </span>
-          <span className="text-lg font-black text-white tracking-tight">
+          <span className="text-xl font-black text-white font-mono tracking-tight drop-shadow-md">
             {formatNumber(currentHp)}
           </span>
-          <span className="text-[11px] font-bold text-zinc-400">
+          <span className="text-xs font-bold text-zinc-300 font-mono">
             / {formatNumber(maxHp)} ({hpPct.toFixed(1)}%)
           </span>
         </div>
-        <div className="h-2 w-full bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden">
+        <div className="h-2.5 w-full bg-zinc-950 border border-zinc-800 rounded-sm overflow-hidden shadow-inner">
           <div
-            className="h-full bg-gradient-to-r from-rose-700 via-rose-600 to-red-500 transition-all duration-500"
+            className="h-full bg-gradient-to-r from-rose-600 via-red-500 to-amber-500 transition-all duration-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]"
             style={{ width: `${hpPct}%` }}
           />
         </div>
-        <div className="self-start bg-zinc-800/90 border border-zinc-700/60 text-zinc-300 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+        <div className="self-start bg-zinc-800/90 border border-zinc-700/60 text-zinc-200 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
           100% Critical
         </div>
       </div>

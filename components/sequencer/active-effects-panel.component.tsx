@@ -19,30 +19,30 @@ const EFFECT_META: Record<
   string,
   { label: string; color: string; bg: string; border: string; glow: string; isBuff: boolean }
 > = {
-  buff_atk:          { label: "ATK",         color: "text-indigo-300",  bg: "bg-indigo-950/40",  border: "border-indigo-500/40", glow: "shadow-[0_0_8px_rgba(99,102,241,0.15)]",  isBuff: true },
-  buff_matk:         { label: "MATK",        color: "text-violet-300",  bg: "bg-violet-950/40",  border: "border-violet-500/40", glow: "shadow-[0_0_8px_rgba(139,92,246,0.15)]",  isBuff: true },
-  buff_crit_rate:    { label: "Crit Rate",   color: "text-rose-300",    bg: "bg-rose-950/40",    border: "border-rose-500/40",   glow: "shadow-[0_0_8px_rgba(244,63,94,0.15)]",   isBuff: true },
-  buff_crit_dmg:     { label: "Crit DMG",    color: "text-rose-400",    bg: "bg-rose-950/40",    border: "border-rose-500/40",   glow: "shadow-[0_0_8px_rgba(244,63,94,0.15)]",   isBuff: true },
-  buff_prop_dmg:     { label: "Prop DMG",    color: "text-emerald-300", bg: "bg-emerald-950/40", border: "border-emerald-500/40", glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]", isBuff: true },
-  buff_energy_guard: { label: "Energy Guard", color: "text-cyan-300", bg: "bg-cyan-950/40", border: "border-cyan-500/40", glow: "shadow-[0_0_8px_rgba(34,211,238,0.15)]", isBuff: true },
-  buff_barrier:      { label: "Barrier",     color: "text-cyan-400",    bg: "bg-cyan-950/40",    border: "border-cyan-500/40",   glow: "shadow-[0_0_8px_rgba(34,211,238,0.15)]",  isBuff: true },
-  buff_evasion:      { label: "Evasion",     color: "text-teal-300",    bg: "bg-teal-950/40",    border: "border-teal-500/40",   glow: "shadow-[0_0_8px_rgba(20,184,166,0.15)]",  isBuff: true },
-  buff_chain_reinforcement: { label: "Chain+", color: "text-amber-300", bg: "bg-amber-950/40", border: "border-amber-500/40", glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]", isBuff: true },
-  buff_taunt:        { label: "Taunt",       color: "text-orange-300",  bg: "bg-orange-950/40",  border: "border-orange-500/40", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",  isBuff: true },
-  buff_counter:      { label: "Counter",     color: "text-blue-300",    bg: "bg-blue-950/40",    border: "border-blue-500/40",   glow: "shadow-[0_0_8px_rgba(59,130,246,0.15)]",  isBuff: true },
-  buff_augmentation: { label: "Augment",     color: "text-amber-400",   bg: "bg-amber-950/40",   border: "border-amber-500/40",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: true },
-  buff_transform:    { label: "Transform",   color: "text-purple-300",  bg: "bg-purple-950/40",  border: "border-purple-500/40", glow: "shadow-[0_0_8px_rgba(168,85,247,0.15)]", isBuff: true },
-  buff_sp_reduce:    { label: "SP Cost-1",  color: "text-sky-300",     bg: "bg-sky-950/40",     border: "border-sky-500/40",    glow: "shadow-[0_0_8px_rgba(56,189,248,0.15)]",  isBuff: true },
-  debuff_def:        { label: "DEF",         color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
-  debuff_mres:       { label: "MRES",        color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
-  debuff_atk:        { label: "ATK",         color: "text-red-400",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
-  debuff_matk:       { label: "MATK",        color: "text-red-300",     bg: "bg-red-950/40",     border: "border-red-500/40",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
-  debuff_vulnerability: { label: "Vuln",     color: "text-amber-300",   bg: "bg-amber-950/40",   border: "border-amber-500/40",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: false },
-  debuff_dot_vulnerability: { label: "DoT Vuln", color: "text-orange-300", bg: "bg-orange-950/40", border: "border-orange-500/40", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]", isBuff: false },
-  debuff_property_vulnerability: { label: "Elem Vuln", color: "text-emerald-300", bg: "bg-emerald-950/40", border: "border-emerald-500/40", glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]", isBuff: false },
-  debuff_concentrated_fire: { label: "Conc Fire", color: "text-red-400", bg: "bg-red-950/40", border: "border-red-500/40", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
-  consume_hp_percent: { label: "HP Sac", color: "text-red-400", bg: "bg-red-950/40", border: "border-red-500/40", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
-  dot:               { label: "DoT",         color: "text-lime-300",    bg: "bg-lime-950/40",    border: "border-lime-500/40",   glow: "shadow-[0_0_8px_rgba(132,204,22,0.15)]",  isBuff: false },
+  buff_atk:          { label: "ATK",         color: "text-indigo-200",  bg: "bg-indigo-950/60",  border: "border-indigo-400/50", glow: "shadow-[0_0_8px_rgba(99,102,241,0.15)]",  isBuff: true },
+  buff_matk:         { label: "MATK",        color: "text-purple-200",  bg: "bg-purple-950/60",  border: "border-purple-400/50", glow: "shadow-[0_0_8px_rgba(139,92,246,0.15)]",  isBuff: true },
+  buff_crit_rate:    { label: "Crit Rate",   color: "text-rose-200",    bg: "bg-rose-950/60",    border: "border-rose-400/50",   glow: "shadow-[0_0_8px_rgba(244,63,94,0.15)]",   isBuff: true },
+  buff_crit_dmg:     { label: "Crit DMG",    color: "text-rose-200",    bg: "bg-rose-950/60",    border: "border-rose-400/50",   glow: "shadow-[0_0_8px_rgba(244,63,94,0.15)]",   isBuff: true },
+  buff_prop_dmg:     { label: "Prop DMG",    color: "text-emerald-200", bg: "bg-emerald-950/60", border: "border-emerald-400/50", glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]", isBuff: true },
+  buff_energy_guard: { label: "Energy Guard", color: "text-cyan-200", bg: "bg-cyan-950/60", border: "border-cyan-400/50", glow: "shadow-[0_0_8px_rgba(34,211,238,0.15)]", isBuff: true },
+  buff_barrier:      { label: "Barrier",     color: "text-cyan-200",    bg: "bg-cyan-950/60",    border: "border-cyan-400/50",   glow: "shadow-[0_0_8px_rgba(34,211,238,0.15)]",  isBuff: true },
+  buff_evasion:      { label: "Evasion",     color: "text-teal-200",    bg: "bg-teal-950/60",    border: "border-teal-400/50",   glow: "shadow-[0_0_8px_rgba(20,184,166,0.15)]",  isBuff: true },
+  buff_chain_reinforcement: { label: "Chain+", color: "text-amber-200", bg: "bg-amber-950/60", border: "border-amber-400/50", glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]", isBuff: true },
+  buff_taunt:        { label: "Taunt",       color: "text-orange-200",  bg: "bg-orange-950/60",  border: "border-orange-400/50", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",  isBuff: true },
+  buff_counter:      { label: "Counter",     color: "text-blue-200",    bg: "bg-blue-950/60",    border: "border-blue-400/50",   glow: "shadow-[0_0_8px_rgba(59,130,246,0.15)]",  isBuff: true },
+  buff_augmentation: { label: "Augment",     color: "text-amber-200",   bg: "bg-amber-950/60",   border: "border-amber-400/50",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: true },
+  buff_transform:    { label: "Transform",   color: "text-purple-200",  bg: "bg-purple-950/60",  border: "border-purple-400/50", glow: "shadow-[0_0_8px_rgba(168,85,247,0.15)]", isBuff: true },
+  buff_sp_reduce:    { label: "SP Cost-1",  color: "text-sky-200",     bg: "bg-sky-950/60",     border: "border-sky-400/50",    glow: "shadow-[0_0_8px_rgba(56,189,248,0.15)]",  isBuff: true },
+  debuff_def:        { label: "DEF",         color: "text-red-200",     bg: "bg-red-950/60",     border: "border-red-400/50",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_mres:       { label: "MRES",        color: "text-red-200",     bg: "bg-red-950/60",     border: "border-red-400/50",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_atk:        { label: "ATK",         color: "text-red-200",     bg: "bg-red-950/60",     border: "border-red-400/50",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_matk:       { label: "MATK",        color: "text-red-200",     bg: "bg-red-950/60",     border: "border-red-400/50",    glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",   isBuff: false },
+  debuff_vulnerability: { label: "Vuln",     color: "text-amber-200",   bg: "bg-amber-950/60",   border: "border-amber-400/50",  glow: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",  isBuff: false },
+  debuff_dot_vulnerability: { label: "DoT Vuln", color: "text-orange-200", bg: "bg-orange-950/60", border: "border-orange-400/50", glow: "shadow-[0_0_8px_rgba(249,115,22,0.15)]", isBuff: false },
+  debuff_property_vulnerability: { label: "Elem Vuln", color: "text-emerald-200", bg: "bg-emerald-950/60", border: "border-emerald-400/50", glow: "shadow-[0_0_8px_rgba(16,185,129,0.15)]", isBuff: false },
+  debuff_concentrated_fire: { label: "Conc Fire", color: "text-red-200", bg: "bg-red-950/60", border: "border-red-400/50", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
+  consume_hp_percent: { label: "HP Sac", color: "text-red-200", bg: "bg-red-950/60", border: "border-red-400/50", glow: "shadow-[0_0_8px_rgba(239,68,68,0.15)]", isBuff: false },
+  dot:               { label: "DoT",         color: "text-lime-200",    bg: "bg-lime-950/60",    border: "border-lime-400/50",   glow: "shadow-[0_0_8px_rgba(132,204,22,0.15)]",  isBuff: false },
 };
 
 function getEffectMeta(type: string) {
@@ -51,9 +51,9 @@ function getEffectMeta(type: string) {
   const cleanLabel = type.replace(/^(buff_|debuff_)/, "").toUpperCase();
   return {
     label: cleanLabel,
-    color: isBuff ? "text-indigo-300" : "text-red-400",
-    bg: isBuff ? "bg-indigo-950/40" : "bg-red-950/40",
-    border: isBuff ? "border-indigo-500/40" : "border-red-500/40",
+    color: isBuff ? "text-indigo-200" : "text-red-200",
+    bg: isBuff ? "bg-indigo-950/60" : "bg-red-950/60",
+    border: isBuff ? "border-indigo-400/50" : "border-red-400/50",
     glow: "",
     isBuff,
   };
@@ -67,9 +67,9 @@ function EffectPill({ effect }: { effect: EffectSnapshot }) {
   return (
     <div
       className={`
-        inline-flex items-center gap-1 px-2 py-0.5 rounded-md border
+        inline-flex items-center gap-1.5 px-2 py-1 rounded-md border
         ${meta.bg} ${meta.border} ${meta.glow}
-        transition-all duration-200 hover:scale-[1.03] select-none
+        transition-all duration-200 hover:scale-[1.03] select-none shadow-sm
       `}
       title={`${meta.label} ${sign}${effect.value}% · ${effect.remainingTurns}T remaining · from ${effect.sourceCharacterName}`}
     >
@@ -81,13 +81,13 @@ function EffectPill({ effect }: { effect: EffectSnapshot }) {
       </span>
       <span
         className={`
-          text-[10px] font-black font-mono leading-none px-1 py-[1px] rounded border ml-0.5
+          text-[10px] font-black font-mono leading-none px-1 py-[1.5px] rounded border ml-0.5
           ${
             effect.remainingTurns <= 1
-              ? "border-red-500/70 bg-red-950/60 text-red-300 animate-pulse"
+              ? "border-red-500 bg-red-950 text-red-200 animate-pulse font-bold"
               : effect.remainingTurns <= 2
-                ? "border-amber-500/60 bg-amber-950/40 text-amber-300"
-                : "border-zinc-700/60 bg-zinc-900/60 text-zinc-400"
+                ? "border-amber-500/80 bg-amber-950/80 text-amber-200 font-bold"
+                : "border-slate-600 bg-slate-800 text-slate-200"
           }
         `}
       >
@@ -106,11 +106,11 @@ function CharacterEffectRow({
   effects: EffectSnapshot[];
 }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="text-[11px] font-black text-zinc-300 uppercase tracking-wider shrink-0 w-20 truncate" title={charName}>
+    <div className="flex items-center gap-3 py-0.5">
+      <span className="text-xs font-black text-slate-100 uppercase tracking-wider shrink-0 w-24 truncate drop-shadow-sm" title={charName}>
         {charName}
       </span>
-      <div className="flex flex-wrap gap-1 items-center">
+      <div className="flex flex-wrap gap-1.5 items-center">
         {effects.map((eff, i) => (
           <EffectPill key={`${eff.type}_${eff.sourceCharacterName}_${i}`} effect={eff} />
         ))}
@@ -156,11 +156,11 @@ export default function ActiveEffectsPanel({
           className="flex items-center gap-2 cursor-pointer group"
         >
           <span className={`w-2 h-2 rounded-full transition-colors ${totalCount > 0 ? "bg-cyan-400 animate-pulse" : "bg-zinc-700"}`} />
-          <span className="text-xs font-black text-zinc-300 uppercase tracking-widest">
+          <span className="text-xs font-black text-cyan-200 uppercase tracking-widest">
             Turn {turnNumber} Active Effects
           </span>
           {totalCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-md bg-cyan-950/40 border border-cyan-500/30 text-[11px] font-black text-cyan-300 font-mono">
+            <span className="px-1.5 py-0.5 rounded-md bg-cyan-950/60 border border-cyan-500/40 text-[11px] font-black text-cyan-300 font-mono">
               {totalCount} active
             </span>
           )}
@@ -169,7 +169,7 @@ export default function ActiveEffectsPanel({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-[11px] font-black text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider cursor-pointer"
+          className="text-[11px] font-black text-zinc-400 hover:text-zinc-200 transition-colors uppercase tracking-wider cursor-pointer"
         >
           {expanded ? "▾ Collapse" : "▸ Expand"}
         </button>
@@ -183,11 +183,11 @@ export default function ActiveEffectsPanel({
               No active buffs or debuffs this turn
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-zinc-900/80">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-zinc-800">
               {/* LEFT COLUMN: Character Effects */}
               <div className="flex flex-col gap-3">
-                <div className="pb-1 border-b border-zinc-900/60">
-                  <span className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
+                <div className="pb-1 border-b border-zinc-800">
+                  <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
                     Character Effects
                   </span>
                 </div>
@@ -196,7 +196,7 @@ export default function ActiveEffectsPanel({
                 {charBuffEntries.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                       <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                         Buffs
                       </span>
