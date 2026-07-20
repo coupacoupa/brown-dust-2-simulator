@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Character, TurnAction } from "@/domain.type";
+import { Character, SimulationResult, TurnAction } from "@/domain.type";
 import { CardSkillBackground } from "../ui/card-skill-background.component";
 
 interface TimelineCardsProps {
@@ -12,6 +12,8 @@ interface TimelineCardsProps {
   // Last-equipped costume per character — the Attack card shows its inventory art
   equippedCostumeId: Record<string, string>;
   onMoveAction: (fromIdx: number, toIdx: number) => void;
+  simulationResult?: SimulationResult | null;
+  activeTurnIndex?: number;
 }
 
 // White L-shape brackets overlay marking the selected card. Rendered in a
@@ -39,6 +41,8 @@ export default function TimelineCards({
   onSelectChar,
   equippedCostumeId,
   onMoveAction,
+  simulationResult,
+  activeTurnIndex = 0,
 }: TimelineCardsProps) {
   const [draggedRowIdx, setDraggedRowIdx] = useState<number | null>(null);
   // Refs to each row element for measuring Y positions
@@ -122,11 +126,31 @@ export default function TimelineCards({
               ? (char.costumes || []).find((c) => c.id === action.costumeId)
               : null;
 
+          const survivalSnap = simulationResult?.survival?.perTurn[activeTurnIndex];
+          const hpSnap = survivalSnap?.hp?.find((h) => h.characterId === char.id);
+
+          const effectSnap = simulationResult?.effectSnapshots?.[activeTurnIndex];
+          const charBuffs = effectSnap?.characterBuffs?.[char.id] || [];
+          const hasShieldBuff = charBuffs.some(
+            (b) => b.type === "buff_energy_guard" || b.type === "buff_barrier"
+          );
+          const costumeHasShield = selectedCostume?.skill?.effects?.some(
+            (e) => e.type === "buff_energy_guard" || e.type === "buff_barrier"
+          );
+
           const waifuHP =
             (char.level || 100) * 135 +
             (selectedCostume ? selectedCostume.upgradeLevel : char.costumes?.length ? Math.max(...char.costumes.map(c => c.upgradeLevel ?? 0)) : 0) * 450 +
             (char.baseAtk || 500) +
             1200;
+
+          const maxHp = char.baseHp > 0 ? char.baseHp : waifuHP;
+          const currentHp = hpSnap?.hp !== undefined && hpSnap?.hp !== null ? hpSnap.hp : maxHp;
+          const shieldVal = hpSnap?.shield ?? 0;
+          const isShielded = shieldVal > 0 || hasShieldBuff || Boolean(costumeHasShield);
+          const isDead = hpSnap ? !hpSnap.alive : false;
+
+          const hpPercent = isDead ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
 
           // Identify active skill ID for background cover
           const activeSkillId =
@@ -160,7 +184,7 @@ export default function TimelineCards({
                 <div
                   onClick={() => onSelectChar(char.id)}
                   className={`
-                   relative h-20 rounded-lg border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between p-2.5 select-none group
+                   relative h-20 rounded-lg border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between px-2.5 pt-2 pb-1.5 select-none group
                    ${isSelected ? "ring-2 ring-indigo-500 scale-[1.01]" : "border-zinc-850"}
                    ${isDragging ? "opacity-30 border-dashed border-zinc-700 bg-zinc-950/30" : ""}
                 `}
@@ -189,17 +213,46 @@ export default function TimelineCards({
                   </div>
 
                   {/* Top Row: Name (High Contrast Drop Shadow) */}
-                  <div className="z-10 mt-1 pl-5">
+                  <div className="z-10 mt-0.5 pl-5">
                     <span className="text-xs font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] truncate max-w-[100px] block">
                       {char.name}
                     </span>
                   </div>
 
-                  {/* Bottom Row: Green HP (High Contrast Drop Shadow) */}
-                  <div className="z-10 flex justify-between items-baseline">
-                    <span className="font-mono text-base font-black text-emerald-300 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                      {waifuHP}
-                    </span>
+                  {/* Bottom Row: HP & Shield (Sitting right above the HP bar line) */}
+                  <div className="z-10 flex justify-between items-baseline mb-0 leading-none">
+                    <div className="flex items-baseline gap-1">
+                      <span className={`font-mono text-sm font-black tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ${
+                        isDead
+                          ? "text-rose-400 line-through"
+                          : isShielded
+                            ? "text-cyan-300"
+                            : "text-white"
+                      }`}>
+                        {currentHp}
+                      </span>
+                      {shieldVal > 0 && (
+                        <span className="font-mono text-[10px] font-black text-cyan-300 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+                          +{shieldVal}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Thin HP / Shield Bar Strip at the very bottom of the card */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-950/80 z-20 overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        isDead
+                          ? "w-0 bg-transparent"
+                          : isShielded
+                            ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]"
+                            : hpPercent < 30
+                              ? "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)]"
+                              : "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]"
+                      }`}
+                      style={{ width: `${isDead ? 0 : hpPercent}%` }}
+                    />
                   </div>
                 </div>
 

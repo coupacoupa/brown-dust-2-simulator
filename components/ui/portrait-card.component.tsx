@@ -6,7 +6,7 @@ import { getInitials } from '@/lib/format.util';
 import { ElementIcon } from './element-icon.component';
 
 // Predicted asset location: public/images/characters/<name_in_snake_case>.png
-export const characterImagePath = (name: string) =>
+const characterImagePath = (name: string) =>
   `/images/characters/${name
     .toLowerCase()
     .replace(/\(.*\)/g, '')

@@ -38,7 +38,7 @@ function tokenClass(token: string): string {
   return "text-orange-400 font-bold";
 }
 
-export function SkillRichText({ text }: { text: string }) {
+function SkillRichText({ text }: { text: string }) {
   const orangeParts = text.split(/(<orange>[\s\S]*?<\/orange>)/g);
   
   return (
@@ -85,7 +85,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function BossStatsSheet({ boss }: { boss: Boss }) {
+function BossStatsSheet({ boss }: { boss: Boss }) {
   const atkLabel = boss.atkType === "magic" ? "Magic ATK" : "ATK";
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 bg-zinc-900/40 border border-zinc-800 rounded-xl px-5 py-2">

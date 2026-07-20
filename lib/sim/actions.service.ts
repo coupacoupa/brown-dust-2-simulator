@@ -19,7 +19,7 @@ import { ActiveEffect } from "./engine/engine.type";
 // numbers the sim produces and what the UI previews.
 
 export const MAX_BURST_LEVEL = 3;
-export const BURST_SCALING_PER_LEVEL = 40; // +40% skill scaling per burst level
+const BURST_SCALING_PER_LEVEL = 40; // +40% skill scaling per burst level
 
 // Identity of an effect for burst-tier merging: a tier effect matching one
 // the skill already applies (same family, target, element scope and
@@ -465,7 +465,7 @@ export function getBurstSpForLevel(costume: ActiveCostume | Costume, burstLevel:
 
 // Total cooldown reduction granted by burst tiers 1..burstLevel (mirrors how
 // scaling/effect burst bonuses stack in resolveAction).
-export function getBurstCooldownReduction(costume: ActiveCostume, burstLevel: number): number {
+function getBurstCooldownReduction(costume: ActiveCostume, burstLevel: number): number {
   if (!costume.burstUpgrades || burstLevel <= 0) return 0;
   const maxLevel = Math.min(burstLevel, costume.burstUpgrades.length);
   let reduction = 0;

@@ -183,13 +183,18 @@ export default function ActiveEffectsPanel({
               No active buffs or debuffs this turn
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-zinc-800">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* LEFT COLUMN: Character Effects */}
-              <div className="flex flex-col gap-3">
-                <div className="pb-1 border-b border-zinc-800">
+              <div className="flex flex-col gap-3 bg-zinc-900/30 border border-zinc-900 rounded-xl p-3.5">
+                <div className="pb-1.5 border-b border-zinc-800/80 flex items-center justify-between">
                   <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
                     Character Effects
                   </span>
+                  {(charBuffCount > 0 || charDebuffCount > 0) && (
+                    <span className="text-[10px] font-bold text-zinc-400 font-mono">
+                      {charBuffCount + charDebuffCount} active
+                    </span>
+                  )}
                 </div>
 
                 {/* Character Buffs */}
@@ -238,11 +243,16 @@ export default function ActiveEffectsPanel({
               </div>
 
               {/* RIGHT COLUMN: Boss Effects */}
-              <div className="flex flex-col gap-3 pt-4 md:pt-0 md:pl-6">
-                <div className="pb-1 border-b border-zinc-900/60">
+              <div className="flex flex-col gap-3 bg-zinc-900/30 border border-zinc-900 rounded-xl p-3.5">
+                <div className="pb-1.5 border-b border-zinc-800/80 flex items-center justify-between">
                   <span className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
                     Boss Effects
                   </span>
+                  {(bossBuffs.length > 0 || bossDebuffs.length > 0) && (
+                    <span className="text-[10px] font-bold text-zinc-400 font-mono">
+                      {bossBuffs.length + bossDebuffs.length} active
+                    </span>
+                  )}
                 </div>
 
                 {/* Boss Buffs */}

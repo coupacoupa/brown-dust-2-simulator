@@ -8,7 +8,7 @@ import { ApproachType, BossRangeStamp, BossSkillDef, TargetShape } from "@/domai
 // rotate it CCW (the boss faces the player), and place it relative to the
 // anchor tile (where the tick lands). Board layout: flat index = depth·3 +
 // flank, depth 0 = frontline, flank 0 = top. Off-board cells are clipped.
-export function projectBossStamp(stamp: BossRangeStamp): number[] {
+function projectBossStamp(stamp: BossRangeStamp): number[] {
   const [tickRow, tickCol] = stamp.tick;
   const steps = ((stamp.rotation ?? 90) / 90) % 4; // number of CCW quarter-turns
   const anchorDepth = Math.floor(stamp.anchorTile / 3);

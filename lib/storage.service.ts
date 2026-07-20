@@ -206,9 +206,9 @@ export function deleteTeam(id: string) {
 
 // ---------- Team construction helpers ----------
 
-export const DEFAULT_TURN_COUNT = 5;
+const DEFAULT_TURN_COUNT = 5;
 
-export function createTurnsForCharacters(chars: Character[], turnCount = DEFAULT_TURN_COUNT): TurnSetup[] {
+function createTurnsForCharacters(chars: Character[], turnCount = DEFAULT_TURN_COUNT): TurnSetup[] {
   return Array.from({ length: turnCount }).map((_, turnIdx) => ({
     turnIndex: turnIdx,
     actions: chars.map((char): TurnAction => ({
@@ -222,7 +222,7 @@ export function createTurnsForCharacters(chars: Character[], turnCount = DEFAULT
 
 // Instantiate a template as a team member, applying the roster's level/upgrade
 // so a fresh deploy always mirrors what the user actually owns.
-export function buildCharacterFromRoster(
+function buildCharacterFromRoster(
   template: CharacterTemplate,
   roster: RosterEntry[],
   position: number,

@@ -10,7 +10,7 @@ interface BossEditorProps {
 }
 
 // Popular Boss templates from Fiend Hunt and Guild Raids
-export const BOSS_TEMPLATES: Boss[] = [
+const BOSS_TEMPLATES: Boss[] = [
   {
     name: 'Fiend: Parakahr (Wind Colossus)',
     element: 'wind',
