@@ -575,7 +575,7 @@ export interface TurnFormulaBreakdown {
 }
 
 export interface EffectSnapshot {
-  type: SkillEffect['type'];
+  type: string;
   value: number;
   remainingTurns: number;
   sourceCharacterName: string;
@@ -584,7 +584,9 @@ export interface EffectSnapshot {
 export interface TurnEffectSnapshot {
   turn: number;                                    // 1-indexed
   characterBuffs: Record<string, EffectSnapshot[]>; // keyed by charId
+  characterDebuffs?: Record<string, EffectSnapshot[]>; // keyed by charId
   bossDebuffs: EffectSnapshot[];
+  bossBuffs?: EffectSnapshot[];
 }
 
 // End-of-turn survival snapshot: team HP after the boss's counterattack.

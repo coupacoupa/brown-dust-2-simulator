@@ -358,12 +358,38 @@ export function simulateTurn(
     sourceCharacterName: ctx.nameOf(d.sourceCharacterId),
   }));
 
+  const bossBuffs: EffectSnapshot[] = (next.bossBuffs ?? []).map((b) => ({
+    type: `buff_${b.stat}`,
+    value: b.valuePct,
+    remainingTurns: b.remainingTurns,
+    sourceCharacterName: ctx.boss.name ?? "Boss",
+  }));
+
+  const characterDebuffs: Record<string, EffectSnapshot[]> = {};
+  ctx.characters.forEach((c) => {
+    const debuffs = next.characterDebuffs.get(c.id) ?? [];
+    if (debuffs.length > 0) {
+      characterDebuffs[c.id] = debuffs.map((d) => ({
+        type: `debuff_${d.stat}`,
+        value: d.valuePct,
+        remainingTurns: d.remainingTurns,
+        sourceCharacterName: ctx.boss.name ?? "Boss",
+      }));
+    }
+  });
+
   const result: TurnResult = {
     turn: displayTurn,
     damage: { min: turnMin, expected: turnExpected, max: turnMax },
     perCharacter: ctx.perCharacter,
     formula: buildTurnFormulaBreakdown(displayTurn, turnExpected, ctx.events),
-    effectSnapshot: { turn: displayTurn, characterBuffs: ctx.perCharBuffSnapshots, bossDebuffs },
+    effectSnapshot: {
+      turn: displayTurn,
+      characterBuffs: ctx.perCharBuffSnapshots,
+      characterDebuffs,
+      bossDebuffs,
+      bossBuffs,
+    },
     survival,
     newDeaths: cast?.newDeaths ?? [],
   };

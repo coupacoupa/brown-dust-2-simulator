@@ -74,39 +74,6 @@ export default function TurnStrip({
           const hasMembers = team.characters.length > 0;
           const overdrafts = overdraftByTeam[teamIdx];
 
-          // Compute active buff tracks across turns for continuous span lines
-          const activeBuffTracks = (() => {
-            if (!team.result?.effectSnapshots) return [];
-            const trackMap = new Map<string, { key: string; label: string; colorClass: string; activeTurns: boolean[] }>();
-
-            team.result.effectSnapshots.forEach((snap, tIdx) => {
-              Object.entries(snap.characterBuffs).forEach(([_, effs]) => {
-                effs.forEach((eff) => {
-                  const key = `${eff.type}_${eff.sourceCharacterName}`;
-                  if (!trackMap.has(key)) {
-                    let colorClass = "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]";
-                    if (eff.type.includes("prop")) colorClass = "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.7)]";
-                    else if (eff.type.includes("crit")) colorClass = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)]";
-                    else if (eff.type.includes("atk")) colorClass = "bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.7)]";
-                    else if (eff.type.includes("matk")) colorClass = "bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.7)]";
-
-                    trackMap.set(key, {
-                      key,
-                      label: `${eff.sourceCharacterName} ${eff.type.replace("buff_", "").toUpperCase()}`,
-                      colorClass,
-                      activeTurns: new Array(team.turns.length).fill(false),
-                    });
-                  }
-                  if (tIdx < team.turns.length) {
-                    trackMap.get(key)!.activeTurns[tIdx] = true;
-                  }
-                });
-              });
-            });
-
-            return Array.from(trackMap.values()).slice(0, 4); // Max 4 span lines under turn tabs
-          })();
-
           return (
             <div
               key={teamIdx}
@@ -151,7 +118,7 @@ export default function TurnStrip({
                         key={idx}
                         type="button"
                         onClick={() => onSelectTurn(teamIdx, idx)}
-                        className={`relative flex flex-col items-center justify-between gap-1 px-3.5 pt-2 pb-1.5 rounded-xl border min-w-23 transition-all cursor-pointer shrink-0 ${
+                        className={`relative flex flex-col items-center justify-between gap-1 px-3.5 py-2 rounded-xl border min-w-23 transition-all cursor-pointer shrink-0 ${
                           isActive
                             ? "border-indigo-500 bg-indigo-950/25 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
                             : "border-zinc-900 bg-zinc-950/40 hover:border-zinc-700"
@@ -173,25 +140,6 @@ export default function TurnStrip({
                             {dmg ? formatCompact(dmg.expected) : "—"}
                           </span>
                         </div>
-
-                        {/* Continuous Buff Uptime Span Lines directly under turn tab */}
-                        {activeBuffTracks.length > 0 && (
-                          <div className="w-full flex flex-col gap-1 mt-1 pt-1 border-t border-zinc-900/60 z-10">
-                            {activeBuffTracks.map((track) => {
-                              const isActiveOnThisTurn = track.activeTurns[idx];
-
-                              return (
-                                <div key={track.key} className="h-1 w-full flex items-center justify-center relative" title={track.label}>
-                                  {isActiveOnThisTurn ? (
-                                    <div className={`h-[3.5px] w-full rounded-full transition-all ${track.colorClass}`} />
-                                  ) : (
-                                    <div className="h-[1px] w-full bg-zinc-900/50" />
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
 
                         {overdrawn && (
                           <span
