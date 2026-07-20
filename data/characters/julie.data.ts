@@ -30,6 +30,7 @@ export const julie: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {

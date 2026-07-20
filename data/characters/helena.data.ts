@@ -37,6 +37,7 @@ export const helena: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {
@@ -218,6 +219,7 @@ export const helena: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {

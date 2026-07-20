@@ -65,7 +65,7 @@ export const samay: CharacterTemplate = {
         name: "I'm Trusting You!",
         hitCount: 0,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "all",
         // All-ally support: ATK + Magic ATK +20→50% (2t) + a 25%-MATK team heal
         // (healSource: caster_matk). `scaling` previously held the buff %; no
         // enemy damage, so scaling is 0.

@@ -66,6 +66,7 @@ export const granadair: CharacterTemplate = {
           [0, -3],
           [0, 3],
         ],
+        targetGrid: "ally",
       },
       upgrades: [
         {
@@ -272,6 +273,7 @@ export const granadair: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {

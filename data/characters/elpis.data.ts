@@ -18,7 +18,7 @@ export const elpis: CharacterTemplate = {
         name: "Prayer of Sanctuary",
         hitCount: 0,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "all",
         // All-ally support: Magic ATK (25→70%) + Crit Rate (30→35%), 6t.
         // `scaling` previously held the MATK buff %; no enemy damage → scaling 0.
         effects: [

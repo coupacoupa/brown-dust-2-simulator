@@ -26,6 +26,7 @@ export const emma: CharacterTemplate = {
           { id: "emma_atk", type: "buff_atk", value: 200, duration: 6, target: "self" },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 2, cooldown: 7, scaling: 0, effects: [

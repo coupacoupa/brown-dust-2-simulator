@@ -105,6 +105,7 @@ export const andrew: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {

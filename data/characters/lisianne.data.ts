@@ -18,7 +18,7 @@ export const lisianne: CharacterTemplate = {
         name: "Prayer for Healing",
         hitCount: 0,
         damageType: "magic",
-        targetShape: "single",
+        targetShape: "all",
         // Pure healer/support: heals all allies for 50→150% of Magic ATK
         // (healSource: caster_matk). scaling 0 (no enemy damage). The "remove DoT
         // from allies" cleanse is a no-op here (allies don't carry DoTs vs a

@@ -89,6 +89,7 @@ export const olivier: CharacterTemplate = {
           { id: "olivier_ap_matk", type: "buff_matk", value: 50, duration: 8, target: "self" },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 2, cooldown: 9, scaling: 0, effects: [

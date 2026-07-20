@@ -28,6 +28,7 @@ export const jayden: CharacterTemplate = {
           { id: "jayden_barrier", type: "buff_barrier", value: 50, duration: 4, target: "self" },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 3, cooldown: 7, scaling: 0, effects: [

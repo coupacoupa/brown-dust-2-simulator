@@ -18,6 +18,7 @@ export const arines: CharacterTemplate = {
         name: "Fair and Square",
         hitCount: 0,
         damageType: "physical", // support: all-ally ATK + Crit Rate buff, no damage
+        targetShape: "all",
         effects: [
           { id: "arines_atk", type: "buff_atk", value: 25, duration: 6, target: "all_allies" },
           { id: "arines_crit", type: "buff_crit_rate", value: 30, duration: 6, target: "all_allies" },

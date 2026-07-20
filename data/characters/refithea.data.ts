@@ -290,6 +290,7 @@ export const refithea: CharacterTemplate = {
           [0, -1],
           [0, 1],
         ],
+        targetGrid: "ally",
       },
       upgrades: [
         {
@@ -529,6 +530,7 @@ export const refithea: CharacterTemplate = {
           [0, -1],
           [0, 1],
         ],
+        targetGrid: "ally",
       },
       upgrades: [
         {

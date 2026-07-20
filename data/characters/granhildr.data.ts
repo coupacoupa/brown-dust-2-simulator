@@ -31,6 +31,7 @@ export const granhildr: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {
@@ -170,6 +171,7 @@ export const granhildr: CharacterTemplate = {
           },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         {

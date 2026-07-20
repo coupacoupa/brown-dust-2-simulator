@@ -19,7 +19,7 @@ export const liberta: CharacterTemplate = {
         name: "Prayer of Duality",
         hitCount: 0,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "all",
         // All-ally support: restore 3 SP + ATK (35→85%) + Crit Rate (25→50%),
         // 4t. `scaling` previously held the ATK buff %; no enemy damage → 0.
         effects: [
@@ -96,7 +96,7 @@ export const liberta: CharacterTemplate = {
         name: "It's the Protection of the Oni!",
         hitCount: 0,
         damageType: "physical",
-        targetShape: "single",
+        targetShape: "all",
         // All-ally Augmentation (+80→120% damage) that only boosts hits at Chain
         // 10+ (`augmentChainMin: 10`), plus a 15%-Max-HP team heal. `scaling`
         // previously held the aug %; no enemy damage → 0.

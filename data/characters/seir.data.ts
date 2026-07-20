@@ -27,6 +27,7 @@ export const seir: CharacterTemplate = {
           { id: "seir_dd_react", type: "buff_reactive", value: 0, duration: 4, target: "self", reactiveEffect: { id: "seir_dd_heal", type: "heal_continuous", value: 15, duration: 0, target: "self" } },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 3, cooldown: 5, scaling: 0, effects: [
@@ -102,6 +103,7 @@ export const seir: CharacterTemplate = {
           { id: "seir_bri_sp", type: "gain_sp", value: 2, duration: 0, target: "self" },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 2, cooldown: 5, scaling: 0, effects: [

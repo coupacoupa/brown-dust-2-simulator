@@ -100,6 +100,7 @@ export const mamonir: CharacterTemplate = {
           { id: "mamonir_mm_react", type: "buff_reactive", value: 0, duration: 8, target: "self", reactiveMaxTriggers: 8, reactiveEffect: { id: "mamonir_mm_vuln", type: "debuff_vulnerability", value: 30, duration: 2, target: "target_enemy" } },
         ],
         hitboxPattern: [[0, 0]],
+        targetGrid: "ally",
       },
       upgrades: [
         { spCost: 3, cooldown: 7, scaling: 0, effects: [
