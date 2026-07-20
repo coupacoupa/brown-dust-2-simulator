@@ -10,6 +10,7 @@ export const octoviusI: SeedBossConfig = {
   id: "boss_octovius",
   name: "Octovius I",
   element: "wind",
+  atkType: "magic",
   grid: [
     { row: 0, col: 1, type: "normal", skillId: "octovius_sticky_leg" },
     { row: 0, col: 2, type: "normal" },
