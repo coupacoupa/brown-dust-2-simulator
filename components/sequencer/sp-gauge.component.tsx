@@ -50,19 +50,19 @@ export default function SpGauge({ state }: { state: SpTurnState }) {
       <div className="flex items-center gap-2.5 shrink-0">
         {/* Rotated square SP emblem */}
         <span className="w-6 h-6 rotate-45 bg-gradient-to-br from-zinc-300 via-zinc-400 to-zinc-600 border border-zinc-200/80 rounded-sm flex items-center justify-center shadow-md ml-1">
-          <span className="-rotate-45 text-[8px] font-black text-zinc-900 select-none">
+          <span className="-rotate-45 text-[9px] font-black text-zinc-900 select-none">
             SP
           </span>
         </span>
         <span
-          className={`text-base font-black tracking-tight ${
+          className={`text-lg font-black tracking-tight ${
             state.isNegative ? "text-rose-500 animate-pulse" : "text-white"
           }`}
         >
           {state.endSp}/{SP_BAR_SLOTS}
         </span>
         <span
-          className="w-4 h-4 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 text-[9px] font-black flex items-center justify-center cursor-help select-none"
+          className="w-4.5 h-4.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-black flex items-center justify-center cursor-help select-none"
           title={`Steel: unused SP · Yellow: skill costs this turn (${state.spentBase}) · Red: burst (${state.spentBurst}) · Dark: unavailable`}
         >
           ?

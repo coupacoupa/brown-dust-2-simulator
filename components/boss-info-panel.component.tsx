@@ -333,7 +333,7 @@ export default function BossInfoPanel({
             </h2>
             <div className="flex items-center gap-2 mt-2">
               {boss.startDate && boss.endDate && (
-                <span className="text-[9px] text-zinc-550 font-bold">
+                <span className="text-[9px] text-zinc-500 font-bold">
                   Active: {new Date(boss.startDate).toLocaleDateString()} – {new Date(boss.endDate).toLocaleDateString()}
                 </span>
               )}
@@ -423,7 +423,7 @@ export default function BossInfoPanel({
             {resolvedDescription ? (
               <SkillRichText text={resolvedDescription} />
             ) : (
-              <span className="text-zinc-650 italic">No description available for this skill.</span>
+              <span className="text-zinc-600 italic">No description available for this skill.</span>
             )}
           </p>
 
@@ -463,7 +463,7 @@ export default function BossInfoPanel({
 
           {/* Skill used — unique skills in cast order */}
           <div className="mt-auto pt-4 border-t border-zinc-900">
-            <p className="text-[9px] font-black text-zinc-550 uppercase tracking-widest mb-2.5">
+            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2.5">
               Skill Used
             </p>
             <div className="flex items-center gap-1 flex-wrap">
@@ -495,7 +495,7 @@ export default function BossInfoPanel({
 
         {/* Rotation grid — cast order, weak-exposure turns marked */}
         <div className="flex flex-col items-center gap-2.5">
-          <span className="text-[9px] font-black text-zinc-550 uppercase tracking-widest">
+          <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
             Attack Rotation
           </span>
           {renderAttackRotation()}

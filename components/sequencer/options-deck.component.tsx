@@ -68,9 +68,9 @@ export default function OptionsDeck({
   onPreemptiveToggle,
 }: OptionsDeckProps) {
   return (
-    <div className="flex flex-col gap-3 w-55 shrink-0">
+    <div className="flex flex-col gap-3 w-60 shrink-0">
       <div className="flex flex-col gap-0.5 border-b border-zinc-900 pb-2">
-        <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">
+        <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">
           {selectedChar?.name || "Selected"} OPTIONS DECK
         </span>
       </div>
@@ -99,10 +99,10 @@ export default function OptionsDeck({
 
                 <div className="flex items-center gap-3.5 z-10 flex-1 min-w-0">
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-[11px] font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                    <span className="text-[13px] font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       {isVault ? "Vault" : "Front"}
                     </span>
-                    <span className="text-[9px] text-zinc-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                    <span className="text-[11px] text-zinc-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       ✖ {selectedChar.baseAtk >= selectedChar.baseMatk
                         ? selectedChar.baseAtk
                         : selectedChar.baseMatk}
@@ -176,10 +176,10 @@ export default function OptionsDeck({
                 />
 
                 <div className="flex items-center gap-2.5 z-10 flex-1 min-w-0">
-                  <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[150px]">
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0 max-w-[170px]">
                     {/* Approach badge + costume name */}
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`text-[6px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
+                      <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-[1px] rounded shrink-0 ${
                         costumeTargetGrid === 'ally'
                           ? 'bg-emerald-600/90 text-emerald-100'
                           : costumeApproach === 'vault'
@@ -188,7 +188,7 @@ export default function OptionsDeck({
                       }`}>
                         {costumeTargetGrid === 'ally' ? 'BUFF' : costumeApproach === 'vault' ? 'VAULT' : 'FRONT'}
                       </span>
-                      <span className="text-[8px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[60px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                      <span className="text-[10px] font-black text-indigo-200 uppercase tracking-wider truncate max-w-[76px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                         {cost.name}
                       </span>
                       {isPreemptive && (
@@ -197,7 +197,7 @@ export default function OptionsDeck({
                             e.stopPropagation();
                             onPreemptiveToggle?.(cost.id, !isPreemptiveEnabled);
                           }}
-                          className={`cursor-pointer text-[5px] font-black uppercase tracking-wider px-1 py-[0.5px] rounded transition-all duration-150 border ${
+                          className={`cursor-pointer text-[7px] font-black uppercase tracking-wider px-1 py-[1px] rounded transition-all duration-150 border ${
                             isPreemptiveEnabled
                               ? 'bg-amber-500 border-amber-400 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.4)] font-black'
                               : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500'
@@ -207,18 +207,18 @@ export default function OptionsDeck({
                         </span>
                       )}
                       {skillState.onCd && (
-                        <span className="text-[7px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                        <span className="text-[9px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                           CD:{skillState.remainingTurns}t
                         </span>
                       )}
                     </div>
                     {/* Skill name + damage preview */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-black text-white truncate max-w-[85px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                      <span className="text-[11px] font-black text-white truncate max-w-[100px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                         {resolvedSkill.name}
                       </span>
                       {previewScaling > 0 && (
-                        <span className="text-[8px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                        <span className="text-[10px] font-bold text-rose-300 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                           ✖ {dmgPreview}
                         </span>
                       )}
@@ -228,8 +228,8 @@ export default function OptionsDeck({
                 {skillState.onCd && (
                   <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none rounded-xl">
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
-                      <span className="text-[10px]">🔒</span>
-                      <span className="text-[8px] font-black text-rose-200 uppercase tracking-widest">
+                      <span className="text-xs">🔒</span>
+                      <span className="text-[10px] font-black text-rose-200 uppercase tracking-widest">
                         ON CD ({skillState.remainingTurns}T)
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export default function OptionsDeck({
                         {cost.displayEffects.map((eff, effIdx) => (
                           <span
                             key={effIdx}
-                            className="text-[6px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/40 rounded px-1 py-[1px] truncate max-w-[130px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                            className="text-[8px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/40 rounded px-1 py-[1px] truncate max-w-[150px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                           >
                             {eff}
                           </span>
@@ -273,11 +273,11 @@ export default function OptionsDeck({
                         }
                       }}
                       disabled={(selectedAction.burstLevel || 0) === 0}
-                      className="text-[9px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
+                      className="text-[11px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
                     >
                       ◀
                     </button>
-                    <span className="text-[8px] font-black text-rose-450 select-none">
+                    <span className="text-[10px] font-black text-rose-400 select-none">
                       BST {selectedAction.burstLevel || 0}
                     </span>
                     <button
@@ -291,7 +291,7 @@ export default function OptionsDeck({
                         }
                       }}
                       disabled={(selectedAction.burstLevel || 0) === maxBurstLevel}
-                      className="text-[9px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
+                      className="text-[11px] font-black text-zinc-400 hover:text-zinc-200 disabled:opacity-20 cursor-pointer"
                     >
                       ▶
                     </button>
@@ -311,7 +311,7 @@ export default function OptionsDeck({
           })}
         </div>
       ) : (
-        <div className="p-6 bg-zinc-900/10 border border-dashed border-zinc-900 rounded-2xl text-center text-[9px] text-zinc-600 font-bold uppercase tracking-wider py-12">
+        <div className="p-6 bg-zinc-900/10 border border-dashed border-zinc-900 rounded-2xl text-center text-[11px] text-zinc-500 font-bold uppercase tracking-wider py-12">
           Select slot character card to view available costumes options
         </div>
       )}

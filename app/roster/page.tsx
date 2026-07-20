@@ -53,7 +53,7 @@ export default function RosterPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-900 pb-4">
         <div>
           <h2 className="text-xl font-black text-zinc-100 uppercase tracking-wide">My Roster</h2>
-          <p className="text-xs text-zinc-450 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Mirror your in-game collection here — team builds sync levels and upgrades from this page
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function RosterPage() {
             className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all ${
               savedFlash
                 ? "text-emerald-300 border-emerald-500/40 bg-emerald-950/30"
-                : "text-zinc-550 border-zinc-800 bg-zinc-900/40"
+                : "text-zinc-500 border-zinc-800 bg-zinc-900/40"
             }`}
           >
             {savedFlash ? "✓ Saved" : `${ownedCount} / ${CHARACTER_TEMPLATES.length} owned`}
@@ -84,7 +84,7 @@ export default function RosterPage() {
           <button
             type="button"
             onClick={() => update(defaultRoster())}
-            className="px-3 py-1.5 border border-rose-950 bg-zinc-950 text-rose-450 hover:bg-rose-950/20 text-[10px] font-bold uppercase rounded-lg tracking-wider cursor-pointer"
+            className="px-3 py-1.5 border border-rose-950 bg-zinc-950 text-rose-400 hover:bg-rose-950/20 text-[10px] font-bold uppercase rounded-lg tracking-wider cursor-pointer"
           >
             Reset
           </button>
@@ -169,7 +169,7 @@ export default function RosterPage() {
                 </span>
                 <div className="flex items-center gap-1.5">
                   <label className="flex items-center gap-1 flex-1">
-                    <span className="text-[8px] font-black text-zinc-550 uppercase">Lv</span>
+                    <span className="text-[8px] font-black text-zinc-500 uppercase">Lv</span>
                     <input
                       type="number"
                       min={1}
@@ -190,7 +190,7 @@ export default function RosterPage() {
       </div>
 
       {filteredTemplates.length === 0 && (
-        <div className="py-12 text-center text-zinc-550 text-xs font-semibold border border-dashed border-zinc-900 rounded-2xl">
+        <div className="py-12 text-center text-zinc-500 text-xs font-semibold border border-dashed border-zinc-900 rounded-2xl">
           No characters match the current filters.
         </div>
       )}

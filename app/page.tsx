@@ -85,11 +85,11 @@ export default function BossListPage() {
       <div className="flex items-end justify-between border-b border-zinc-900 pb-4">
         <div>
           <h2 className="text-xl font-black text-zinc-100 uppercase tracking-wide">Boss Battles</h2>
-          <p className="text-xs text-zinc-450 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Pick a boss to build teams and simulate rotations against it — newest content first
           </p>
         </div>
-        <span className="text-[10px] font-black text-zinc-550 uppercase tracking-widest bg-zinc-900/60 border border-zinc-800 px-3 py-1 rounded-lg">
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-900/60 border border-zinc-800 px-3 py-1 rounded-lg">
           {bosses ? `${bosses.length} Bosses` : "Loading…"}
         </span>
       </div>
@@ -130,7 +130,7 @@ export default function BossListPage() {
                   <h3 className="text-base md:text-lg font-black text-zinc-100 uppercase tracking-wide truncate group-hover:text-indigo-300 transition-colors">
                     {boss.name}
                   </h3>
-                  <p className="text-[10px] text-zinc-450 font-bold mt-0.5 flex items-center gap-1">
+                  <p className="text-[10px] text-zinc-400 font-bold mt-0.5 flex items-center gap-1">
                     <span>📅</span>
                     {boss.startDate && boss.endDate ? (
                       `${formatDateStr(boss.startDate)} – ${formatDateStr(boss.endDate)}`
@@ -186,7 +186,7 @@ export default function BossListPage() {
                     ? "bg-indigo-950/40 border-indigo-500/30 text-indigo-300 group-hover:bg-indigo-900/50 group-hover:border-indigo-400"
                     : "bg-zinc-900/40 border-zinc-800/80 text-zinc-500 group-hover:text-zinc-400 group-hover:border-zinc-700"
                 }`}>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-zinc-550 group-hover:text-zinc-400 transition-colors">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-zinc-400 transition-colors">
                     Saved Teams
                   </p>
                   <p className="text-xs font-black uppercase tracking-wide">
@@ -200,7 +200,7 @@ export default function BossListPage() {
       </div>
 
       {bosses !== undefined && bosses.length === 0 && (
-        <div className="py-16 text-center text-zinc-550 text-sm font-semibold border border-dashed border-zinc-900 rounded-2xl">
+        <div className="py-16 text-center text-zinc-500 text-sm font-semibold border border-dashed border-zinc-900 rounded-2xl">
           No bosses configured yet — add one via the Account menu → Manage Bosses.
         </div>
       )}

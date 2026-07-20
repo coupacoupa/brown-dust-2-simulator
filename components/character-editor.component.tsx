@@ -314,7 +314,7 @@ export default function CharacterEditor({
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-zinc-900 pb-4">
         <div className="flex items-baseline gap-3">
           <h2 className="text-lg font-black tracking-wider text-zinc-100 uppercase">Team Formation</h2>
-          <span className="hidden md:block text-[10px] font-bold text-zinc-550 uppercase tracking-wider">
+          <span className="hidden md:block text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
             Click a roster portrait to deploy it into the highlighted slot
           </span>
         </div>
@@ -328,7 +328,7 @@ export default function CharacterEditor({
           </button>
           <button
             onClick={handleClearTeam}
-            className="px-3.5 py-1.5 border border-rose-950 bg-zinc-950 text-rose-450 hover:bg-rose-950/20 text-xs font-bold uppercase rounded-lg tracking-wider cursor-pointer"
+            className="px-3.5 py-1.5 border border-rose-950 bg-zinc-950 text-rose-400 hover:bg-rose-950/20 text-xs font-bold uppercase rounded-lg tracking-wider cursor-pointer"
           >
             Clear Team {activeTeamIdx + 1}
           </button>
@@ -360,7 +360,7 @@ export default function CharacterEditor({
                     <span className={`text-sm font-black tracking-widest ${isActiveTeam ? 'text-indigo-300' : 'text-zinc-300'}`}>
                       TEAM{tIdx + 1}
                     </span>
-                    <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-wider">▸ Combat Power</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">▸ Combat Power</span>
                     <span className="text-sm font-black text-zinc-100">⚔️ {formatNumber(getTeamCombatPower(team))}</span>
                   </div>
                   {isActiveTeam && (
@@ -439,7 +439,7 @@ export default function CharacterEditor({
                           onDragLeave={() => setDragOver(null)}
                           className={`
                             absolute inset-0 rounded-lg border border-dashed flex flex-col items-center justify-center gap-0.5 transition-all duration-150 cursor-pointer select-none
-                            ${isSelected ? 'border-indigo-400 bg-indigo-950/20 ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-black text-indigo-400' : 'border-zinc-800 bg-zinc-950/40 text-zinc-650 hover:border-zinc-600 hover:text-zinc-450'}
+                            ${isSelected ? 'border-indigo-400 bg-indigo-950/20 ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-black text-indigo-400' : 'border-zinc-800 bg-zinc-950/40 text-zinc-600 hover:border-zinc-600 hover:text-zinc-400'}
                             ${isDragOver ? 'border-indigo-400 bg-indigo-950/20 text-indigo-400 scale-[1.05]' : ''}
                           `}
                         >
@@ -536,7 +536,7 @@ export default function CharacterEditor({
                     className={`px-4 py-2 text-sm font-bold uppercase rounded-md cursor-pointer ${
                       roleFilter === role
                         ? 'bg-zinc-800 text-zinc-200 font-black'
-                        : 'text-zinc-550 hover:text-zinc-350'
+                        : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
                     {role.substring(0, 4).toUpperCase()}
@@ -602,7 +602,7 @@ export default function CharacterEditor({
           </div>
 
           {filteredTemplates.length === 0 && (
-            <div className="py-8 text-center text-zinc-550 text-xs font-semibold">
+            <div className="py-8 text-center text-zinc-500 text-xs font-semibold">
               No characters match the current filters.
             </div>
           )}

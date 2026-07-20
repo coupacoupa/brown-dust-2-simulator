@@ -55,7 +55,7 @@ export default function TeamWorkspacePage() {
         <div className="flex items-center gap-4 min-w-0">
           <Link
             href={`/boss/${boss.id}`}
-            className="text-[10px] font-black text-zinc-550 hover:text-zinc-200 uppercase tracking-widest shrink-0 transition-colors"
+            className="text-xs font-black text-zinc-400 hover:text-zinc-200 uppercase tracking-widest shrink-0 transition-colors"
             title={`Back to ${boss.name}`}
           >
             ← {boss.name.length > 26 ? `${boss.name.slice(0, 26)}…` : boss.name}
@@ -64,7 +64,7 @@ export default function TeamWorkspacePage() {
             <select
               value={boss.level}
               onChange={(e) => ws.changeBossLevel(Number(e.target.value))}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-100 font-black text-[10px] px-2 py-0.5 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer shadow-md hover:bg-zinc-850 transition-colors"
+              className="bg-zinc-900 border border-zinc-800 text-zinc-100 font-black text-xs px-2 py-1 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer shadow-md hover:bg-zinc-850 transition-colors"
             >
               {Object.keys(boss.stats)
                 .map(Number)
@@ -84,7 +84,7 @@ export default function TeamWorkspacePage() {
             title="Team name"
           />
           <span
-            className={`text-[8px] font-black uppercase tracking-widest shrink-0 ${
+            className={`text-[10px] font-black uppercase tracking-widest shrink-0 ${
               ws.lastSavedAt ? "text-emerald-500/80" : "text-zinc-600"
             }`}
           >
@@ -98,7 +98,7 @@ export default function TeamWorkspacePage() {
             type="button"
             onClick={ws.syncFromRoster}
             title="Re-apply your roster's levels and upgrades to every member of this variant"
-            className={`px-3.5 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl border text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               ws.hypotheticalCount > 0
                 ? "border-amber-500/50 bg-amber-950/20 text-amber-300 hover:bg-amber-950/40"
                 : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
@@ -118,7 +118,7 @@ export default function TeamWorkspacePage() {
             ).map(([label, value, setter, min, max], i) => (
               <React.Fragment key={label}>
                 {i > 0 && <div className="w-px h-4 bg-zinc-800" />}
-                <label className="flex items-center gap-1.5 text-[9px] text-zinc-450 font-black uppercase tracking-wider">
+                <label className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-black uppercase tracking-wider">
                   {label}
                   <input
                     type="number"
@@ -128,7 +128,7 @@ export default function TeamWorkspacePage() {
                     onChange={(e) =>
                       setter(Math.max(min, Math.min(max, parseInt(e.target.value) || min)))
                     }
-                    className="w-11 bg-zinc-950 border border-zinc-800 rounded px-1 py-0.5 text-center text-[11px] text-zinc-200 font-bold"
+                    className="w-12 bg-zinc-950 border border-zinc-800 rounded px-1 py-0.5 text-center text-[13px] text-zinc-200 font-bold"
                   />
                 </label>
               </React.Fragment>
@@ -140,7 +140,7 @@ export default function TeamWorkspacePage() {
             <button
               type="button"
               onClick={() => setActiveTab("sequencer")}
-              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === "sequencer" ? "bg-zinc-900 text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
@@ -149,7 +149,7 @@ export default function TeamWorkspacePage() {
             <button
               type="button"
               onClick={() => setActiveTab("team")}
-              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === "team" ? "bg-zinc-900 text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >

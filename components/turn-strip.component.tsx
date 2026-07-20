@@ -91,15 +91,15 @@ export default function TurnStrip({
                 title={`Switch to Team ${teamIdx + 1}`}
               >
                 <span
-                  className={`text-[9px] font-black uppercase tracking-widest ${
+                  className={`text-[11px] font-black uppercase tracking-widest ${
                     isActiveTeam ? "text-indigo-300" : "text-zinc-500 group-hover:text-zinc-300"
                   }`}
                 >
                   Team {teamIdx + 1}
                 </span>
                 <span
-                  className={`text-[9px] font-mono font-bold ${
-                    isActiveTeam ? "text-zinc-200" : "text-zinc-600"
+                  className={`text-[11px] font-mono font-bold ${
+                    isActiveTeam ? "text-zinc-200" : "text-zinc-500"
                   }`}
                 >
                   {team.result ? formatCompact(team.result.totalDamageExpected) : "—"}
@@ -118,7 +118,7 @@ export default function TurnStrip({
                         key={idx}
                         type="button"
                         onClick={() => onSelectTurn(teamIdx, idx)}
-                        className={`relative flex flex-col items-center justify-between gap-1 px-3.5 py-2 rounded-xl border min-w-23 transition-all cursor-pointer shrink-0 ${
+                        className={`relative flex flex-col items-center justify-between gap-1 px-3.5 py-2 rounded-xl border min-w-26 transition-all cursor-pointer shrink-0 ${
                           isActive
                             ? "border-indigo-500 bg-indigo-950/25 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
                             : "border-zinc-900 bg-zinc-950/40 hover:border-zinc-700"
@@ -126,15 +126,15 @@ export default function TurnStrip({
                       >
                         <div className="flex flex-col items-center gap-0.5 w-full">
                           <span
-                            className={`text-[9px] font-black uppercase tracking-widest ${
+                            className={`text-[11px] font-black uppercase tracking-widest ${
                               isActive ? "text-indigo-300" : "text-zinc-500"
                             }`}
                           >
                             Turn {(team.offset + idx) * 2 + 1}
                           </span>
                           <span
-                            className={`text-xs font-black font-mono tracking-tight ${
-                              isActive ? "text-white" : "text-zinc-400"
+                            className={`text-sm font-black font-mono tracking-tight ${
+                              isActive ? "text-white" : "text-zinc-300"
                             }`}
                           >
                             {dmg ? formatCompact(dmg.expected) : "—"}
@@ -144,7 +144,7 @@ export default function TurnStrip({
                         {overdrawn && (
                           <span
                             title="This turn overspends SP — the rotation is not castable"
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 border border-rose-400 text-[8px] font-black text-white flex items-center justify-center shadow-md z-20"
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-600 border border-rose-400 text-[10px] font-black text-white flex items-center justify-center shadow-md z-20"
                           >
                             !
                           </span>
@@ -156,7 +156,7 @@ export default function TurnStrip({
                   <button
                     type="button"
                     onClick={() => onSelectTurn(teamIdx, 0)}
-                    className="flex items-center justify-center px-4 py-2 rounded-xl border border-dashed border-zinc-800 text-[9px] font-black text-zinc-600 uppercase tracking-widest hover:text-zinc-400 hover:border-zinc-700 cursor-pointer transition-all"
+                    className="flex items-center justify-center px-4 py-2 rounded-xl border border-dashed border-zinc-800 text-[11px] font-black text-zinc-500 uppercase tracking-widest hover:text-zinc-300 hover:border-zinc-700 cursor-pointer transition-all"
                     title={`Team ${teamIdx + 1} has no members yet — it doesn't take turns in the flow`}
                   >
                     No members
@@ -194,14 +194,14 @@ export default function TurnStrip({
       {/* Flow totals across all teams */}
       <div className="flex items-center gap-4 pl-4 border-l border-zinc-900 shrink-0">
         <div className="text-right">
-          <p className="text-[8px] font-black text-zinc-550 uppercase tracking-widest">
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
             Through Turn {globalActiveTurn}
           </p>
-          <p className="text-sm font-black text-zinc-200 font-mono">{formatCompact(throughExpected)}</p>
+          <p className="text-lg font-black text-zinc-200 font-mono">{formatCompact(throughExpected)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Total Expected</p>
-          <p className="text-sm font-black text-white font-mono">{formatCompact(totalExpected)}</p>
+          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Total Expected</p>
+          <p className="text-lg font-black text-white font-mono">{formatCompact(totalExpected)}</p>
         </div>
       </div>
     </div>

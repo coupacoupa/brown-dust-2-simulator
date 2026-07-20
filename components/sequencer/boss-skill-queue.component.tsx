@@ -46,11 +46,11 @@ export default function BossSkillQueue({
       <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-          <h4 className="text-[10px] font-black text-zinc-350 uppercase tracking-wider">
+          <h4 className="text-xs font-black text-zinc-300 uppercase tracking-wider">
             Skill used
           </h4>
         </div>
-        <span className="text-[8px] text-zinc-500 font-mono">
+        <span className="text-[10px] text-zinc-400 font-mono">
           Ally T{allyGlobalTurn}
         </span>
       </div>
@@ -75,12 +75,12 @@ export default function BossSkillQueue({
             </span>
 
             {/* Global turn badge — same corner style as the team cards */}
-            <div className="absolute top-0 left-0 bg-rose-950 border-r border-b border-rose-900 text-[9px] font-black text-rose-200 px-2 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
+            <div className="absolute top-0 left-0 bg-rose-950 border-r border-b border-rose-900 text-[11px] font-black text-rose-200 px-2 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
               {entry.globalTurn}
             </div>
 
             {/* Skill name */}
-            <span className="absolute top-1 left-8 right-1.5 text-[9px] font-black text-white uppercase tracking-wide truncate text-right drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+            <span className="absolute top-1 left-9 right-1.5 text-[11px] font-black text-white uppercase tracking-wide truncate text-right drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
               {entry.name}
             </span>
 
@@ -90,7 +90,7 @@ export default function BossSkillQueue({
                 <span className="text-base font-black text-rose-500 uppercase tracking-[0.2em] leading-none">
                   WEAK
                 </span>
-                <span className="text-[10px] font-black text-rose-300 leading-tight">
+                <span className="text-xs font-black text-rose-300 leading-tight">
                   {entry.weakExposurePct}%
                 </span>
               </span>
@@ -99,7 +99,7 @@ export default function BossSkillQueue({
             {/* NEXT banner on the upcoming attack */}
             {entry.isNext && (
               <div className="absolute bottom-0 inset-x-0 bg-rose-600/95 text-center py-0.5 z-10">
-                <span className="text-[10px] font-black text-white tracking-[0.25em] uppercase">
+                <span className="text-xs font-black text-white tracking-[0.25em] uppercase">
                   NEXT
                 </span>
               </div>

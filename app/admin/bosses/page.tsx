@@ -56,7 +56,7 @@ export default function AdminBossesPage() {
               Admin
             </span>
           </div>
-          <p className="text-xs text-zinc-450 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Configure the boss catalog shown on the landing page — stats, hitboxes, and content type
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function AdminBossesPage() {
                 <button
                   type="button"
                   onClick={() => handleDelete(boss.id)}
-                  className="text-[9px] font-black text-rose-450 hover:text-rose-300 uppercase tracking-wider px-3 py-1.5 rounded-lg border border-rose-950 hover:bg-rose-950/20 cursor-pointer transition-all"
+                  className="text-[9px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-wider px-3 py-1.5 rounded-lg border border-rose-950 hover:bg-rose-950/20 cursor-pointer transition-all"
                 >
                   Delete
                 </button>

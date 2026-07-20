@@ -163,19 +163,19 @@ function ContributorPanel({ spec, contributors }: { spec: BoxSpec; contributors:
     <div className="border-t border-zinc-900 pt-3 flex flex-col gap-2 animate-fadeIn">
       <div className="flex items-center gap-2">
         <span className={`w-1.5 h-1.5 rounded-full ${spec.meter}`} />
-        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
           {spec.label} — {spec.contributorsTitle}
         </span>
       </div>
       {contributors.length === 0 ? (
-        <p className="text-[11px] font-bold text-zinc-500 py-1.5">
+        <p className="text-[13px] font-bold text-zinc-400 py-1.5">
           {spec.untappedHint ?? "Nothing contributed to this bucket this turn."}
         </p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {contributors.map((c, i) => (
             <div key={`${c.name}_${i}`} className="flex items-center gap-3">
-              <span className="text-[11px] font-bold text-zinc-200 truncate w-48 shrink-0" title={c.name}>
+              <span className="text-[13px] font-bold text-zinc-200 truncate w-52 shrink-0" title={c.name}>
                 {c.name}
               </span>
               <div className="flex-1 h-2.5 bg-zinc-900 rounded-full overflow-hidden">
@@ -184,7 +184,7 @@ function ContributorPanel({ spec, contributors }: { spec: BoxSpec; contributors:
                   style={{ width: `${Math.min(100, Math.max(2, c.share * 100))}%` }}
                 />
               </div>
-              <span className={`text-[11px] font-black font-mono w-24 text-right shrink-0 ${spec.text}`}>
+              <span className={`text-[13px] font-black font-mono w-24 text-right shrink-0 ${spec.text}`}>
                 {c.display}
               </span>
             </div>
@@ -235,17 +235,17 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
       <div className="flex items-baseline justify-between relative">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">
+          <span className="text-xs font-black text-zinc-300 uppercase tracking-widest">
             Turn {turnNumber} Damage Formula
           </span>
         </div>
-        <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
           Click a gauge for its contributors
         </span>
       </div>
 
       {!hasDamage ? (
-        <div className="py-5 text-center text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+        <div className="py-5 text-center text-xs font-bold text-zinc-500 uppercase tracking-wider">
           No damage dealt this turn — buff/setup turns have no formula to break down
         </div>
       ) : (
@@ -254,7 +254,7 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
             {/* Hero total */}
             <div className="relative flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-indigo-500/60 bg-gradient-to-b from-indigo-950/60 to-zinc-950 min-w-[130px] shadow-[0_0_24px_rgba(99,102,241,0.2)] overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400" />
-              <span className="text-[8px] font-black text-indigo-300 uppercase tracking-widest">
+              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
                 Turn Damage
               </span>
               <span className="text-2xl font-black font-mono text-white tracking-tighter leading-tight drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">
@@ -301,7 +301,7 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
                     onClick={() => clickable && setOpenBucket(isOpen ? null : (box.key as BucketKey))}
                     title={untapped && box.untappedHint ? box.untappedHint : box.hint}
                     className={`
-                      group relative flex flex-col items-center justify-between gap-1 px-3 pt-2.5 pb-2 rounded-xl border min-w-[104px] overflow-hidden transition-all duration-150
+                      group relative flex flex-col items-center justify-between gap-1 px-3 pt-2.5 pb-2 rounded-xl border min-w-[112px] overflow-hidden transition-all duration-150
                       ${clickable ? "cursor-pointer hover:-translate-y-0.5" : "cursor-help"}
                       ${
                         na
@@ -321,8 +321,8 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
                     )}
 
                     <span
-                      className={`text-[8px] font-black uppercase tracking-widest leading-none ${
-                        na || neutral ? "text-zinc-600" : "text-zinc-400"
+                      className={`text-[10px] font-black uppercase tracking-widest leading-none ${
+                        na || neutral ? "text-zinc-500" : "text-zinc-300"
                       }`}
                     >
                       {box.label}
@@ -344,7 +344,7 @@ export default function FormulaBreakdown({ breakdown, turnNumber }: FormulaBreak
 
                     {/* Delta / status line */}
                     <span
-                      className={`text-[9px] font-black uppercase tracking-wider leading-none ${
+                      className={`text-[11px] font-black uppercase tracking-wider leading-none ${
                         na
                           ? "text-zinc-700"
                           : untapped

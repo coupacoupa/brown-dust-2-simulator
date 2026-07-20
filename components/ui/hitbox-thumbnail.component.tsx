@@ -22,10 +22,10 @@ export function HitboxThumbnail({
       : "bg-rose-950/80 border-rose-500/50 text-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]";
     return (
       <div className="relative w-12 h-16 bg-zinc-950/80 border border-zinc-800 rounded flex flex-col items-center justify-center overflow-hidden shrink-0 select-none pb-2">
-        <div className={`border rounded-[4px] text-[8px] font-black uppercase tracking-wider px-2 py-0.5 ${bgClass}`}>
+        <div className={`border rounded-[4px] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 ${bgClass}`}>
           All
         </div>
-        <span className={`absolute bottom-0 inset-x-0 text-center text-[5px] font-black uppercase tracking-wider py-[1px] ${
+        <span className={`absolute bottom-0 inset-x-0 text-center text-[6px] font-black uppercase tracking-wider py-[1px] ${
           targetGrid === "ally"
             ? "bg-emerald-600/90 text-emerald-100"
             : approach === "vault"
@@ -67,10 +67,10 @@ export function HitboxThumbnail({
 
   // Calculate exact square sizes to fit inside the 48x64 container
   // Available width = 48 - 6 (padding) = 42
-  // Available height = 64 - 12 (bottom label & padding) = 52
+  // Available height = 64 - 14 (bottom label & padding) = 50
   const gap = 2;
   const maxCellWidth = (42 - gap * (cols - 1)) / cols;
-  const maxCellHeight = (52 - gap * (rows - 1)) / rows;
+  const maxCellHeight = (50 - gap * (rows - 1)) / rows;
   const cellSize = Math.floor(Math.min(maxCellWidth, maxCellHeight));
   
   const gridWidth = cols * cellSize + gap * (cols - 1);
@@ -100,7 +100,7 @@ export function HitboxThumbnail({
               }`}
             >
               {isTick && isActive && (
-                <span className="text-[7px] font-black text-white leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                <span className="text-[8px] font-black text-white leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                   ✓
                 </span>
               )}
@@ -108,7 +108,7 @@ export function HitboxThumbnail({
           );
         })}
       </div>
-      <span className={`absolute bottom-0 inset-x-0 text-center text-[5px] font-black uppercase tracking-wider py-[1px] ${
+      <span className={`absolute bottom-0 inset-x-0 text-center text-[6px] font-black uppercase tracking-wider py-[1px] ${
         targetGrid === 'ally'
           ? 'bg-emerald-600/90 text-emerald-100'
           : approach === 'vault'

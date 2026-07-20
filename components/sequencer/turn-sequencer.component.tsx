@@ -229,7 +229,7 @@ export default function TurnSequencer({
           <div className="flex flex-row flex-wrap items-center justify-center gap-3 py-2">
             {/* Allied Position Placement (Left, facing the boss) */}
             <div className="flex flex-col items-center flex-1 min-w-80 max-w-125">
-              <h5 className="text-[9px] font-black text-zinc-550 uppercase tracking-widest mb-3 text-center flex items-center gap-1.5">
+              <h5 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 text-center flex items-center gap-1.5">
                 <span>Allied Position (Drag to swap)</span>
                 {bossDangerTiles.length > 0 && bossCastName && (
                   <span className="text-rose-400 normal-case tracking-wide flex items-center gap-1">
@@ -258,7 +258,7 @@ export default function TurnSequencer({
               <span className="text-indigo-500/85 animate-pulse font-black text-xl">
                 ➔
               </span>
-              <span className="text-[7px] font-black text-zinc-600 uppercase tracking-wider">
+              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider">
                 {targetGrid === 'ally' ? 'Buffing' : 'Attack'}
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function TurnSequencer({
             {/* Boss Hitbox Target Preview (Right, larger, facing the allies) */}
             <div className="flex flex-col items-center flex-1 min-w-[380px] max-w-[500px]">
               <div className="flex flex-col items-center gap-0.5 mb-3">
-                <span className="text-[9px] font-black text-zinc-550 uppercase tracking-widest text-center">
+                <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest text-center">
                   Fiend Hitbox (Target Preview)
                 </span>
               </div>
@@ -277,6 +277,7 @@ export default function TurnSequencer({
                 highlightColor="amber"
                 readOnly={true}
                 variant="battle"
+                bossElement={boss.element}
                 weakPointMultiplier={boss.weakPointMultiplier}
                 targetOriginTile={targetGrid === 'enemy' ? targetOriginTile : null}
               />

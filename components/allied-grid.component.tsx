@@ -157,10 +157,10 @@ export default function AlliedGrid({
               />
 
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-1 pt-3 pb-0.5 flex items-baseline justify-between gap-1 pointer-events-none">
-                <span className="text-[8px] font-black text-white uppercase tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+                <span className="text-[10px] font-black text-white uppercase tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
                   {char.name}
                 </span>
-                <span className="text-[7px] font-bold text-zinc-300 shrink-0">
+                <span className="text-[9px] font-bold text-zinc-300 shrink-0">
                   Lv.{char.level ?? 100}
                 </span>
               </div>
@@ -171,14 +171,36 @@ export default function AlliedGrid({
 
               {isDragging && (
                 <div className="absolute inset-0 bg-black/50 z-20 flex items-center justify-center backdrop-blur-sm pointer-events-none">
-                  <span className="text-[10px] font-bold text-white/50 tracking-widest uppercase">Moving</span>
+                  <span className="text-xs font-bold text-white/50 tracking-widest uppercase">Moving</span>
                 </div>
               )}
+              {/* Skill/danger overlays: edge gradient + ring + corner badge so
+                  the portrait stays visible instead of a full color flood */}
               {isHighlighted && (
-                <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/15 shadow-[0_0_6px_rgba(16,185,129,0.3)] pointer-events-none z-30" />
+                <>
+                  <span className="absolute inset-0 bg-gradient-to-t from-emerald-500/40 via-emerald-500/10 to-transparent pointer-events-none z-30" />
+                  <span className="absolute inset-0 rounded-[10px] border-2 border-emerald-400/90 shadow-[0_0_10px_rgba(16,185,129,0.4)] pointer-events-none z-30" />
+                </>
               )}
               {isDanger && (
-                <span className="absolute inset-0 rounded-xl border-2 border-rose-500/80 bg-rose-500/25 shadow-[0_0_8px_rgba(244,63,94,0.45)] pointer-events-none z-30 animate-pulse" />
+                <>
+                  <span className="absolute inset-0 bg-gradient-to-b from-rose-600/40 via-rose-600/10 to-transparent pointer-events-none z-30" />
+                  <span className="absolute inset-0 rounded-[10px] border-2 border-rose-500/90 shadow-[0_0_12px_rgba(244,63,94,0.5)] pointer-events-none z-30 animate-pulse" />
+                </>
+              )}
+              {(isHighlighted || isDanger) && (
+                <span className="absolute top-1 left-1 flex flex-col gap-0.5 z-40 pointer-events-none">
+                  {isDanger && (
+                    <span className="w-4.5 h-4.5 rounded-md bg-rose-600/95 border border-rose-300/60 text-white text-[10px] font-black flex items-center justify-center shadow-md">
+                      ⚠
+                    </span>
+                  )}
+                  {isHighlighted && (
+                    <span className="w-4.5 h-4.5 rounded-md bg-emerald-600/95 border border-emerald-300/60 text-white text-[10px] font-black flex items-center justify-center shadow-md">
+                      ✦
+                    </span>
+                  )}
+                </span>
               )}
             </div>
           );
@@ -192,7 +214,7 @@ export default function AlliedGrid({
               onDragLeave={(e) => handleDragLeave(e, index)}
               className={`
                 relative aspect-square rounded-xl border-2 border-dashed
-                flex items-center justify-center transition-all duration-200 cursor-pointer text-[10px] text-zinc-600 font-bold tracking-widest
+                flex items-center justify-center transition-all duration-200 cursor-pointer text-xs text-zinc-600 font-bold tracking-widest
                 ${isDragOver ? 'border-indigo-500 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)] scale-[1.02]' : 'border-zinc-800 bg-zinc-900/30 hover:border-zinc-600 hover:bg-zinc-800/50'}
               `}
             >
@@ -203,11 +225,16 @@ export default function AlliedGrid({
                   "+"
                 )}
               </span>
+              {/* Empty tiles carry only a quiet tint — the occupied tiles are
+                  the ones that need attention */}
               {isHighlighted && (
-                <span className="absolute inset-0 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_4px_rgba(16,185,129,0.2)] pointer-events-none z-30" />
+                <span className="absolute inset-0 rounded-xl border-2 border-emerald-700/50 bg-emerald-500/8 pointer-events-none z-30" />
               )}
               {isDanger && (
-                <span className="absolute inset-0 rounded-xl border-2 border-rose-500/70 bg-rose-500/20 shadow-[0_0_6px_rgba(244,63,94,0.35)] pointer-events-none z-30 animate-pulse" />
+                <>
+                  <span className="absolute inset-0 rounded-xl border-2 border-rose-800/60 bg-rose-500/10 pointer-events-none z-30" />
+                  <span className="absolute top-1 left-1.5 text-[10px] text-rose-400/80 pointer-events-none z-30">⚠</span>
+                </>
               )}
             </div>
           );
@@ -220,7 +247,7 @@ export default function AlliedGrid({
   return (
     <div className="flex flex-col items-center w-full">
       <div className="flex w-full gap-1.5 items-stretch">
-        <div className="flex flex-col justify-around py-2 text-[9px] font-black text-zinc-600 select-none text-right w-4 shrink-0">
+        <div className="flex flex-col justify-around py-2 text-[10px] font-black text-zinc-500 select-none text-right w-4 shrink-0">
           {flankLabels.map((label) => (
             <div key={label}>{label}</div>
           ))}
@@ -228,7 +255,7 @@ export default function AlliedGrid({
 
         <div className="flex flex-col flex-1 min-w-0">
           {/* Depth headers: BACK → FRONT, front column faces the boss */}
-          <div className="grid grid-cols-4 gap-2 px-2 mb-1.5 text-[9px] font-bold text-zinc-500 text-center tracking-wider uppercase">
+          <div className="grid grid-cols-4 gap-2 px-2 mb-1.5 text-[10px] font-bold text-zinc-500 text-center tracking-wider uppercase">
             {depthLabels.map((label) => (
               <div key={label} className={label === '3' ? 'text-indigo-400' : ''}>
                 {label}

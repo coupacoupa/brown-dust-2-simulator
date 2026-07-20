@@ -73,15 +73,15 @@ function EffectPill({ effect }: { effect: EffectSnapshot }) {
       `}
       title={`${meta.label} ${sign}${effect.value}% · ${effect.remainingTurns}T remaining · from ${effect.sourceCharacterName}`}
     >
-      <span className={`text-[9px] font-black uppercase tracking-wide ${meta.color}`}>
+      <span className={`text-[11px] font-black uppercase tracking-wide ${meta.color}`}>
         {meta.label}
       </span>
-      <span className={`text-[9px] font-black font-mono ${meta.color}`}>
+      <span className={`text-[11px] font-black font-mono ${meta.color}`}>
         {sign}{effect.value}%
       </span>
       <span
         className={`
-          text-[8px] font-black font-mono leading-none px-1 py-[1px] rounded border ml-0.5
+          text-[10px] font-black font-mono leading-none px-1 py-[1px] rounded border ml-0.5
           ${
             effect.remainingTurns <= 1
               ? "border-red-500/70 bg-red-950/60 text-red-300 animate-pulse"
@@ -107,7 +107,7 @@ function CharacterEffectRow({
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider shrink-0 w-16 truncate" title={charName}>
+      <span className="text-[11px] font-black text-zinc-300 uppercase tracking-wider shrink-0 w-20 truncate" title={charName}>
         {charName}
       </span>
       <div className="flex flex-wrap gap-1 items-center">
@@ -156,11 +156,11 @@ export default function ActiveEffectsPanel({
           className="flex items-center gap-2 cursor-pointer group"
         >
           <span className={`w-2 h-2 rounded-full transition-colors ${totalCount > 0 ? "bg-cyan-400 animate-pulse" : "bg-zinc-700"}`} />
-          <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">
+          <span className="text-xs font-black text-zinc-300 uppercase tracking-widest">
             Turn {turnNumber} Active Effects
           </span>
           {totalCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-md bg-cyan-950/40 border border-cyan-500/30 text-[9px] font-black text-cyan-300 font-mono">
+            <span className="px-1.5 py-0.5 rounded-md bg-cyan-950/40 border border-cyan-500/30 text-[11px] font-black text-cyan-300 font-mono">
               {totalCount} active
             </span>
           )}
@@ -169,7 +169,7 @@ export default function ActiveEffectsPanel({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-[10px] font-black text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-wider cursor-pointer"
+          className="text-[11px] font-black text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider cursor-pointer"
         >
           {expanded ? "▾ Collapse" : "▸ Expand"}
         </button>
@@ -179,7 +179,7 @@ export default function ActiveEffectsPanel({
       {expanded && (
         <div className="p-4 animate-fadeIn">
           {totalCount === 0 ? (
-            <div className="py-3 text-center text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+            <div className="py-3 text-center text-xs font-bold text-zinc-500 uppercase tracking-wider">
               No active buffs or debuffs this turn
             </div>
           ) : (
@@ -187,7 +187,7 @@ export default function ActiveEffectsPanel({
               {/* LEFT COLUMN: Character Effects */}
               <div className="flex flex-col gap-3">
                 <div className="pb-1 border-b border-zinc-900/60">
-                  <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">
+                  <span className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
                     Character Effects
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export default function ActiveEffectsPanel({
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                      <span className="text-[9px] font-black text-zinc-450 uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                         Buffs
                       </span>
                     </div>
@@ -216,7 +216,7 @@ export default function ActiveEffectsPanel({
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      <span className="text-[9px] font-black text-zinc-450 uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                         Debuffs
                       </span>
                     </div>
@@ -231,7 +231,7 @@ export default function ActiveEffectsPanel({
                 )}
 
                 {charBuffEntries.length === 0 && charDebuffEntries.length === 0 && (
-                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider py-2">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider py-2">
                     No active character effects
                   </div>
                 )}
@@ -240,7 +240,7 @@ export default function ActiveEffectsPanel({
               {/* RIGHT COLUMN: Boss Effects */}
               <div className="flex flex-col gap-3 pt-4 md:pt-0 md:pl-6">
                 <div className="pb-1 border-b border-zinc-900/60">
-                  <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">
+                  <span className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">
                     Boss Effects
                   </span>
                 </div>
@@ -250,7 +250,7 @@ export default function ActiveEffectsPanel({
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                      <span className="text-[9px] font-black text-zinc-450 uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                         Buffs
                       </span>
                     </div>
@@ -267,7 +267,7 @@ export default function ActiveEffectsPanel({
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      <span className="text-[9px] font-black text-zinc-450 uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
                         Debuffs
                       </span>
                     </div>
@@ -280,7 +280,7 @@ export default function ActiveEffectsPanel({
                 )}
 
                 {bossBuffs.length === 0 && bossDebuffs.length === 0 && (
-                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider py-2">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider py-2">
                     No active boss effects
                   </div>
                 )}

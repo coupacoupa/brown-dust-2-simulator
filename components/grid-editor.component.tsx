@@ -1,6 +1,9 @@
 "use client";
 
 import React from 'react';
+import { ElementType } from '@/domain.type';
+import { ELEMENT_BOSS_GRADIENTS } from '@/lib/elements.constant';
+import { ElementIcon } from './ui/element-icon.component';
 
 interface GridEditorProps {
   selectedTiles: number[]; // Flat indices 0-11
@@ -17,6 +20,9 @@ interface GridEditorProps {
   // 'battle' — rotated 4x3 facing the allies (FRONT column on the left),
   //   clean tiles with no labels, sized by the parent container.
   variant?: 'editor' | 'battle';
+  // Battle variant: tints boss-occupied tiles with the boss's element gradient
+  // so its silhouette is legible at a glance.
+  bossElement?: ElementType;
   weakPointMultiplier?: number; // e.g. 1.5 → weak tiles labeled "WEAK 150%"
   // In battle variant, the flat index of the skill's target origin tile
   // (the ✓ tick mark shown in the game preview). Renders a tick indicator
@@ -36,6 +42,7 @@ export default function GridEditor({
   hoverCenter = null,
   onHoverCell,
   variant = 'editor',
+  bossElement,
   weakPointMultiplier,
   targetOriginTile = null,
 }: GridEditorProps) {
@@ -157,6 +164,7 @@ export default function GridEditor({
   if (variant === 'battle') {
     const visualCols = 4;
     const visualRows = 3;
+    const bossGradient = bossElement ? ELEMENT_BOSS_GRADIENTS[bossElement] : null;
 
     const tileIndexAt = (y: number, x: number) => x * 3 + y;
     const depthLabels = Array.from({ length: visualCols }).map((_, i) => `${i}`); // left → right (columns)
@@ -171,7 +179,8 @@ export default function GridEditor({
         const isHighlighted = highlightedTiles.includes(index);
         const isTargetOrigin = targetOriginTile === index && isHighlighted;
 
-        let cellBg = 'bg-zinc-950/40 border-zinc-800/60';
+        // Empty tiles recede; boss-occupied tiles get an element-tinted body
+        let cellBg = 'bg-zinc-950/60 border-zinc-800/40';
         if (isHighlighted && isSelected) {
           // Tile is both part of boss hitbox AND highlighted by skill — strong color
           if (highlightColor === 'amber') {
@@ -194,20 +203,36 @@ export default function GridEditor({
           else cellBg = 'bg-rose-950/25 border-rose-700/50';
         } else if (isSelected) {
           cellBg = isWeakPoint
-            ? 'bg-rose-950/40 border-rose-500/70'
-            : 'bg-indigo-950/40 border-indigo-500/70';
+            ? 'border-rose-500/80 shadow-[0_0_10px_rgba(244,63,94,0.25),inset_0_0_12px_rgba(244,63,94,0.15)]'
+            : bossGradient
+              ? 'border-zinc-500/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+              : 'bg-indigo-950/40 border-indigo-500/70';
         }
 
         battleCells.push(
           <div
             key={index}
             className={`
-              relative aspect-square rounded-lg border-2 flex items-center justify-center
+              relative aspect-square rounded-lg border-2 flex items-center justify-center overflow-hidden
               transition-all duration-200 select-none
               ${cellBg}
               ${!isHighlighted ? getCellHighlightClass(index) : ''}
             `}
           >
+            {/* Boss body fill — element gradient under everything else, so
+                occupied tiles clearly read against the empty grid */}
+            {isSelected && bossGradient && !isHighlighted && (
+              <span className={`absolute inset-0 bg-gradient-to-br ${bossGradient} pointer-events-none`} />
+            )}
+
+            {/* Element watermark on plain boss tiles (weak tiles show WEAK instead) */}
+            {isSelected && bossElement && !isWeakPoint && !isHighlighted && (
+              <ElementIcon
+                element={bossElement}
+                className="w-6 h-6 opacity-35 relative pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+              />
+            )}
+
             {/* Target origin tick mark — shown when this is the skill's target tile */}
             {isTargetOrigin && (
               <span className="absolute text-sm font-black text-white z-10 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] animate-fadeIn">
@@ -218,11 +243,11 @@ export default function GridEditor({
             {/* Weak point marker — the only tile content in battle view */}
             {isSelected && isWeakPoint && !isTargetOrigin && (
               <div className="flex flex-col items-center animate-pulse drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-tight">
+                <span className="text-xs font-black text-rose-400 uppercase tracking-widest leading-tight">
                   WEAK
                 </span>
                 {weakPointMultiplier != null && (
-                  <span className="text-[11px] font-black text-rose-400 leading-tight">
+                  <span className="text-[13px] font-black text-rose-400 leading-tight">
                     {Math.round(weakPointMultiplier * 100)}%
                   </span>
                 )}
@@ -250,7 +275,7 @@ export default function GridEditor({
           <div className="flex flex-col flex-1 min-w-0">
             {/* Depth headers: FRONT → BACK, front column faces the allies */}
             <div
-              className="grid gap-2 px-2 mb-1.5 text-[9px] font-bold text-zinc-500 text-center tracking-wider uppercase"
+              className="grid gap-2 px-2 mb-1.5 text-[10px] font-bold text-zinc-500 text-center tracking-wider uppercase"
               style={{ gridTemplateColumns: `repeat(${visualCols}, minmax(0, 1fr))` }}
             >
               {depthLabels.map((label) => (
@@ -270,7 +295,7 @@ export default function GridEditor({
           </div>
 
           {/* Flank labels on the outer (right) edge */}
-          <div className="flex flex-col justify-around py-2 text-[9px] font-black text-zinc-600 select-none text-left w-4 shrink-0">
+          <div className="flex flex-col justify-around py-2 text-[10px] font-black text-zinc-500 select-none text-left w-4 shrink-0">
             {flankLabels.map((label) => (
               <div key={label}>{label}</div>
             ))}

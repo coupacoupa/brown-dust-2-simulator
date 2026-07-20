@@ -70,7 +70,7 @@ export default function BossDetailPage() {
     <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-8 mt-10 pb-16 flex flex-col gap-8">
       <Link
         href="/"
-        className="text-[10px] font-black text-zinc-550 hover:text-zinc-200 uppercase tracking-widest self-start transition-colors"
+        className="text-[10px] font-black text-zinc-500 hover:text-zinc-200 uppercase tracking-widest self-start transition-colors"
       >
         ← All Bosses
       </Link>
@@ -134,7 +134,7 @@ export default function BossDetailPage() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[8px] font-black text-zinc-550 uppercase tracking-widest">Best Sim</p>
+                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Best Sim</p>
                       <p className={`text-sm font-black ${best > 0 ? "text-emerald-400" : "text-zinc-600"}`}>
                         {best > 0 ? formatNumber(best) : "—"}
                       </p>
@@ -149,7 +149,7 @@ export default function BossDetailPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteTeam(team.id)}
-                    className="text-[9px] font-black text-rose-450 hover:text-rose-300 uppercase tracking-wider px-3 py-1.5 rounded-lg border border-rose-950 hover:bg-rose-950/20 cursor-pointer transition-all shrink-0"
+                    className="text-[9px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-wider px-3 py-1.5 rounded-lg border border-rose-950 hover:bg-rose-950/20 cursor-pointer transition-all shrink-0"
                   >
                     Delete
                   </button>

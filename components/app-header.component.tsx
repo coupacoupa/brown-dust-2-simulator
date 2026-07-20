@@ -30,7 +30,7 @@ export default function AppHeader() {
         className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
           active
             ? "bg-zinc-900 text-indigo-300 shadow-sm"
-            : "text-zinc-450 hover:text-zinc-200 hover:bg-zinc-900/50"
+            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50"
         }`}
       >
         {label}
@@ -49,7 +49,7 @@ export default function AppHeader() {
           <span className="text-lg font-black tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent uppercase group-hover:opacity-80 transition-opacity">
             Brown Dust 2 Simulator
           </span>
-          <span className="text-[10px] font-semibold text-zinc-500 tracking-wide">
+          <span className="text-[11px] font-semibold text-zinc-500 tracking-wide">
             Fiend Hunt & Guild Raid Combat Optimizer
           </span>
         </Link>
@@ -81,8 +81,8 @@ export default function AppHeader() {
         {menuOpen && (
           <div className="absolute right-0 top-full mt-2 w-56 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl shadow-black/60 overflow-hidden animate-fadeIn">
             <div className="px-4 py-3 border-b border-zinc-900">
-              <p className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">Local Account</p>
-              <p className="text-[9px] text-zinc-550 mt-0.5">Saved in this browser</p>
+              <p className="text-[11px] font-black text-zinc-300 uppercase tracking-wider">Local Account</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Saved in this browser</p>
             </div>
             <Link
               href="/roster"
@@ -90,10 +90,10 @@ export default function AppHeader() {
               className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-indigo-300 transition-colors"
             >
               🎭 My Roster
-              <span className="ml-auto text-[8px] text-zinc-600 uppercase font-black">Sync</span>
+              <span className="ml-auto text-[9px] text-zinc-500 uppercase font-black">Sync</span>
             </Link>
             <div className="border-t border-zinc-900">
-              <p className="px-4 pt-2.5 pb-1 text-[8px] font-black text-zinc-600 uppercase tracking-widest">Admin</p>
+              <p className="px-4 pt-2.5 pb-1 text-[9px] font-black text-zinc-500 uppercase tracking-widest">Admin</p>
               <Link
                 href="/admin/bosses"
                 onClick={() => setMenuOpen(false)}

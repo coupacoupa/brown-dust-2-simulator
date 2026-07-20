@@ -102,9 +102,9 @@ export default function TimelineCards({
   }, [draggedRowIdx, getRowAtY, onMoveAction]);
 
   return (
-    <div className="flex flex-col gap-3 w-[175px] shrink-0">
+    <div className="flex flex-col gap-3 w-[185px] shrink-0">
       <div className="flex flex-col gap-0.5 border-b border-zinc-900 pb-2">
-        <span className="text-[9px] font-black text-zinc-450 uppercase tracking-widest">
+        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">
           Team Timeline
         </span>
       </div>
@@ -184,20 +184,20 @@ export default function TimelineCards({
                   )}
 
                   {/* Speed index badge */}
-                  <div className="absolute top-0 left-0 bg-cyan-950 border-r border-b border-cyan-855 text-[9px] font-black text-cyan-200 px-2 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
+                  <div className="absolute top-0 left-0 bg-cyan-950 border-r border-b border-cyan-800 text-[11px] font-black text-cyan-200 px-2 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
                     {idx + 1}
                   </div>
 
                   {/* Top Row: Name (High Contrast Drop Shadow) */}
                   <div className="z-10 mt-1 pl-4">
-                    <span className="text-[10px] font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] truncate max-w-[90px] block">
+                    <span className="text-xs font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] truncate max-w-[100px] block">
                       {char.name}
                     </span>
                   </div>
 
                   {/* Bottom Row: Green HP (High Contrast Drop Shadow) */}
                   <div className="z-10 flex justify-between items-baseline">
-                    <span className="font-mono text-sm font-bold text-emerald-400 tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+                    <span className="font-mono text-base font-bold text-emerald-400 tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       {waifuHP}
                     </span>
                   </div>

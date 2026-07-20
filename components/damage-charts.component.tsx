@@ -125,17 +125,17 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
       {/* CARD 1: Damage Distribution (Crit Fishing Meter) */}
       <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-5 flex flex-col justify-between backdrop-blur-md">
         <div>
-          <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+          <h4 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-3">
             Damage Probabilities
           </h4>
-          <p className="text-[11px] text-zinc-500 mb-4">
+          <p className="text-xs text-zinc-500 mb-4">
             Crit outcomes dictate performance. Restarting matches helps secure the Crit Fish maximum.
           </p>
 
           <div className="flex flex-col gap-4 mt-1">
             {/* Min damage */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] font-semibold text-zinc-400">
+              <div className="flex justify-between text-[13px] font-semibold text-zinc-400">
                 <span>Low Roll (0% Crits)</span>
                 <span className="text-zinc-300 font-bold">{formatNumber(totalDamageMin)}</span>
               </div>
@@ -149,7 +149,7 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
 
             {/* Expected damage */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] font-semibold text-zinc-400">
+              <div className="flex justify-between text-[13px] font-semibold text-zinc-400">
                 <span>Expected Average</span>
                 <span className="text-indigo-400 font-extrabold">{formatNumber(totalDamageExpected)}</span>
               </div>
@@ -163,7 +163,7 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
 
             {/* Max damage */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] font-semibold text-zinc-400">
+              <div className="flex justify-between text-[13px] font-semibold text-zinc-400">
                 <span className="text-amber-400 font-bold">Crit Fish (100% Crits)</span>
                 <span className="text-amber-400 font-extrabold">{formatNumber(totalDamageMax)}</span>
               </div>
@@ -177,7 +177,7 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
           </div>
         </div>
 
-        <div className="mt-5 border-t border-zinc-900 pt-3 flex items-center justify-between text-[10px] text-zinc-500">
+        <div className="mt-5 border-t border-zinc-900 pt-3 flex items-center justify-between text-xs text-zinc-500">
           <span>Crit-Fish Damage Boost:</span>
           <span className="text-amber-400 font-bold">+{critMultiplier}x vs base</span>
         </div>
@@ -186,10 +186,10 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
       {/* CARD 2: Character Share Ring Chart */}
       <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-5 flex flex-col justify-between backdrop-blur-md">
         <div>
-          <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          <h4 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-2">
             Character DPS Share
           </h4>
-          <p className="text-[11px] text-zinc-500 mb-3">
+          <p className="text-xs text-zinc-500 mb-3">
             Expected damage contribution split by team members.
           </p>
 
@@ -227,12 +227,12 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                 </svg>
                 {/* Centered label */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Total</span>
-                  <span className="text-xs text-zinc-200 font-extrabold">100%</span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Total</span>
+                  <span className="text-sm text-zinc-200 font-extrabold">100%</span>
                 </div>
               </div>
             ) : (
-              <div className="w-[120px] h-[120px] border-4 border-zinc-900 rounded-full flex items-center justify-center text-[10px] text-zinc-600 shrink-0">
+              <div className="w-[120px] h-[120px] border-4 border-zinc-900 rounded-full flex items-center justify-center text-xs text-zinc-600 shrink-0">
                 No Damage
               </div>
             )}
@@ -252,13 +252,13 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                 </div>
               ))}
               {characterShareData.length === 0 && (
-                <span className="text-[11px] text-zinc-600 italic">Configure team to view shares.</span>
+                <span className="text-xs text-zinc-600 italic">Configure team to view shares.</span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="mt-4 border-t border-zinc-900 pt-3 flex items-center justify-between text-[10px] text-zinc-500">
+        <div className="mt-4 border-t border-zinc-900 pt-3 flex items-center justify-between text-xs text-zinc-500">
           <span>Top Nuker:</span>
           <span className="text-indigo-400 font-bold truncate max-w-[140px]">
             {characterShareData[0]?.characterName || 'N/A'}
@@ -269,10 +269,10 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
       {/* CARD 3: Damage Timeline Line Chart */}
       <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-5 flex flex-col justify-between backdrop-blur-md">
         <div>
-          <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          <h4 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-2">
             Damage Timeline
           </h4>
-          <p className="text-[11px] text-zinc-500 mb-3">
+          <p className="text-xs text-zinc-500 mb-3">
             Expected damage output trends turn-by-turn.
           </p>
 
@@ -334,8 +334,8 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                     <text 
                       x={p.x} 
                       y={turnChartPoints.height - 5} 
-                      fill="#71717a" 
-                      fontSize="9" 
+                      fill="#71717a"
+                      fontSize="11"
                       textAnchor="middle"
                       className="font-bold"
                     >
@@ -345,8 +345,8 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                     <text 
                       x={p.x} 
                       y={p.y - 8} 
-                      fill="#e4e4e7" 
-                      fontSize="8" 
+                      fill="#e4e4e7"
+                      fontSize="10"
                       textAnchor="middle"
                       className="font-semibold opacity-0 group-hover:opacity-100 transition-opacity bg-black"
                     >
@@ -356,14 +356,14 @@ export default function DamageCharts({ result, turnOffset = 0 }: DamageChartsPro
                 ))}
               </svg>
             ) : (
-              <div className="h-[100px] flex items-center justify-center text-[10px] text-zinc-600">
+              <div className="h-[100px] flex items-center justify-center text-xs text-zinc-600">
                 No Damage Timeline
               </div>
             )}
           </div>
         </div>
 
-        <div className="mt-4 border-t border-zinc-900 pt-3 flex items-center justify-between text-[10px] text-zinc-500">
+        <div className="mt-4 border-t border-zinc-900 pt-3 flex items-center justify-between text-xs text-zinc-500">
           <span>Simulation Length:</span>
           <span className="text-zinc-300 font-bold">{damagePerTurn.length} Turns</span>
         </div>
