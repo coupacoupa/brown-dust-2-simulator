@@ -16,8 +16,16 @@ import { BattleState, DamageBand, TurnResult } from "./engine.type";
 //   → summon phase (zones stack & refresh, damage summons detonate)
 //   → ally actions (the scripted order)
 //   → DoT tick
+//   → duration tick (the ally/odd global turn ends)
 //   → boss cast (survival) → counter retaliations → reactive on-hit procs
-//   → effect duration tick
+//   → duration tick (the boss/even global turn ends)
+//
+// One step spans TWO global turns — the ally (odd) turn and the boss (even)
+// turn that answers it — so durations, which are in-game global-turn counts,
+// tick twice per step. A 4-turn buff cast on turn 1 covers global turns 1–4:
+// both halves of its cast step, then both halves of the next (shown as 2
+// turns left on turn 3), gone by turn 5. Effects the boss phase applies only
+// experience the boss-turn tick that step.
 //
 // The incoming state is never mutated; `next` carries buffs/debuffs
 // (durations already ticked) into the following turn, so callers can cache
@@ -326,31 +334,11 @@ export function simulateTurn(
   runSummonPhase(ctx);
   runAllyActionPhase(ctx);
   runDotTickPhase(ctx);
-  // Resolved before rounding so Counter retaliation folds into this turn's
-  // offensive total.
-  const cast = runBossPhase(ctx, bossCast);
 
-  const turnMin = Math.round(ctx.damage.min);
-  const turnExpected = Math.round(ctx.damage.expected);
-  const turnMax = Math.round(ctx.damage.max);
-
-  const survival: TurnSurvivalSnapshot = {
-    turn: displayTurn,
-    bossSkillName: bossCast?.name ?? null,
-    incomingDamage: Math.round(cast?.totalDamage ?? 0),
-    hp: characters.map((c) => {
-      const hp = next.characterHp.get(c.id) ?? null;
-      return {
-        characterId: c.id,
-        hp: hp === null ? null : Math.round(hp),
-        shield: Math.round(
-          (next.characterBuffs.get(c.id) ?? []).reduce((acc, b) => acc + (b.shieldRemaining ?? 0), 0),
-        ),
-        alive: !next.deadCharacters.has(c.id),
-      };
-    }),
-  };
-
+  // Snapshot boss-side effects as of the ally turn, pre-tick — consistent
+  // with the per-character buff snapshots taken as each ally acts. Effects
+  // the boss phase applies this step surface on the NEXT turn's snapshot,
+  // already down their boss-turn tick.
   const bossDebuffs: EffectSnapshot[] = next.bossDebuffs.map((d) => ({
     type: d.type,
     value: d.value,
@@ -378,6 +366,35 @@ export function simulateTurn(
     }
   });
 
+  // The ally (odd) global turn ends here — first duration tick of the step.
+  // Anything at 1 turn left expires now, BEFORE the boss cast.
+  tickEffectDurations(next);
+
+  // Resolved before rounding so Counter retaliation folds into this turn's
+  // offensive total.
+  const cast = runBossPhase(ctx, bossCast);
+
+  const turnMin = Math.round(ctx.damage.min);
+  const turnExpected = Math.round(ctx.damage.expected);
+  const turnMax = Math.round(ctx.damage.max);
+
+  const survival: TurnSurvivalSnapshot = {
+    turn: displayTurn,
+    bossSkillName: bossCast?.name ?? null,
+    incomingDamage: Math.round(cast?.totalDamage ?? 0),
+    hp: characters.map((c) => {
+      const hp = next.characterHp.get(c.id) ?? null;
+      return {
+        characterId: c.id,
+        hp: hp === null ? null : Math.round(hp),
+        shield: Math.round(
+          (next.characterBuffs.get(c.id) ?? []).reduce((acc, b) => acc + (b.shieldRemaining ?? 0), 0),
+        ),
+        alive: !next.deadCharacters.has(c.id),
+      };
+    }),
+  };
+
   const result: TurnResult = {
     turn: displayTurn,
     damage: { min: turnMin, expected: turnExpected, max: turnMax },
@@ -394,7 +411,7 @@ export function simulateTurn(
     newDeaths: cast?.newDeaths ?? [],
   };
 
-  // End of turn: decrement effect durations and drop expired ones.
+  // The boss (even) global turn ends here — second duration tick of the step.
   tickEffectDurations(next);
 
   return { result, next };

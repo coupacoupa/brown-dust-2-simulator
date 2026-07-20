@@ -121,7 +121,10 @@ export function upsertEffect(list: ActiveEffect[], next: ActiveEffect): void {
   else list.push(next);
 }
 
-// Decrement durations and drop expired effects at end of turn. A spent
+// Decrement durations and drop expired effects at the end of ONE global
+// turn. Durations are in-game global-turn counts and one simulated step
+// spans two global turns (ally + boss), so simulateTurn calls this twice
+// per step: after the ally phases and again after the boss phase. A spent
 // energy guard (pool at 0) drops with its duration like any other buff.
 export function tickEffectDurations(store: BattleState): void {
   store.characterBuffs.forEach((buffs, charId) => {
