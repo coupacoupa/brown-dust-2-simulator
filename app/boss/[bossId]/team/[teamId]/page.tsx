@@ -232,6 +232,8 @@ export default function TeamWorkspacePage() {
                 maxSp={ws.maxSp}
                 boss={boss}
                 onUpdateCharacters={ws.updateActiveCharacters}
+                summonPositions={ws.summonPositions}
+                onUpdateSummonPositions={ws.updateSummonPositions}
                 simulationResult={ws.simulationResult}
                 flowTurnOffset={ws.flowOffsets[ws.activeVariantIdx] ?? 0}
                 carryoverDamage={ws.carryoverDamage}

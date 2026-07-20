@@ -6,6 +6,7 @@ import { CardSkillBackground } from "../ui/card-skill-background.component";
 
 interface TimelineCardsProps {
   characters: Character[];
+  summons?: Character[];
   actions: TurnAction[];
   selectedCharId: string | null;
   onSelectChar: (charId: string) => void;
@@ -36,6 +37,7 @@ function CornerBrackets() {
 // reordering — just hold and drag up/down, swaps happen automatically.
 export default function TimelineCards({
   characters,
+  summons = [],
   actions,
   selectedCharId,
   onSelectChar,
@@ -47,8 +49,6 @@ export default function TimelineCards({
   const [draggedRowIdx, setDraggedRowIdx] = useState<number | null>(null);
   // Refs to each row element for measuring Y positions
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // Track current logical index of the dragged item (updates as swaps happen)
-  const currentIdxRef = useRef<number | null>(null);
 
   // Compute which row index the pointer Y is over
   const getRowAtY = useCallback((clientY: number): number | null => {
@@ -61,40 +61,27 @@ export default function TimelineCards({
         return i;
       }
     }
-    // If above all rows, return first; if below all, return last
-    const first = refs[0]?.getBoundingClientRect();
-    const last = refs[refs.length - 1]?.getBoundingClientRect();
-    if (first && clientY < first.top) return 0;
-    if (last && clientY > last.bottom) return refs.length - 1;
     return null;
   }, []);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent, idx: number) => {
+  const handlePointerDown = (e: React.PointerEvent, idx: number) => {
     e.preventDefault();
-    currentIdxRef.current = idx;
     setDraggedRowIdx(idx);
-  }, []);
+  };
 
   useEffect(() => {
     if (draggedRowIdx === null) return;
 
     const handlePointerMoveGlobal = (e: PointerEvent) => {
-      if (currentIdxRef.current === null) return;
       const targetIdx = getRowAtY(e.clientY);
-      if (targetIdx === null) return;
-
-      // Live swap when pointer crosses into a different row
-      if (targetIdx !== currentIdxRef.current) {
-        const from = currentIdxRef.current;
-        onMoveAction(from, targetIdx);
-        currentIdxRef.current = targetIdx;
+      if (targetIdx !== null && targetIdx !== draggedRowIdx) {
+        onMoveAction(draggedRowIdx, targetIdx);
         setDraggedRowIdx(targetIdx);
       }
     };
 
     const handlePointerUpGlobal = () => {
       setDraggedRowIdx(null);
-      currentIdxRef.current = null;
     };
 
     window.addEventListener("pointermove", handlePointerMoveGlobal);
@@ -104,6 +91,8 @@ export default function TimelineCards({
       window.removeEventListener("pointerup", handlePointerUpGlobal);
     };
   }, [draggedRowIdx, getRowAtY, onMoveAction]);
+
+  const allUnits = [...characters, ...summons];
 
   return (
     <div className="flex flex-col gap-3 w-[185px] shrink-0">
@@ -115,7 +104,7 @@ export default function TimelineCards({
 
       <div className="flex flex-col gap-2.5">
         {actions.map((action, idx) => {
-          const char = characters.find((c) => c.id === action.characterId);
+          const char = allUnits.find((c) => c.id === action.characterId);
           if (!char) return null;
 
           const isSelected = selectedCharId === char.id;
@@ -138,13 +127,19 @@ export default function TimelineCards({
             (e) => e.type === "buff_energy_guard" || e.type === "buff_barrier"
           );
 
+          const costumeLevelBonus = selectedCostume
+            ? (selectedCostume.upgradeLevel ?? 0)
+            : char.costumes?.length
+              ? Math.max(...char.costumes.map((c) => c.upgradeLevel ?? 0))
+              : 0;
+
           const waifuHP =
             (char.level || 100) * 135 +
-            (selectedCostume ? selectedCostume.upgradeLevel : char.costumes?.length ? Math.max(...char.costumes.map(c => c.upgradeLevel ?? 0)) : 0) * 450 +
+            costumeLevelBonus * 450 +
             (char.baseAtk || 500) +
             1200;
 
-          const maxHp = char.baseHp > 0 ? char.baseHp : waifuHP;
+          const maxHp = char.baseHp && char.baseHp > 0 ? char.baseHp : waifuHP;
           const currentHp = hpSnap?.hp !== undefined && hpSnap?.hp !== null ? hpSnap.hp : maxHp;
           const shieldVal = hpSnap?.shield ?? 0;
           const isShielded = shieldVal > 0 || hasShieldBuff || Boolean(costumeHasShield);
@@ -162,9 +157,7 @@ export default function TimelineCards({
                   ? "knockback"
                   : "skip";
 
-          // Basic attack shows the last-equipped costume's inventory
-          // illustration (illust_inven_char), falling back to the
-          // character's default portrait or the legacy costume art.
+          // Basic attack illustration logic
           const attackEqId = equippedCostumeId[char.id];
           const attackEqCostume = (char.costumes || []).find((c) => c.id === attackEqId);
           const attackInvenArt = attackEqCostume?.invenImage || char.image;
@@ -179,13 +172,13 @@ export default function TimelineCards({
               ref={(el) => { rowRefs.current[idx] = el; }}
               className="flex items-center gap-1.5"
             >
-              {/* Compact Character Card h-20 with full cover skill portrait */}
+              {/* Compact Character/Summon Card h-20 with full cover skill portrait */}
               <div className="relative flex-1">
                 <div
                   onClick={() => onSelectChar(char.id)}
                   className={`
                    relative h-20 rounded-lg border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between px-2.5 pt-2 pb-1.5 select-none group
-                   ${isSelected ? "ring-2 ring-indigo-500 scale-[1.01]" : "border-zinc-850"}
+                   ${isSelected ? "ring-2 ring-indigo-500 scale-[1.01]" : char.isSummon ? "border-purple-900/80" : "border-zinc-850"}
                    ${isDragging ? "opacity-30 border-dashed border-zinc-700 bg-zinc-950/30" : ""}
                 `}
                 >
@@ -201,25 +194,29 @@ export default function TimelineCards({
                   ) : (
                     <CardSkillBackground
                       skillId={activeSkillId}
-                      imagePath={selectedCostume?.image}
+                      imagePath={selectedCostume?.image || char.image}
                       animate={false}
                       element={char.element}
                     />
                   )}
 
-                  {/* Speed index badge */}
-                  <div className="absolute top-0 left-0 bg-slate-900/95 border-r border-b border-slate-700 text-xs font-black text-amber-300 px-2.5 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md">
-                    {idx + 1}
+                  {/* Speed index badge (purple marks a summoned unit) */}
+                  <div className={`absolute top-0 left-0 border-r border-b text-xs font-black px-2.5 py-0.5 rounded-br-md rounded-tl-lg z-10 shadow-md ${
+                    char.isSummon
+                      ? "bg-purple-950/95 border-purple-600 text-purple-300"
+                      : "bg-slate-900/95 border-slate-700 text-amber-300"
+                  }`}>
+                    {idx + 1} {char.isSummon ? "• SUMMON" : ""}
                   </div>
 
-                  {/* Top Row: Name (High Contrast Drop Shadow) */}
+                  {/* Top Row: Name */}
                   <div className="z-10 mt-0.5 pl-5">
                     <span className="text-xs font-black text-white uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] truncate max-w-[100px] block">
                       {char.name}
                     </span>
                   </div>
 
-                  {/* Bottom Row: HP & Shield (Sitting right above the HP bar line) */}
+                  {/* Bottom Row: HP & Shield */}
                   <div className="z-10 flex justify-between items-baseline mb-0 leading-none">
                     <div className="flex items-baseline gap-1">
                       <span className={`font-mono text-sm font-black tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ${
@@ -256,11 +253,11 @@ export default function TimelineCards({
                   </div>
                 </div>
 
-                {/* Selected brackets — outside the clipped card */}
+                {/* Selected brackets */}
                 {isSelected && <CornerBrackets />}
               </div>
 
-              {/* Reorder Grab Handle — pointer-based Y-position reorder */}
+              {/* Reorder Grab Handle */}
               <div
                 onPointerDown={(e) => handlePointerDown(e, idx)}
                 className="flex flex-col items-center justify-center cursor-grab active:cursor-grabbing hover:bg-amber-500/10 rounded-lg transition-all select-none touch-none"

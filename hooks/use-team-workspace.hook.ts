@@ -22,6 +22,7 @@ import {
 import { applyBossLevel } from "@/lib/bosses.service";
 import { applyRosterState, syncCharacterWithTemplate } from "@/lib/characters.service";
 import { createSimulationCache } from "@/lib/sim/engine";
+import { getSummonSpecIdsForTeam } from "@/lib/summons.service";
 
 // All state and persistence for the team workspace page: one saved team with
 // three lineup variants fighting the boss as one continuous flow (Team 1's
@@ -45,6 +46,8 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
   const [spRecovery, setSpRecovery] = useState(3);
   const [maxSp, setMaxSp] = useState(20);
   const [lastResults, setLastResults] = useState<(number | null)[]>([null, null, null]);
+  // Ally-grid tile per summon unit id, one record per variant (user drags)
+  const [variantSummonPositions, setVariantSummonPositions] = useState<Record<string, number>[]>([{}, {}, {}]);
   const [activeTurnIndex, setActiveTurnIndex] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
@@ -73,6 +76,7 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     setSpRecovery(team.spRecovery);
     setMaxSp(team.maxSp);
     setLastResults(team.lastResults ?? [null, null, null]);
+    setVariantSummonPositions(team.variantSummonPositions ?? [{}, {}, {}]);
     setLoaded(true);
   }, [bossId, teamId]);
 
@@ -116,9 +120,10 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
         boss,
         turns,
         bossCastOffset: 0,
+        summonPositions: variantSummonPositions[idx],
       }).result;
     });
-  }, [loaded, boss, variantCharacters, variantTurns, simCache]);
+  }, [loaded, boss, variantCharacters, variantTurns, variantSummonPositions, simCache]);
 
   const simulationResult = variantResults[activeVariantIdx] ?? null;
 
@@ -142,23 +147,30 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     [activeCharacters, roster],
   );
 
-  // Keep each turn's action list aligned with the variant's current members
+  // Keep each turn's action list aligned with the variant's current members.
+  // Summon-unit actions (characterId = spec id + cast key) count as members
+  // so a summon's scripted order survives roster edits; new summon actions
+  // are only ADDED per-turn by the sequencer once the summon is on the board.
   const updateTurnsForCharacters = (newCharacters: Character[], currentTurns: TurnSetup[]): TurnSetup[] => {
+    const summonSpecIds = getSummonSpecIdsForTeam(newCharacters);
+    const isSummonAction = (id: string) =>
+      summonSpecIds.some((specId) => id === specId || id.startsWith(`${specId}:`));
     return currentTurns.map((turn) => {
       const charIds = new Set(newCharacters.map((c) => c.id));
-      const filteredActions = turn.actions.filter((a) => charIds.has(a.characterId));
+      const keptActions = turn.actions.filter(
+        (a) => charIds.has(a.characterId) || isSummonAction(a.characterId),
+      );
 
-      const orderedActions: TurnAction[] = [];
+      const orderedActions: TurnAction[] = [...keptActions];
       newCharacters.forEach((char) => {
-        const existing = filteredActions.find((a) => a.characterId === char.id);
-        orderedActions.push(
-          existing ?? {
+        if (!orderedActions.some((a) => a.characterId === char.id)) {
+          orderedActions.push({
             characterId: char.id,
             actionType: "attack",
             costumeId: undefined,
             burstLevel: 0,
-          },
-        );
+          });
+        }
       });
 
       return { ...turn, actions: orderedActions };
@@ -175,6 +187,14 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     setVariantTurns((prev) => {
       const copy = [...prev];
       copy[variantIdx] = updateTurnsForCharacters(activeChars, prev[variantIdx]);
+      return copy;
+    });
+  };
+
+  const updateSummonPositions = (positions: Record<string, number>) => {
+    setVariantSummonPositions((prev) => {
+      const copy = [...prev];
+      copy[activeVariantIdx] = positions;
       return copy;
     });
   };
@@ -356,11 +376,12 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
         spRecovery,
         maxSp,
         lastResults: liveLastResults,
+        variantSummonPositions,
       });
       setLastSavedAt(Date.now());
     }, 400);
     return () => window.clearTimeout(handle);
-  }, [loaded, teamName, variants, variantTurns, activeVariantIdx, startingSp, spRecovery, maxSp, liveLastResults]);
+  }, [loaded, teamName, variants, variantTurns, activeVariantIdx, startingSp, spRecovery, maxSp, liveLastResults, variantSummonPositions]);
 
   return {
     boss,
@@ -391,6 +412,8 @@ export function useTeamWorkspace(bossId: string, teamId: string) {
     globalTurnNumber,
     carryoverDamage,
     hypotheticalCount,
+    summonPositions: variantSummonPositions[activeVariantIdx],
+    updateSummonPositions,
     setVariantAt,
     updateActiveCharacters,
     syncFromRoster,

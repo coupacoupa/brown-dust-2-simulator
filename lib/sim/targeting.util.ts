@@ -120,3 +120,55 @@ export function getTilesHit(
   }
   return resolveHitboxTiles(center, hitboxPattern);
 }
+
+function occupiedSummonTiles(
+  characters: { id?: string; position?: number }[],
+  existingSummons?: { originTile?: number }[],
+  deadCharIds?: Set<string>,
+): Set<number> {
+  const occupied = new Set<number>();
+  characters.forEach((c) => {
+    if (c.position !== undefined && !(c.id && deadCharIds?.has(c.id))) {
+      occupied.add(c.position);
+    }
+  });
+  existingSummons?.forEach((s) => {
+    if (s.originTile !== undefined) {
+      occupied.add(s.originTile);
+    }
+  });
+  return occupied;
+}
+
+// Finds the next empty ally grid tile for placing a summon, in flat-index order.
+export function findNextEmptySummonTile(
+  characters: { id?: string; position?: number }[],
+  existingSummons?: { originTile?: number }[],
+  deadCharIds?: Set<string>,
+): number {
+  const occupied = occupiedSummonTiles(characters, existingSummons, deadCharIds);
+  for (let tile = 0; tile < 12; tile++) {
+    if (!occupied.has(tile)) {
+      return tile;
+    }
+  }
+  return 0;
+}
+
+// Where a summon actually lands: its remembered (user-dragged) tile when that
+// tile is still free, otherwise the next empty one. The remembered tile is a
+// preference, never a claim — the lineup may have moved onto it since.
+export function resolveSummonTile(
+  preferredTile: number | undefined,
+  characters: { id?: string; position?: number }[],
+  existingSummons?: { originTile?: number }[],
+  deadCharIds?: Set<string>,
+): number {
+  if (
+    preferredTile !== undefined
+    && !occupiedSummonTiles(characters, existingSummons, deadCharIds).has(preferredTile)
+  ) {
+    return preferredTile;
+  }
+  return findNextEmptySummonTile(characters, existingSummons, deadCharIds);
+}

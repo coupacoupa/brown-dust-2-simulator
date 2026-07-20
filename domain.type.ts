@@ -188,7 +188,10 @@ export type EffectKind = SkillEffect['type'];
 // buff's value is `effect.value × currentStacks`.
 export interface SummonSpec {
   id: string;                        // stable id (also tags the applied buff)
-  hitboxPattern: [number, number][]; // zone/attack shape, relative to the summoner
+  name?: string;                      // display name of the summoned ally entity (e.g. "Magic Amplifier ET001")
+  image?: string;                    // non-skill illustration image path (e.g. illust_skill_char050301_197)
+  skillImage?: string;               // skill card illustration image path (e.g. illust_skill_char050201_156)
+  hitboxPattern: [number, number][]; // zone/attack shape, relative to the summoner or summon position
   duration: number;                  // summon lifetime in turns
   // --- Buff summon (Diana's Magic Amplifier): each turn re-applies `effect` to
   //     allies in its zone, ramping one stack (≤ maxStacks) per turn.
@@ -344,9 +347,15 @@ export interface Character {
   level?: number;         // e.g. 100
   position?: number;      // Flat index 0-11 for allied grid placement
   image?: string;         // Optional path to character profile image
+  isSummon?: boolean;     // True for summoned ally units (e.g. Magic Amplifier ET001)
 }
 
 export type CharacterTemplate = Omit<Character, 'id' | 'costumes' | 'baseAtk' | 'baseMatk' | 'baseHp' | 'baseCritRate' | 'baseCritDmg' | 'baseDef' | 'baseMres' | 'basePropDmg'> & { costumes: Costume[] };
+
+// A summoned unit's full battle sheet (stats included — they come from game
+// data, not user input). Instantiated by lib/summons.service, keyed by the
+// SummonSpec id that puts it on the board.
+export type SummonUnitTemplate = Omit<Character, 'id' | 'position'>;
 
 // A debuff that a boss skill applies to the player's team on hit.
 export interface BossSkillDebuff {
@@ -520,6 +529,9 @@ export interface SavedTeam {
   maxSp: number;
   // Last simulated expected damage per variant, for boss-page listings
   lastResults: (number | null)[];
+  // Ally-grid tile per summon unit id, one record per variant. Absent on
+  // older saves — summons then auto-place on the next empty tile.
+  variantSummonPositions?: Record<string, number>[];
 }
 
 export interface TurnAction {

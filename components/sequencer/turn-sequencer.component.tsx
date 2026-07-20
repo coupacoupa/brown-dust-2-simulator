@@ -2,9 +2,10 @@
 
 import React, { useMemo, useState } from "react";
 import { Boss, Character, SimulationResult, TurnAction, TurnSetup } from "@/domain.type";
-import { getTilesHit, resolveFixedBossTiles } from "@/lib/sim/targeting.util";
-import { computeSpTimeline, resolveAction, resolveTargetOrigin } from "@/lib/sim/actions.service";
+import { getTilesHit, resolveFixedBossTiles, resolveSummonTile } from "@/lib/sim/targeting.util";
+import { castSummonInstanceId, computeSpTimeline, resolveAction, resolveTargetOrigin } from "@/lib/sim/actions.service";
 import { resolveBossRotation } from "@/lib/bosses.service";
+import { ensureActionsIncludeSummons, getActiveSummonsForTurn } from "@/lib/summons.service";
 import GridEditor from "../grid-editor.component";
 import AlliedGrid from "../allied-grid.component";
 import TimelineCards from "./timeline-cards.component";
@@ -23,6 +24,9 @@ interface TurnSequencerProps {
   maxSp?: number;
   boss: Boss;
   onUpdateCharacters?: (updatedChars: Character[]) => void;
+  // Persisted summon tiles (summon id → ally tile) + their update callback
+  summonPositions?: Record<string, number>;
+  onUpdateSummonPositions?: (positions: Record<string, number>) => void;
   simulationResult: SimulationResult | null;
   // Player turns already used by teams fielded before this one — shifts the
   // global turn counter and the boss's looping rotation.
@@ -44,6 +48,8 @@ export default function TurnSequencer({
   maxSp = 20,
   boss,
   onUpdateCharacters,
+  summonPositions,
+  onUpdateSummonPositions,
   simulationResult,
   flowTurnOffset = 0,
   carryoverDamage = 0,
@@ -62,8 +68,13 @@ export default function TurnSequencer({
   const [openSelectorCharId, setOpenSelectorCharId] = useState<string | null>(
     characters[0]?.id || null,
   );
-
   const activeTurnSetup = turns[activeTurnIndex];
+
+  const activeSummons = useMemo(
+    () => getActiveSummonsForTurn(characters, turns, activeTurnIndex, summonPositions),
+    [characters, turns, activeTurnIndex, summonPositions],
+  );
+  const allSelectableUnits = useMemo(() => [...characters, ...activeSummons], [characters, activeSummons]);
 
   // Face art for the allied grid tiles — the equipped costume's illustration,
   // i.e. the same image shown on the skill costume selector cards.
@@ -73,8 +84,11 @@ export default function TurnSequencer({
       const equipped = (c.costumes || []).find((k) => k.id === equippedCostumeId[c.id]);
       map[c.id] = equipped?.image || c.costumes?.[0]?.image || c.image;
     });
+    activeSummons.forEach((s) => {
+      map[s.id] = s.image;
+    });
     return map;
-  }, [characters, equippedCostumeId]);
+  }, [characters, equippedCostumeId, activeSummons]);
 
   // SP timeline shared with the engine rules (lib/sim/actions.ts)
   const spStatesByTurn = useMemo(
@@ -89,9 +103,20 @@ export default function TurnSequencer({
     isNegative: false,
   };
 
+  // The turn's display list: drop actions of units not on the board this turn
+  // (a summon before its cast resolves), append defaults for summons that
+  // just appeared.
+  const activeTurnActions = useMemo(() => {
+    const boardIds = new Set(allSelectableUnits.map((u) => u.id));
+    return ensureActionsIncludeSummons(
+      activeTurnSetup.actions.filter((a) => boardIds.has(a.characterId)),
+      activeSummons,
+    );
+  }, [activeTurnSetup.actions, activeSummons, allSelectableUnits]);
+
   // Reorder execution within the active turn
   const handleMoveAction = (fromIdx: number, toIdx: number) => {
-    const actionsCopy = [...activeTurnSetup.actions];
+    const actionsCopy = [...activeTurnActions];
     const [moved] = actionsCopy.splice(fromIdx, 1);
     actionsCopy.splice(toIdx, 0, moved);
     onChange(turns.map((t, idx) => (idx === activeTurnIndex ? { ...t, actions: actionsCopy } : t)));
@@ -99,7 +124,7 @@ export default function TurnSequencer({
 
   // Modify one action's attributes within the active turn
   const handleActionChange = (actionIdx: number, updates: Partial<TurnAction>) => {
-    const actionsCopy = [...activeTurnSetup.actions];
+    const actionsCopy = [...activeTurnActions];
     actionsCopy[actionIdx] = { ...actionsCopy[actionIdx], ...updates };
     onChange(turns.map((t, idx) => (idx === activeTurnIndex ? { ...t, actions: actionsCopy } : t)));
   };
@@ -109,22 +134,33 @@ export default function TurnSequencer({
     const turn1Setup = { ...turns[0] };
     const currentPreemptive = turn1Setup.preemptiveCostumeIds || [];
     let updatedPreemptive: string[];
-    const char = characters.find((c) => c.costumes?.some((cost) => cost.id === costumeId));
-
     if (enabled) {
-      if (currentPreemptive.includes(costumeId)) return;
-      updatedPreemptive = [...currentPreemptive, costumeId];
+      updatedPreemptive = Array.from(new Set([...currentPreemptive, costumeId]));
     } else {
       updatedPreemptive = currentPreemptive.filter((id) => id !== costumeId);
     }
 
+    const char = characters.find((c) => c.costumes?.some((k) => k.id === costumeId));
+    if (char) {
+      setEquippedCostumeId((prev) => ({ ...prev, [char.id]: costumeId }));
+    }
+
+    // The toggle MOVES the cast between the pre-battle slot and the turn-1
+    // slot, so on/off round-trips losslessly (the cast — and the cooldown it
+    // implies — is never silently deleted). Enable: a scripted turn-1 cast
+    // becomes a basic attack. Disable: the cast returns to the turn-1 slot
+    // if that slot is still a basic attack.
     const updatedTurns = turns.map((t, idx) => {
       if (idx !== 0) return t;
-      let newActions = [...t.actions];
-      if (enabled && char) {
-        newActions = newActions.map((act) => {
-          if (act.characterId === char.id && act.actionType === "costume" && act.costumeId === costumeId) {
+      let newActions = t.actions;
+      if (char) {
+        newActions = t.actions.map((act) => {
+          if (act.characterId !== char.id) return act;
+          if (enabled && act.actionType === "costume" && act.costumeId === costumeId) {
             return { characterId: char.id, actionType: "attack" as const };
+          }
+          if (!enabled && act.actionType === "attack") {
+            return { characterId: char.id, actionType: "costume" as const, costumeId, burstLevel: 0 };
           }
           return act;
         });
@@ -135,17 +171,27 @@ export default function TurnSequencer({
     onChange(updatedTurns);
   };
 
-  // Allied grid drag swaps reposition characters
+  // Allied grid drag swaps reposition characters and summons alike
   const handleSwapTiles = (fromIdx: number, toIdx: number) => {
-    const charA = characters.find((c) => c.position === fromIdx);
-    const charB = characters.find((c) => c.position === toIdx);
-    if (charA) {
-      const updatedChars = characters.map((c) => {
-        if (c.id === charA.id) return { ...c, position: toIdx };
-        if (charB && c.id === charB.id) return { ...c, position: fromIdx };
-        return c;
-      });
-      onUpdateCharacters?.(updatedChars);
+    const unitA = allSelectableUnits.find((u) => u.position === fromIdx);
+    if (!unitA) return;
+    const unitB = allSelectableUnits.find((u) => u.position === toIdx);
+
+    if (unitA.isSummon || unitB?.isSummon) {
+      const nextPositions = { ...(summonPositions ?? {}) };
+      if (unitA.isSummon) nextPositions[unitA.id] = toIdx;
+      if (unitB?.isSummon) nextPositions[unitB.id] = fromIdx;
+      onUpdateSummonPositions?.(nextPositions);
+    }
+
+    if (!unitA.isSummon || (unitB && !unitB.isSummon)) {
+      onUpdateCharacters?.(
+        characters.map((c) => {
+          if (c.id === unitA.id) return { ...c, position: toIdx };
+          if (unitB && c.id === unitB.id) return { ...c, position: fromIdx };
+          return c;
+        }),
+      );
     }
   };
 
@@ -154,8 +200,16 @@ export default function TurnSequencer({
   // in-game hitbox pattern.
   const { gridOverlayTiles, targetOriginTile, targetGrid } = useMemo(() => {
     const none = { gridOverlayTiles: [] as number[], targetOriginTile: null, targetGrid: "enemy" as const };
-    const char = characters.find((c) => c.id === openSelectorCharId);
+    const char = allSelectableUnits.find((c) => c.id === openSelectorCharId);
     if (!char) return none;
+
+    if (char.isSummon) {
+      const spec = char.costumes[0]?.skill;
+      if (!spec) return none;
+      const originTile = char.position ?? 0;
+      const hitTiles = getTilesHit(originTile, spec.hitboxPattern, undefined);
+      return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid: "ally" as const };
+    }
 
     // Fall back to a basic attack when the character has no action this turn
     const action =
@@ -164,14 +218,21 @@ export default function TurnSequencer({
     const resolved = resolveAction(char, action);
     if (resolved.isSkip) return none;
 
+    if (resolved.summon) {
+      // Casting preview: mark only where the summon will land. Its buff zone
+      // only lights up once the unit is actually on the board (select it) —
+      // highlighting allies now would falsely read as "buffed this turn".
+      const spec = Array.isArray(resolved.summon) ? resolved.summon[0] : resolved.summon;
+      const instanceId = castSummonInstanceId(spec.id, activeTurnIndex);
+      const originTile = resolveSummonTile(summonPositions?.[instanceId], allSelectableUnits);
+      return { gridOverlayTiles: [originTile], targetOriginTile: originTile, targetGrid: "ally" as const };
+    }
+
     const originTile = resolveTargetOrigin(char, resolved, boss.hitbox);
     const hitTiles = getTilesHit(originTile, resolved.hitboxPattern, resolved.targetShape);
 
     return { gridOverlayTiles: hitTiles, targetOriginTile: originTile, targetGrid: resolved.targetGrid };
-  }, [openSelectorCharId, activeTurnIndex, characters, turns, boss.hitbox]);
-
-  // Player turn i of THIS team is flow turn (flowTurnOffset + i) overall
-  const flowTurnIdx = flowTurnOffset + activeTurnIndex;
+  }, [openSelectorCharId, activeTurnIndex, turns, boss.hitbox, allSelectableUnits, summonPositions]);
 
   // Where the boss's answering cast lands on the ally board this turn.
   // Boss rotation resets to Move 1 whenever a new team enters the match.
@@ -202,12 +263,12 @@ export default function TurnSequencer({
 
   // Character currently selected for the options deck
   const selectedCharForDeck =
-    characters.find((c) => c.id === openSelectorCharId) || characters[0];
-  const selectedCharActionIdx = activeTurnSetup.actions.findIndex(
+    allSelectableUnits.find((c) => c.id === openSelectorCharId) || characters[0];
+  const selectedCharActionIdx = activeTurnActions.findIndex(
     (a) => a.characterId === selectedCharForDeck?.id,
   );
   const selectedCharAction =
-    selectedCharActionIdx !== -1 ? activeTurnSetup.actions[selectedCharActionIdx] : null;
+    selectedCharActionIdx !== -1 ? activeTurnActions[selectedCharActionIdx] : null;
 
   return (
     <div className="bg-zinc-950/65 border border-zinc-900 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-6 font-sans">
@@ -216,7 +277,8 @@ export default function TurnSequencer({
         <div className="flex flex-row gap-2 items-start xl:shrink-0">
           <TimelineCards
             characters={characters}
-            actions={activeTurnSetup.actions}
+            summons={activeSummons}
+            actions={activeTurnActions}
             selectedCharId={openSelectorCharId}
             onSelectChar={setOpenSelectorCharId}
             equippedCostumeId={equippedCostumeId}
@@ -226,7 +288,7 @@ export default function TurnSequencer({
           />
 
           <OptionsDeck
-            characters={characters}
+            characters={allSelectableUnits}
             turns={turns}
             activeTurnIndex={activeTurnIndex}
             selectedChar={selectedCharForDeck}
@@ -256,10 +318,10 @@ export default function TurnSequencer({
                 )}
               </h5>
               <AlliedGrid
-                characters={characters}
+                characters={allSelectableUnits}
                 selectedCharId={openSelectorCharId}
                 onTileClick={(idx) => {
-                  const c = characters.find((ch) => ch.position === idx);
+                  const c = allSelectableUnits.find((ch) => ch.position === idx);
                   if (c) {
                     setOpenSelectorCharId(c.id);
                   }

@@ -1,9 +1,9 @@
 import { Boss, BossSkillDef, Character, EffectSnapshot, TurnSetup, TurnSurvivalSnapshot } from "@/domain.type";
-import { getTilesHit } from "../targeting.util";
-import { resolveAction, resolvePreemptiveCasts, resolveTargetOrigin, ResolvedAction } from "../actions.service";
+import { getTilesHit, resolveSummonTile } from "../targeting.util";
+import { castSummonInstanceId, preemptiveSummonInstanceId, resolveAction, resolvePreemptiveCasts, resolveTargetOrigin, ResolvedAction } from "../actions.service";
 import { ActionDamageEvent, buildTurnFormulaBreakdown } from "../breakdown.service";
 import { applyEffects } from "./effect-behaviors.service";
-import { actSummons, cloneBattleState, registerSummon, tickEffectDurations } from "./state.service";
+import { actBuffSummon, cloneBattleState, registerSummon, tickEffectDurations } from "./state.service";
 import { computeFinalStats } from "./stats.service";
 import { calculateActionDamage, computeCounterDamage } from "./damage.service";
 import { BossCastResult, resolveBossCast } from "./incoming.service";
@@ -41,6 +41,9 @@ interface TurnContext {
   boss: Boss;
   displayTurn: number;
   turnSetup: TurnSetup;
+  // User-dragged summon tiles (summon id → ally tile); fallback is the next
+  // empty tile at cast time.
+  summonPositions?: Record<string, number>;
   events: ActionDamageEvent[];
   chain: number;
   damage: { min: number; expected: number; max: number };
@@ -72,7 +75,7 @@ function snapshotBuffs(ctx: TurnContext, char: Character): void {
     type: b.type,
     value: b.value,
     remainingTurns: b.remainingTurns,
-    sourceCharacterName: ctx.nameOf(b.sourceCharacterId),
+    sourceCharacterName: b.summonName ?? ctx.nameOf(b.sourceCharacterId),
   }));
 }
 
@@ -85,22 +88,26 @@ function runPreemptivePhase(ctx: TurnContext): void {
     applyEffects(skill.effects, char, tilesTargeted, ctx.aliveCharacters, ctx.boss, ctx.next, preStats, 0);
     if (skill.summon) {
       (Array.isArray(skill.summon) ? skill.summon : [skill.summon]).forEach((spec) => {
-        registerSummon(spec, char, getTilesHit(char.position ?? 0, spec.hitboxPattern, undefined), ctx.next);
+        const instanceId = preemptiveSummonInstanceId(spec.id);
+        const originTile = resolveSummonTile(
+          ctx.summonPositions?.[instanceId], ctx.characters, ctx.next.summons, ctx.next.deadCharacters,
+        );
+        const tiles = getTilesHit(originTile, spec.hitboxPattern, undefined);
+        registerSummon(spec, char, tiles, ctx.next, originTile, instanceId);
       });
     }
   });
 }
 
 // --- Phase: summons act -----------------------------------------------------
-// Allied Zone summons stack & refresh their buffs first (so the buff is live
-// for this turn's attackers), then damage summons (Morpeah's self-destruct
-// Personas) detonate: each attacks the boss for a % of its SUMMONER's stats,
-// applies any on-detonation debuffs, then (if selfDestruct) is removed. Their
-// damage joins this turn's totals, attributed to the summoner, and builds
-// chain for the allies acting after them.
+// Allied Zone buff summons act inside the ally phase (at their scripted slot,
+// or appended at the end when unscripted — see runAllyActionPhase). Here only
+// damage summons (Morpeah's self-destruct Personas) detonate: each attacks
+// the boss for a % of its SUMMONER's stats, applies any on-detonation
+// debuffs, then (if selfDestruct) is removed. Their damage joins this turn's
+// totals, attributed to the summoner, and builds chain for the allies acting
+// after them.
 function runSummonPhase(ctx: TurnContext): void {
-  actSummons(ctx.next, ctx.characters);
-
   ctx.next.summons.filter((s) => s.attack).forEach((summon) => {
     const summoner = ctx.charMap.get(summon.sourceCharacterId);
     if (!summoner) return;
@@ -132,7 +139,24 @@ function runSummonPhase(ctx: TurnContext): void {
 
 // --- Phase: ally actions (the scripted order; the dead take no turns) -------
 function runAllyActionPhase(ctx: TurnContext): void {
+  // Buff summons already on the field when the turn starts (registered on an
+  // earlier turn or by this turn's preemptive cast) — a summon cast DURING
+  // this phase is excluded: it starts acting next turn.
+  const preexistingSummonIds = new Set(ctx.next.summons.map((s) => s.id));
+
   ctx.turnSetup.actions.forEach((action) => {
+    // A scripted board summon takes its turn like any unit, at its slot in
+    // the order: its zone skill stacks & refreshes the buff (so only allies
+    // acting AFTER it benefit this turn); any other choice skips the pulse
+    // and the existing buff just runs out its duration.
+    const scriptedSummon = ctx.next.summons.find((s) => s.id === action.characterId);
+    if (scriptedSummon) {
+      if (action.actionType === "costume") {
+        actBuffSummon(ctx.next, scriptedSummon, ctx.characters);
+      }
+      return;
+    }
+
     const char = ctx.charMap.get(action.characterId);
     if (!char || ctx.next.deadCharacters.has(char.id)) return;
 
@@ -157,7 +181,12 @@ function runAllyActionPhase(ctx: TurnContext): void {
     // summon phase already ran).
     if (resolved.summon) {
       (Array.isArray(resolved.summon) ? resolved.summon : [resolved.summon]).forEach((spec) => {
-        registerSummon(spec, char, getTilesHit(char.position ?? 0, spec.hitboxPattern, undefined), ctx.next);
+        const instanceId = castSummonInstanceId(spec.id, ctx.displayTurn - 1);
+        const originTile = resolveSummonTile(
+          ctx.summonPositions?.[instanceId], ctx.characters, ctx.next.summons, ctx.next.deadCharacters,
+        );
+        const tiles = getTilesHit(originTile, spec.hitboxPattern, undefined);
+        registerSummon(spec, char, tiles, ctx.next, originTile, instanceId);
       });
     }
 
@@ -174,6 +203,18 @@ function runAllyActionPhase(ctx: TurnContext): void {
     addDamage(ctx, char.id, result.damage);
     ctx.chain += result.chainsAdded;
     if (result.event) ctx.events.push(result.event);
+  });
+
+  // Buff summons the script doesn't mention yet act LAST — the same slot the
+  // timeline shows for a freshly appeared summon (it is appended at the end
+  // until the user reorders, which persists it into the script). Without
+  // this order match, a just-toggled preemptive summon would buff the whole
+  // turn from the top.
+  const scriptedIds = new Set(ctx.turnSetup.actions.map((a) => a.characterId));
+  ctx.next.summons.forEach((summon) => {
+    if (summon.effect && !scriptedIds.has(summon.id) && preexistingSummonIds.has(summon.id)) {
+      actBuffSummon(ctx.next, summon, ctx.characters);
+    }
   });
 }
 
@@ -310,6 +351,7 @@ export function simulateTurn(
   boss: Boss,
   displayTurn: number,
   bossCast?: BossSkillDef | null,
+  summonPositions?: Record<string, number>,
 ): { result: TurnResult; next: BattleState } {
   const charMap = new Map(characters.map((c) => [c.id, c]));
   const next = cloneBattleState(state);
@@ -323,6 +365,7 @@ export function simulateTurn(
     boss,
     displayTurn,
     turnSetup,
+    summonPositions,
     events: [],
     chain: 0, // chain resets at the start of each turn
     damage: { min: 0, expected: 0, max: 0 },

@@ -19,6 +19,9 @@ export interface SimulationInput {
   // looping rotation carries across the team swap, so Team 2 faces the casts
   // Team 1 left off at.
   bossCastOffset?: number;
+  // User-dragged summon tiles (summon id → ally tile). Compared by reference
+  // for checkpoint reuse — keep the object's identity stable across renders.
+  summonPositions?: Record<string, number>;
 }
 
 // One completed run: inputs, every turn-boundary state, per-turn results and
@@ -43,6 +46,7 @@ function reusablePrefix(input: SimulationInput, prev?: SimulationRun): number {
     || prev.input.characters !== input.characters
     || prev.input.boss !== input.boss
     || (prev.input.bossCastOffset ?? 0) !== (input.bossCastOffset ?? 0)
+    || prev.input.summonPositions !== input.summonPositions
   ) {
     return 0;
   }
@@ -70,7 +74,9 @@ export function simulateIncremental(input: SimulationInput, prev?: SimulationRun
     const bossCast = rotation.length > 0
       ? rotation[(castOffset + i) % rotation.length].skill
       : null;
-    const { result, next } = simulateTurn(checkpoints[i], turns[i], characters, boss, i + 1, bossCast);
+    const { result, next } = simulateTurn(
+      checkpoints[i], turns[i], characters, boss, i + 1, bossCast, input.summonPositions,
+    );
     turnResults.push(result);
     checkpoints.push(next);
   }

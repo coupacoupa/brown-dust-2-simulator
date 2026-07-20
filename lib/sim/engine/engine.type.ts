@@ -32,6 +32,7 @@ export interface ActiveEffect {
   // Tags a buff applied by an active summon, so the summon can refresh/replace
   // its own contribution each turn without stacking duplicates.
   summonId?: string;
+  summonName?: string;
 }
 
 // A live Allied Zone summon on the field. Each turn it adds a stack (up to
@@ -39,6 +40,9 @@ export interface ActiveEffect {
 // standing on its `tiles`.
 export interface ActiveSummon {
   id: string;
+  name?: string;
+  image?: string;
+  skillImage?: string;
   sourceCharacterId: string;
   tiles: number[];       // ally-grid tiles the zone covers (buff summons)
   remainingTurns: number;

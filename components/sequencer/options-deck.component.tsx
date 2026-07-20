@@ -133,6 +133,9 @@ export default function OptionsDeck({
             const costumeTargetGrid = resolvedSkill.targetGrid ?? 'enemy';
             const isPreemptive = resolvedSkill.isPreemptive === true;
             const isPreemptiveEnabled = turns[0]?.preemptiveCostumeIds?.includes(cost.id) ?? false;
+            // Preemptive is a battle-start decision — the toggle only exists
+            // while editing turn 1 (the ⚡ badge still marks it on later turns).
+            const showPreemptiveControl = isPreemptive && activeTurnIndex === 0;
             // Damage preview: ATK × scaling%. For split-scaling skills show the
             // Main Target (center) hit — the headline number players expect.
             const primaryStat = resolvedSkill.damageType === 'magic'
@@ -151,27 +154,22 @@ export default function OptionsDeck({
               <div key={cost.id} className="relative">
                 <div
                   onClick={() => {
-                    if (isPreemptiveEnabled) {
-                      onPreemptiveToggle?.(cost.id, false);
-                      onEquipCostume(selectedChar.id, cost.id);
-                      onActionChange(selectedActionIdx, {
-                        actionType: "costume",
-                        costumeId: cost.id,
-                        burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
-                      });
-                    } else if (!skillState.onCd) {
-                      onEquipCostume(selectedChar.id, cost.id);
-                      onActionChange(selectedActionIdx, {
-                        actionType: "costume",
-                        costumeId: cost.id,
-                        burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
-                      });
-                    }
+                    // A preemptive-enabled skill is not manually castable while
+                    // its preemptive cast has it on cooldown — the toggle panel
+                    // is the only preemptive control. Once the CD runs out it
+                    // becomes a normal cast again.
+                    if (skillState.onCd) return;
+                    onEquipCostume(selectedChar.id, cost.id);
+                    onActionChange(selectedActionIdx, {
+                      actionType: "costume",
+                      costumeId: cost.id,
+                      burstLevel: isSkillSelected ? selectedAction.burstLevel : 0,
+                    });
                   }}
                   className={`
                   relative rounded-xl border flex items-center justify-between p-2.5 cursor-pointer transition-all duration-150 overflow-hidden group
                   ${isSkillSelected ? "border-emerald-500 bg-emerald-950/15 shadow-[0_0_10px_rgba(16,185,129,0.15)] scale-[1.01]" : "border-zinc-850 bg-zinc-950/30 hover:bg-zinc-900/40"}
-                  ${skillState.onCd && !isPreemptiveEnabled ? "cursor-not-allowed border-zinc-900 bg-zinc-950/10" : ""}
+                  ${skillState.onCd ? "cursor-not-allowed border-zinc-900 bg-zinc-950/10" : ""}
                 `}
                 >
                   {/* Background covers the button container completely (100% opacity, zoomed close-up face crop) */}
@@ -203,7 +201,7 @@ export default function OptionsDeck({
                             ⚡ Preemptive
                           </span>
                         )}
-                        {skillState.onCd && !isPreemptiveEnabled && (
+                        {skillState.onCd && (
                           <span className="text-[9px] text-rose-400 font-bold uppercase shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                             CD:{skillState.remainingTurns}t
                           </span>
@@ -221,14 +219,22 @@ export default function OptionsDeck({
                         )}
                       </div>
 
-                  {/* ON COOLDOWN full dark overlay */}
-                  {skillState.onCd && !isPreemptiveEnabled && (
+                  {/* ON COOLDOWN full dark overlay (incl. the CD a preemptive
+                      cast starts — the skill is not re-castable until it ends) */}
+                  {skillState.onCd && (
                     <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none rounded-xl">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
-                        <span className="text-xs">🔒</span>
-                        <span className="text-[10px] font-black text-rose-200 uppercase tracking-widest">
-                          ON CD ({skillState.remainingTurns}T)
-                        </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-600/80 shadow-md">
+                          <span className="text-xs">🔒</span>
+                          <span className="text-[10px] font-black text-rose-200 uppercase tracking-widest">
+                            ON CD ({skillState.remainingTurns}T)
+                          </span>
+                        </div>
+                        {isPreemptiveEnabled && (
+                          <span className="text-[9px] font-black text-amber-300 uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                            ⚡ Cast preemptively
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -264,10 +270,10 @@ export default function OptionsDeck({
                 </div>
 
                 {/* Right side controls (Preemptive & Burst) extended OUTSIDE to the right */}
-                {(isPreemptive || hasBurstCapability) && (
+                {(showPreemptiveControl || hasBurstCapability) && (
                   <div className="absolute left-[calc(100%+8px)] top-0 bottom-0 flex gap-2 items-stretch z-30">
                     {/* Preemptive Action Control Panel */}
-                    {isPreemptive && (
+                    {showPreemptiveControl && (
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
@@ -305,7 +311,7 @@ export default function OptionsDeck({
                     )}
 
                     {/* Burst Control Panel */}
-                    {hasBurstCapability && (!skillState.onCd || isPreemptiveEnabled) && (
+                    {hasBurstCapability && !skillState.onCd && (
                       <div
                         onClick={(e) => e.stopPropagation()}
                         className={`w-20 shrink-0 rounded-xl border flex flex-col items-center justify-center p-1.5 select-none transition-all duration-150 ${

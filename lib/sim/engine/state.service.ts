@@ -1,5 +1,5 @@
 import { Character, SummonSpec } from "@/domain.type";
-import { ActiveEffect, BattleState } from "./engine.type";
+import { ActiveEffect, ActiveSummon, BattleState } from "./engine.type";
 
 // BattleState lifecycle: creation, cloning, summon bookkeeping and effect
 // decay. HOW effects enter the stores lives in effect-behaviors.service.ts;
@@ -43,62 +43,70 @@ export function cloneBattleState(state: BattleState): BattleState {
 
 // Register a new Allied Zone summon on the field. `tiles` is its zone on the
 // ally grid (computed from the summoner's position + the spec's pattern by the
-// caller). Idempotent per summon id: a re-cast refreshes the existing summon
-// rather than stacking a second copy.
+// caller). `instanceId` identifies the CAST EVENT (see actions.service) — a
+// re-cast after cooldown fields a second summon; only re-registering the
+// SAME instance (e.g. a re-simulated turn) refreshes in place.
 export function registerSummon(
   spec: SummonSpec,
   sourceChar: Character,
   tiles: number[],
   store: BattleState,
+  originTile?: number,
+  instanceId?: string,
 ): void {
+  const id = instanceId ?? spec.id;
   const common = {
+    name: spec.name,
+    image: spec.image,
+    skillImage: spec.skillImage,
     remainingTurns: spec.duration,
     tiles,
     effect: spec.effect ? { ...spec.effect } : undefined,
     maxStacks: spec.maxStacks,
     attack: spec.attack ? { ...spec.attack } : undefined,
-    originTile: sourceChar.position ?? 0,
+    originTile: originTile ?? sourceChar.position ?? 0,
     hitboxPattern: spec.hitboxPattern,
   };
-  const existing = store.summons.find((s) => s.id === spec.id);
+  const existing = store.summons.find((s) => s.id === id);
   if (existing) {
     Object.assign(existing, common);
     return;
   }
   store.summons.push({
-    id: spec.id,
+    id,
     sourceCharacterId: sourceChar.id,
     stacks: 0,
     ...common,
   });
 }
 
-// Every live summon acts once: it gains a stack (capped at maxStacks) and
+// One buff summon acts once: it gains a stack (capped at maxStacks) and
 // refreshes its buff on each living ally in its zone. The buff value is
 // per-stack × current stacks; the summon replaces its own prior contribution
-// (matched by summonId) so re-application never double-stacks.
-export function actSummons(store: BattleState, characters: Character[]): void {
-  store.summons.forEach((summon) => {
-    const eff = summon.effect;
-    if (!eff) return; // damage summons detonate in turn.service's summon phase
-    summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks ?? 1);
-    const value = eff.value * summon.stacks;
-    characters.forEach((ally) => {
-      if (ally.position === undefined || !summon.tiles.includes(ally.position)) return;
-      if (store.deadCharacters.has(ally.id)) return;
-      const buffs = store.characterBuffs.get(ally.id);
-      if (!buffs) return;
-      const kept = buffs.filter((b) => b.summonId !== summon.id);
-      kept.push({
-        type: eff.type,
-        value,
-        remainingTurns: eff.duration,
-        sourceCharacterId: summon.sourceCharacterId,
-        element: 'element' in eff ? eff.element : undefined,
-        summonId: summon.id,
-      });
-      store.characterBuffs.set(ally.id, kept);
+// (matched by summonId) so re-application never double-stacks. When the
+// summon appears in the turn script, this runs at its slot in the acting
+// order (turn.service); no-op for damage summons.
+export function actBuffSummon(store: BattleState, summon: ActiveSummon, characters: Character[]): void {
+  const eff = summon.effect;
+  if (!eff) return; // damage summons detonate in turn.service's summon phase
+  summon.stacks = Math.min(summon.stacks + 1, summon.maxStacks ?? 1);
+  const value = eff.value * summon.stacks;
+  characters.forEach((ally) => {
+    if (ally.position === undefined || !summon.tiles.includes(ally.position)) return;
+    if (store.deadCharacters.has(ally.id)) return;
+    const buffs = store.characterBuffs.get(ally.id);
+    if (!buffs) return;
+    const kept = buffs.filter((b) => b.summonId !== summon.id);
+    kept.push({
+      type: eff.type,
+      value,
+      remainingTurns: eff.duration,
+      sourceCharacterId: summon.sourceCharacterId,
+      element: 'element' in eff ? eff.element : undefined,
+      summonId: summon.id,
+      summonName: summon.name,
     });
+    store.characterBuffs.set(ally.id, kept);
   });
 }
 

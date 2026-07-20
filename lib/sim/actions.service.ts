@@ -358,6 +358,17 @@ export function resolvePreemptiveCasts(
 }
 
 // ---------------------------------------------------------------------------
+// Summon instances — one summon UNIT exists per CAST EVENT: re-casting after
+// cooldown fields a second unit next to the first (each ramps its own
+// stacks), it does not refresh it. Both the engine and the UI derive the
+// same instance id from the cast that created the unit, so scripted actions,
+// persisted positions and ActiveSummon state all line up.
+// ---------------------------------------------------------------------------
+
+export const preemptiveSummonInstanceId = (specId: string): string => `${specId}:pre`;
+export const castSummonInstanceId = (specId: string, turnIdx: number): string => `${specId}:t${turnIdx}`;
+
+// ---------------------------------------------------------------------------
 // SP economy — one rolling timeline per team (SP recovers at the start of
 // every turn after the first, capped at maxSp; costs can overdraw below 0,
 // which the UI flags as an uncastable rotation).

@@ -1,5 +1,5 @@
 import { CharacterTemplate } from "@/domain.type";
-import { invenIllust, costumeArt } from "@/lib/assets.util";
+import { invenIllust, costumeArt, skillIllust } from "@/lib/assets.util";
 
 export const diana: CharacterTemplate = {
   charId: "0024",
@@ -82,6 +82,7 @@ export const diana: CharacterTemplate = {
       name: "Magical Innovator",
       ...costumeArt("char002403_195"),
       approach: "vault",
+      displayEffects: ["Summons Magic Amplifier ET001", "Property DMG +25%..50%/stack (max 4)"],
       skill: {
         id: "s002403",
         name: "Magical Field Expansion",
@@ -96,6 +97,9 @@ export const diana: CharacterTemplate = {
         effects: [],
         summon: {
           id: "diana_magic_amplifier",
+          name: "Magic Amplifier ET001",
+          image: skillIllust("char050301_197"),
+          skillImage: skillIllust("char050201_156"),
           effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 25, duration: 4, target: "area_allies" },
           hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]],
           duration: 99, // persists for the battle
@@ -105,12 +109,12 @@ export const diana: CharacterTemplate = {
         targetGrid: "ally",
       },
       upgrades: [
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 25, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 30, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 35, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 40, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 45, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
-        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 50, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 25, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 30, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 35, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 40, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 45, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
+        { spCost: 5, cooldown: 15, scaling: 0, effects: [], summon: { id: "diana_magic_amplifier", name: "Magic Amplifier ET001", image: skillIllust("char050301_197"), skillImage: skillIllust("char050201_156"), effect: { id: "diana_amplifier_propdmg", type: "buff_prop_dmg", value: 50, duration: 4, target: "area_allies" }, hitboxPattern: [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], duration: 99, maxStacks: 4 } },
       ],
       potentials: [
         { id: "diana_innov_pot1", type: "sp_reduce", value: 1, name: "SP cost -1" },
